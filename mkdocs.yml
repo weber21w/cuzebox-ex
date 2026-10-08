@@ -1,0 +1,43 @@
+site_name: CUzeBox Documentation
+site_description: Starter documentation for the CUzeBox emulator and development workflow
+repo_name: CUzeBox
+
+docs_dir: documentation
+
+theme:
+  name: material
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - fenced_code
+  - attr_list
+
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Building: building.md
+  - SPI RAM: spiram.md
+  - Input Topology and Virtual Devices: input-topology.md
+  - Video Filters: video-filters.md
+  - Sound Options: sound.md
+  - Messages and Debugging Output: logging.md
+  - Preference Persistence: preference-persistence.md
+  - Cheats: cheats.md
+  - Serial and Endpoints: serial.md
+  - ESP8266 Emulation: esp8266-emulation.md
+  - Netplay: netplay.md
+  - Debugger: debugger.md
+  - API Profiler: api-profiler.md
+  - API Disassembly and Run Control: api-run-control.md
+  - API Stack Inspection: api-stack.md
+  - API Memory Snapshots: api-memory-snapshots.md
+  - API Memory Scans: api-memory-scans.md
+  - API Watchpoints: api-watchpoints.md
+  - API Breakpoints: api-breakpoints.md
+  - API:
+      - API Overview: api/index.md
+      - Command Reference: api/commands.md
+      - Automated Testing: api/testing.md
