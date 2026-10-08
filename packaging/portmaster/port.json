@@ -1,0 +1,10 @@
+{
+	"version": 2,
+	"name": "CUzeBox",
+	"items": [
+		{
+			"name": "CUzeBox.sh",
+			"target": "CUzeBox.sh"
+		}
+	]
+}

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CUzeBox
+Comment=Uzebox emulator
+Exec=cuzebox
+Icon=cuzebox
+Terminal=false
+Categories=Game;Emulator;
