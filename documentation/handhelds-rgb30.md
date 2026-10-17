@@ -1,4 +1,4 @@
-# RGB30 and standalone ROCKNIX integration
+# Building cuzebox for handheld Linux devices using PortMaster
 
 The RGB30 uses an AArch64 Linux build. `TARGET_RGB30=1` selects a lean
 gameplay preset while keeping the native SDL2 controller interface, MicroUI,
@@ -6,7 +6,89 @@ save states, and virtual keyboard. It disables the debugger, API/web server,
 display filters, recording/replay, netplay, ESP emulation, and remote ROMs by
 default. Explicit command-line feature overrides still work.
 
-The intended delivery is a **standalone emulator integrated into ROCKNIX**.
+## Compatibility
+
+This guide covers building a [PortMaster](https://portmaster.games/) package of cuzebox
+for the RGB30 Linux based handheld. The same package should also run a variety of ARM64
+Linux based handhelds.
+
+Some devices will require a new build profile and PortMaster package to get fully working.
+The install instructions are for [dArkOS](https://github.com/christianhaitian/dArkOS)
+but the same install steps will work for many other distros based on Emulation Station.
+
+## PortMaster under ROCKNIX menu issue
+
+Whilst the RGB30 builds of ROCKNIX let you download and install packages PortMaster
+packages, the ports menu seems to be broken so you cannot run any ports you install
+unless you run the PortMaster port scripts via ssh. I do not have this issue with
+dArkOS.
+
+## Undervolting the RGB30 to improve stability
+
+The latest version of dArkOS is based on Debian 13 (trixie) and has the nasty habit of
+resetting, presumably through overheating and thermal issues, when I run demanding programs
+like emulators or 3D games.
+
+To fix this, push START on the main dArkOS / Emulation Station menu then choose
+
+**ADVANCED SETTINGS -> CPU UNDERVOLT** and select the **MAXIMUM** undervolt setting.
+
+After exiting the advanced settings menu, you will have to reboot to apply the undervolt
+kernel setting. This lowers thermal output and stabilizes power delivery without sacrificing
+actual performance.
+
+## Building the RGB30 PortMaster package
+
+In the root of the cuzebox-ex source tree, run:
+
+```sh
+sh tools/build_rgb30.sh --doctor
+```
+
+This will check if you have the correct build dependencies installed and gives the
+commands required to install the missing packages for Debian, Ubuntu and WSL users.
+
+Once you have all of the build dependencies, you can build the PortMaster packgage:
+
+```
+make rgb30-package
+```
+
+If this completes succesfully it will create cuzebox-rgb30-portmaster.zip in the
+root directory of the cuzebox repo source tree.
+
+## Installing the package under dArkOS
+
+dArkOS doesn't ship with PortMaster installed by default. To install PM, first make
+sure your WiFi is configured and connected then run:
+
+**START -> OPTIONS -> TOOLS -> Install.PortMaster**
+
+After installing PortMaster you will have a
+
+**START -> OPTIONS -> TOOLS -> PortMaster**
+
+Menu option to download and install ports and autoinstalled packages like cuzebox.
+
+Copy **cuzebox-rgb30-portmaster.zip** into the **ports/autoinstall** directory of
+the **EASYROMS** partition of your dArkOS SD card then run:
+
+**START -> OPTIONS -> TOOLS -> PortMaster**
+
+PortMaster will autoinstall the cuzebox PM package when it loads so you can quit
+out of PM as soon as you've loaded it amd you see its menu.
+
+After installing the cuzebox portmaster zip you need to restart Emulation Station
+before it will appear in the ports menu by running
+
+**START -> QUIT -> RESTART EMULATIONSTATION**
+
+You should now have CUzebox available to run from the ports menu.
+
+# Integrating cuzebox with ROCKNIX
+
+Seeing as ROCKNIX currently has issues with using PortMaster. It is possible to
+integrate cuzebox as a **standalone emulator integrated into ROCKNIX**.
 This does not require a PortMaster installation. ROCKNIX already has an
 [Uzebox system](https://rocknix.org/systems/uzebox/); its existing Uzem core can
 remain available alongside CUzeBox EX.

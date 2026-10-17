@@ -28,7 +28,7 @@ configuration, workflows, and implementation details beyond this quick guide.
 | Topic | Guides |
 | --- | --- |
 | Build options and development workflow | [Building](documentation/building.md) |
-| RGB30 builds and standalone ROCKNIX integration | [Handheld guide](documentation/handhelds-rgb30.md) |
+| Building cuzebox for handheld Linux devices using PortMaster  | [Handheld guide](documentation/handhelds-rgb30.md) |
 | API capabilities, scripting and automated tests | [API overview](documentation/api/index.md), [command reference](documentation/api/commands.md), [testing](documentation/api/testing.md) |
 | CPU/source debugging, symbols, watches and profiles | [Debugger](documentation/debugger.md), [web debugger and diagnostics](documentation/web-debugger.md) |
 | Input capture playback and video export | [Input files](documentation/input-files.md) |

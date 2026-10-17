@@ -613,3 +613,35 @@ uart-logic-check:
 .PHONY: spi-register-check
 spi-register-check:
 	$(PYTHON) tools/test_spi_registers.py
+
+# ==========================================
+# RGB30 PortMaster Packaging Target
+# ==========================================
+
+# Define the folder name expected inside the PortMaster zip
+PORTMASTER_NAME ?= cuzebox
+
+rgb30-package: rgb30
+	@echo "Staging PortMaster package for RGB30..."
+	rm -rf _portmaster
+	mkdir -p _portmaster/$(PORTMASTER_NAME)
+
+	# Copy the compiled aarch64 binary from the build directory
+	cp _obj_/rgb30/cuzebox _portmaster/$(PORTMASTER_NAME)/cuzebox
+
+	# Copy PortMaster launch script into the staging dir
+	cp packaging/portmaster/CUzeBox.sh _portmaster/CUzeBox.sh
+
+	# Copy icon into the port folder
+	cp icon.png _portmaster/$(PORTMASTER_NAME)/icon.png
+
+	# Copy port.json into the port folder
+	cp packaging/portmaster/port.json _portmaster/$(PORTMASTER_NAME)/port.json
+
+	# Ensure correct permissions on the binary and launcher
+	chmod +x _portmaster/$(PORTMASTER_NAME)/cuzebox
+	chmod +x _portmaster/CUzeBox.sh
+
+	# Create the PortMaster autoinstall zip file
+	cd _portmaster && zip -qr ../cuzebox-rgb30-portmaster.zip CUzeBox.sh $(PORTMASTER_NAME)
+	@echo "Success! cuzebox-rgb30-portmaster.zip created"
