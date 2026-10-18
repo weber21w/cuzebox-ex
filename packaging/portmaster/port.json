@@ -1,10 +1,34 @@
 {
-	"version": 2,
-	"name": "CUzeBox",
-	"items": [
-		{
-			"name": "CUzeBox.sh",
-			"target": "CUzeBox.sh"
-		}
-	]
+    "version": 1,
+    "name": "CUzeBox",
+    "items": [
+        "CUzeBox.sh",
+        "CUzeBox/"
+    ],
+    "items_opt": null,
+    "attr": {
+        "title": "CUzeBox",
+        "porter": [
+            "Lee Weber",
+            "Dan MacDonald"
+        ],
+        "desc": "Uzebox emulator",
+        "inst": "Loads and runs .uze or .hex Uzebox roms",
+        "genres": [
+            "Other"
+        ],
+        "image": "icon.png",
+        "rtr": true,
+        "exp": false,
+        "runtime": null,
+        "reqs": [
+            "analog_1"
+        ],
+        "arch": [
+            "aarch64"
+        ],
+        "desc_md": null,
+        "inst_md": null,
+        "min_glibc": ""
+    }
 }
