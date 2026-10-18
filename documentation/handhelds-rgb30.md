@@ -9,8 +9,8 @@ default. Explicit command-line feature overrides still work.
 ## Compatibility
 
 This guide covers building a [PortMaster](https://portmaster.games/) package of cuzebox
-for the RGB30 Linux based handheld. The same package should also run a variety of ARM64
-Linux based handhelds.
+for the RGB30 Linux based handheld. The same package should also run on a variety of ARM
+Linux based handhelds such as the Anbernic family of devices etc.
 
 Some devices will require a new build profile and PortMaster package to get fully working.
 The install instructions are for [dArkOS](https://github.com/christianhaitian/dArkOS)
@@ -20,8 +20,7 @@ but the same install steps will work for many other distros based on Emulation S
 
 Whilst the RGB30 builds of ROCKNIX let you download and install packages PortMaster
 packages, the ports menu seems to be broken so you cannot run any ports you install
-unless you run the PortMaster port scripts via ssh. I do not have this issue with
-dArkOS.
+unless you run the PortMaster port scripts via ssh.
 
 ## Undervolting the RGB30 to improve stability
 
@@ -48,7 +47,8 @@ sh tools/build_rgb30.sh --doctor
 This will check if you have the correct build dependencies installed and gives the
 commands required to install the missing packages for Debian, Ubuntu and WSL users.
 
-Once you have all of the build dependencies, you can build the PortMaster packgage:
+Once you have all of the build dependencies, you can build the PortMaster packgage
+or build cuzebox as a binary to integrate into ROCKNIX.
 
 ```
 make rgb30-package
@@ -83,11 +83,11 @@ before it will appear in the ports menu by running
 
 **START -> QUIT -> RESTART EMULATIONSTATION**
 
-You should now have CUzebox available to run from the ports menu.
+You should now have CUzebox available to run from the dArkOS ports menu.
 
 # Integrating cuzebox with ROCKNIX
 
-Seeing as ROCKNIX currently has issues with using PortMaster. It is possible to
+Whilst ROCKNIX currently has issues with using PortMaster, it is possible to
 integrate cuzebox as a **standalone emulator integrated into ROCKNIX**.
 This does not require a PortMaster installation. ROCKNIX already has an
 [Uzebox system](https://rocknix.org/systems/uzebox/); its existing Uzem core can
