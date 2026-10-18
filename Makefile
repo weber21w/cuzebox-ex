@@ -243,7 +243,7 @@ package-portmaster: portmaster-stage
 
 .PHONY: rgb30 rgb30-doctor
 rgb30:
-	$(MAKE) TARGET_RGB30=1 all
+	$(MAKE) TARGET_RGB30=1 $(if $(ENABLE_DEBUGGER),ENABLE_DEBUGGER=$(ENABLE_DEBUGGER)) all
 rgb30-doctor:
 	$(MAKE) TARGET_RGB30=1 PORTMASTER_DIAG=1 _portmaster-doctor-inner
 
