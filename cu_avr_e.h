@@ -781,7 +781,8 @@ static void op_3B(auint arg1, auint arg2) /* SBIW */
 
 static void op_3C(auint arg1, auint arg2) /* CBI */
 {
- auint tmp   = cu_avr_read_io(arg1) & (~arg2);
+ /* On a PINx, CBI writes only its zero bit: nothing toggles */
+ auint tmp   = CU_IO_IS_PIN(arg1) ? 0U : (cu_avr_read_io(arg1) & (~arg2));
  oub_tail();
 }
 
@@ -796,7 +797,8 @@ static void op_3D(auint arg1, auint arg2) /* SBIC */
 
 static void op_3E(auint arg1, auint arg2) /* SBI */
 {
- auint tmp   = cu_avr_read_io(arg1) | ( arg2);
+ /* On a PINx, SBI writes only its own bit: that one bit toggles */
+ auint tmp   = CU_IO_IS_PIN(arg1) ? arg2 : (cu_avr_read_io(arg1) | ( arg2));
  oub_tail();
 }
 

@@ -176,6 +176,40 @@ static int run_decoder(void (*step)(void))
  return 0;
 }
 
+/* A one written to a PINx bit toggles PORTx (ATmega644 "Toggling the Pin"),
+** through OUT, STS, SBI (its bit only) and CBI (nothing); PINx is unchanged. */
+static int pin_toggle_test(void (*step)(void))
+{
+ setup();
+ cpu_state.iors[CU_IO_DDRC] = 0xFFU;
+ cpu_state.iors[CU_IO_PORTC] = 0x00U;
+ cpu_state.iors[CU_IO_PINC] = 0x55U;
+ cpu_state.iors[CU_IO_DDRB] = 0x02U;
+ cpu_state.iors[CU_IO_PORTB] = 0x00U;
+ cpu_state.iors[16] = 0x0FU;
+ instruction(0, 0xB906U); /* OUT PINC, r16 */
+ instruction(1, 0x9A37U); /* SBI PINC, 7 */
+ instruction(2, 0x9830U); /* CBI PINC, 0 */
+ instruction(3, 0xEF0FU); /* LDI r16, 0xFF */
+ instruction(4, 0x9300U); instruction(5, 0x0026U); /* STS PINC, r16 */
+ instruction(6, 0x9A19U); /* SBI PINB, 1 */
+ instruction(7, 0x9A19U); /* SBI PINB, 1 */
+ step();
+ CHECK(cpu_state.iors[CU_IO_PORTC] == 0x0FU, "OUT to PINC toggles PORTC");
+ CHECK(cpu_state.iors[CU_IO_PINC] == 0x55U, "a PINC write leaves PINC");
+ step();
+ CHECK(cpu_state.iors[CU_IO_PORTC] == 0x8FU, "SBI on PINC toggles only its bit");
+ step();
+ CHECK(cpu_state.iors[CU_IO_PORTC] == 0x8FU, "CBI on PINC toggles nothing");
+ step(); step();
+ CHECK(cpu_state.iors[CU_IO_PORTC] == 0x70U, "STS to PINC toggles PORTC");
+ step();
+ CHECK(cpu_state.iors[CU_IO_PORTB] == 0x02U, "SBI on PINB toggles PORTB");
+ step();
+ CHECK(cpu_state.iors[CU_IO_PORTB] == 0x00U, "a second SBI toggles it back");
+ return 0;
+}
+
 static int peripherals_test(void)
 {
  static auint const vectors[] = { VECT_WDT, VECT_T1COMPA, VECT_T1COMPB,
@@ -227,6 +261,8 @@ static int peripherals_test(void)
 int main(void)
 {
  if (run_decoder(cu_avr_exec) || run_decoder(cu_avr_exec_table) || peripherals_test()) return 1;
+ if (pin_toggle_test(cu_avr_exec) || pin_toggle_test(cu_avr_exec_table)) return 1;
  puts("Interrupt timing regression passed for switch and function-table decoders.");
+ puts("PINx toggle regression passed for switch and function-table decoders.");
  return 0;
 }

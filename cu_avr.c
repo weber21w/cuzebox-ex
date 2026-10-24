@@ -936,6 +936,15 @@ static void  cu_avr_write_io(auint port, auint val)
  if (cu_debug_mem_active){ cu_avr_debug_mem_event(CU_AVR_WATCH_REGION_IO, CU_AVR_WATCH_WRITE, port & 0x00FFU, cval); }
 #endif
 
+ /* Writing a one to a PINx bit toggles that bit of PORTx (ATmega644
+ ** datasheet, "Toggling the Pin"); PINx itself is not written. Done as a
+ ** PORTx write so the port's side effects (sync, chip selects) follow.
+ ** Video modes that output pixels as PINC toggles depend on this. */
+ if (CU_IO_IS_PIN(port)){
+  cu_avr_write_io(port + 2U, cpu_state.iors[port + 2U] ^ cval);
+  return;
+ }
+
  switch (port){
 
   case CU_IO_PORTA:   /* Controller inputs, SPI RAM Chip Select */

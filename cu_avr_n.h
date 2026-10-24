@@ -541,7 +541,8 @@ adiw_tail:
    goto cy2_tail;
 
   case 0x3CU: /* CBI */
-   tmp   = cu_avr_read_io(arg1) & (~arg2);
+   /* On a PINx, CBI writes only its zero bit: nothing toggles */
+   tmp   = CU_IO_IS_PIN(arg1) ? 0U : (cu_avr_read_io(arg1) & (~arg2));
    goto oub_tail;
 
   case 0x3DU: /* SBIC */
@@ -551,7 +552,8 @@ adiw_tail:
    goto skip_tail;
 
   case 0x3EU: /* SBI */
-   tmp   = cu_avr_read_io(arg1) | ( arg2);
+   /* On a PINx, SBI writes only its own bit: that one bit toggles */
+   tmp   = CU_IO_IS_PIN(arg1) ? arg2 : (cu_avr_read_io(arg1) | ( arg2));
 oub_tail:
    UPDATE_HARDWARE;
 out_tail:

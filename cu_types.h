@@ -140,6 +140,9 @@ typedef struct{
 #define CU_IO_PIND    0x29U
 #define CU_IO_DDRD    0x2AU
 #define CU_IO_PORTD   0x2BU
+/* PINA, PINB, PINC or PIND: a write toggles PORTx where it has ones */
+#define CU_IO_IS_PIN(p) ( ((p) >= CU_IO_PINA) && ((p) <= CU_IO_PIND) && \
+                          ((((p) - CU_IO_PINA) % 3U) == 0U) )
 #define CU_IO_TIFR0   0x35U
 #define CU_IO_TIFR1   0x36U
 #define CU_IO_TIFR2   0x37U
