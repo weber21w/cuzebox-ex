@@ -7709,6 +7709,10 @@ int main (int argc, char** argv)
   main_rom_name[sizeof(main_rom_name) - 1U] = 0;
   strncpy(main_loaded_rom_path, &(startup_game[0]), sizeof(main_loaded_rom_path) - 1U);
   main_loaded_rom_path[sizeof(main_loaded_rom_path) - 1U] = 0;
+  /* As main_load_rom_file_internal() does for a .hex: without it a ROM named
+  ** on the command line ran with no SPI RAM (a .uze gets it from its header). */
+  main_apply_spiram_policy(FALSE, 0U);
+  cu_spir_reset(0U);
   main_serial_profile_load();
   main_apply_rom_peripheral_policy(FALSE, NULL);
  }
