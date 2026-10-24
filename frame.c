@@ -76,6 +76,16 @@ static uint8  frame_iof[256U];
 static auint  frame_raw_xmap[ROW_PIXELS];
 static boole  frame_raw_xmap_init = FALSE;
 
+/* Area-weighted map for the staged path: a target pixel covers
+** ROW_ACTIVE_CYCLES / ROW_PIXELS (2.31) cycles, so up to RAW_TAPS of them,
+** each weighted by the share of it covered (weights sum to 256). Nearest-
+** cycle sampling made a 3-cycle Uzebox pixel 1 or 2 target pixels wide
+** depending on its position: uneven strokes in 80-column text. */
+#define RAW_TAPS 4U
+static auint  frame_blend_x0[ROW_PIXELS];
+static auint  frame_blend_w[ROW_PIXELS][RAW_TAPS];
+static boole  frame_blend_init = FALSE;
+
 /* Frame counter to time memory access logic */
 static auint  frame_ctr = 0U;
 
@@ -170,6 +180,66 @@ static void frame_init_raw_xmap(void)
  frame_raw_xmap_init = TRUE;
 }
 
+static void frame_init_blend_map(void)
+{
+ auint dp;
+ auint t;
+ auint beg;   /* Target pixel's span, in units of 1 / ROW_PIXELS cycle */
+ auint end;
+ auint c0;
+ auint lo;
+ auint hi;
+ auint sum;
+ if (frame_blend_init){ return; }
+ for (dp = 0U; dp < ROW_PIXELS; dp ++){
+  beg = dp * ROW_ACTIVE_CYCLES;
+  end = beg + ROW_ACTIVE_CYCLES;
+  c0  = beg / ROW_PIXELS;
+  frame_blend_x0[dp] = c0;
+  sum = 0U;
+  for (t = 0U; t < RAW_TAPS; t ++){
+   lo = (c0 + t) * ROW_PIXELS;
+   hi = lo + ROW_PIXELS;
+   if (lo < beg){ lo = beg; }
+   if (hi > end){ hi = end; }
+   frame_blend_w[dp][t] = (hi > lo) ?
+       ((((hi - lo) * 256U) + (ROW_ACTIVE_CYCLES >> 1)) / ROW_ACTIVE_CYCLES) : 0U;
+   sum += frame_blend_w[dp][t];
+  }
+  /* Rounding: the largest weight absorbs the difference, so sum is 256 */
+  for (t = 1U, lo = 0U; t < RAW_TAPS; t ++){
+   if (frame_blend_w[dp][t] > frame_blend_w[dp][lo]){ lo = t; }
+  }
+  frame_blend_w[dp][lo] = frame_blend_w[dp][lo] + 256U - sum;
+  /* Never read past the active window: a zero-weight tap stays in it */
+  for (t = 0U; t < RAW_TAPS; t ++){
+   if ((c0 + t) >= ROW_ACTIVE_CYCLES){ frame_blend_w[dp][t] = 0U; }
+  }
+ }
+ frame_blend_init = TRUE;
+}
+
+/* One target pixel from the cycles it covers. src is the first cycle of the
+** active window. Channels are blended in two 16-bit lanes each (weights sum
+** to 256, so 255 * 256 fits). */
+static uint32 frame_blend_px(uint8 const* src, auint dp, uint32 const* pal)
+{
+ auint  x0 = frame_blend_x0[dp];
+ auint  t;
+ auint  w;
+ uint32 c;
+ uint32 rb = 0U;
+ uint32 ga = 0U;
+ for (t = 0U; t < RAW_TAPS; t ++){
+  w = frame_blend_w[dp][t];
+  if (w == 0U){ continue; }
+  c = pal[src[x0 + t]];
+  rb += ( c        & 0x00FF00FFU) * w;
+  ga += ((c >> 8U) & 0x00FF00FFU) * w;
+ }
+ return ((rb >> 8U) & 0x00FF00FFU) | (ga & 0xFF00FF00U);
+}
+
 static auint frame_get_render_path(void)
 {
  auint mode = guicore_get_render_path();
@@ -184,9 +254,16 @@ static boole frame_use_classic_render(void)
  return RENDER_PATH_IS_CLASSIC(frame_get_render_path());
 }
 
+/* The staged path blends by area; Potato keeps the cheaper nearest cycle. */
+static boole frame_use_blend(void)
+{
+ return RENDER_PATH_IS_STAGED(frame_get_render_path());
+}
+
 /*
-** Renders a line by explicitly sampling the active video window in the
-** cycle domain without applying any built-in blur / shrink filter.
+** Renders a line from the active video window in the cycle domain: in the
+** staged path each target pixel blends the cycles it covers, by area; in
+** Potato it takes the nearest cycle.
 ** dest is the target line to fill; len is in target pixels.
 */
 static void frame_line32_raw(uint32* dest,
@@ -196,6 +273,13 @@ static void frame_line32_raw(uint32* dest,
  auint dp;
  auint sp;
 
+ if (frame_use_blend()){
+  frame_init_blend_map();
+  for (dp = 0U; dp < len; dp ++){
+   dest[dp] = frame_blend_px(src + off, dp, pal);
+  }
+  return;
+ }
  frame_init_raw_xmap();
  for (dp = 0U; dp < len; dp ++){
   sp = off + frame_raw_xmap[dp];
@@ -252,6 +336,17 @@ static void frame_line32_copy_raw(uint32* dest,
  uint32 c0;
  uint32 c1;
 
+ if (frame_use_blend()){
+  frame_init_blend_map();
+  for (dp = 0U; dp < len; dp ++){
+   c0 = frame_blend_px(src + off, dp, pal);
+   c1 = frame_blend_px(dsu, dp, pal);
+   dest[dp] = (((c0 & 0xFEFEFEFEU) >> 1) +
+               ((c1 & 0xFEFEFEFEU) >> 1));
+  }
+  memcpy(dsu, src + off, ROW_ACTIVE_CYCLES);
+  return;
+ }
  frame_init_raw_xmap();
  for (dp = 0U; dp < len; dp ++){
   sp = frame_raw_xmap[dp];
