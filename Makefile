@@ -253,7 +253,7 @@ portmaster-stage: $(OUT)
 	$(INSTALL) -m 644 readme.md "$(PORTMASTER_STAGE_DIR)/$(PORTMASTER_NAME)/readme.md"
 	@if [ -f icon.png ]; then $(INSTALL) -m 644 icon.png "$(PORTMASTER_STAGE_DIR)/$(PORTMASTER_NAME)/icon.png"; fi
 	$(INSTALL) -m 755 "$(PORTMASTER_SCRIPT_SRC)" "$(PORTMASTER_STAGE_DIR)/$(PORTMASTER_NAME).sh"
-	$(INSTALL) -m 644 "$(PORTMASTER_JSON_SRC)" "$(PORTMASTER_STAGE_DIR)/port.json"
+	$(INSTALL) -m 644 "$(PORTMASTER_JSON_SRC)" "$(PORTMASTER_STAGE_DIR)/$(PORTMASTER_NAME)/port.json"
 	$(INSTALL) -m 644 "$(PORTMASTER_README_SRC)" "$(PORTMASTER_STAGE_DIR)/README-portmaster.md"
 
 package-portmaster: portmaster-stage
