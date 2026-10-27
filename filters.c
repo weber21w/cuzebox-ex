@@ -423,6 +423,7 @@ static void filter_apply_scanlines_preset(
 	uint8_t dark = 255;
 
 	switch(mode){
+		case FILTER_CRT_SCANLINES_12: dark = 224; break;
 		case FILTER_CRT_SCANLINES_25: dark = 192; break;
 		case FILTER_CRT_SCANLINES_37: dark = 160; break;
 		case FILTER_CRT_SCANLINES_50: dark = 128; break;
@@ -839,6 +840,7 @@ void filter_apply_crt(
 		case FILTER_CRT_NONE:
 			break;
 
+		case FILTER_CRT_SCANLINES_12:
 		case FILTER_CRT_SCANLINES_25:
 		case FILTER_CRT_SCANLINES_37:
 		case FILTER_CRT_SCANLINES_50:

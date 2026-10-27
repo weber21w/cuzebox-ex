@@ -52,6 +52,14 @@ screenshot-test: $(OBD)/screenshot_regression.exe
 $(OBD)/screenshot_regression.exe: tests/gui/screenshot_regression.c main.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
 	$(CC) -o $@ $< $(PREF_TEST_OBJECTS) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
 
+.PHONY: filter-width-test
+filter-width-test: $(OBD)/filter_width_regression.exe
+	mkdir -p $(OBD)/filter-width-run
+	cd $(OBD)/filter-width-run && ../filter_width_regression.exe
+
+$(OBD)/filter_width_regression.exe: tests/gui/filter_width_regression.c main.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
+	$(CC) -o $@ $< $(PREF_TEST_OBJECTS) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+
 .PHONY: source-step-test
 source-step-test: $(OBD)/source_step_regression.exe
 	mkdir -p $(OBD)/source-step-run

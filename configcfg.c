@@ -318,7 +318,7 @@ boole appcfg_save(app_config_t const* cfg, const char* path)
 	fprintf(f, "FrameRateLimiter=%u\n", cfg->frame_rate_limiter ? 1U : 0U);
 	fprintf(f, "FrameMerge=%u\n", cfg->frame_merge ? 1U : 0U);
 	fprintf(f, "# InterlaceMode: 0=ROM hint, 1=off, 2=on, 3=detect; presentation: 0=hint, 1=field, 2=weave\n");
-	fprintf(f, "# AreaWeightedMode: 0=ROM hint (otherwise off), 1=off, 2=on\n");
+	fprintf(f, "# AreaWeightedMode: 0=ROM hint (otherwise off), 1=off, 2=on; also keeps full width in the filters\n");
 	fprintf(f, "AreaWeightedMode=%u\n", (unsigned)cfg->area_weighted_mode);
 	fprintf(f, "InterlaceMode=%u\n", (unsigned)cfg->interlace_mode);
 	fprintf(f, "InterlacePresentation=%u\n", (unsigned)cfg->interlace_presentation);
@@ -362,7 +362,7 @@ boole appcfg_save(app_config_t const* cfg, const char* path)
 	fprintf(f, "# FilterScaleMode: 0=nearest, 1=scale2x, 2=hq2x, 3=xbr2x\n");
 	fprintf(f, "# FilterCrtMode: 0=none, 1=scan25, 2=scan37, 3=scan50, 4=grille,\n");
 	fprintf(f, "#                5=shadowmask, 6=curvature, 9=grille+scanlines, 10=mask+scanlines,\n");
-	fprintf(f, "#                11=bumpmap, 12=lucid, 13=heatwave\n");
+	fprintf(f, "#                11=bumpmap, 12=lucid, 13=heatwave, 14=scan12\n");
 	fprintf(f, "MouseEnable=%u\n", cfg->mouse_enable ? 1U : 0U);
 	fprintf(f, "MouseScale=%u\n", (unsigned)cfg->mouse_scale);
 	fprintf(f, "FilterPreMode=%u\n", (unsigned)cfg->filter_pre_mode);
@@ -842,7 +842,7 @@ boole appcfg_load_or_create(app_config_t* cfg, const char* path)
 	if (cfg->filter_pre_mode > FILTER_PRE_BLACK_WHITE){ cfg->filter_pre_mode = FILTER_PRE_NONE; }
 	if (cfg->filter_scale_mode > FILTER_SCALE_XBR2X){ cfg->filter_scale_mode = FILTER_SCALE_NONE; }
 	if ((cfg->filter_crt_mode == 7U) || (cfg->filter_crt_mode == 8U)){ cfg->filter_crt_mode = FILTER_CRT_NONE; }
-	if (cfg->filter_crt_mode > FILTER_CRT_HEATWAVE){ cfg->filter_crt_mode = FILTER_CRT_NONE; }
+	if (cfg->filter_crt_mode > FILTER_CRT_MODE_MAX){ cfg->filter_crt_mode = FILTER_CRT_NONE; }
 	if (cfg->audio_output_rate > AUDIO_OUTRATE_96000){ cfg->audio_output_rate = AUDIO_OUTRATE_48000; }
 	if (cfg->audio_latency > AUDIO_LATENCY_SAFE){ cfg->audio_latency = AUDIO_LATENCY_NORMAL; }
 	if (cfg->audio_resampler > AUDIO_RESAMPLER_CUBIC){ cfg->audio_resampler = AUDIO_RESAMPLER_LINEAR; }

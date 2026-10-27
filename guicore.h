@@ -164,6 +164,11 @@ auint guicore_get_filter_crt_mode(void);
 /* Sets current CRT / post-filter mode. */
 void  guicore_set_filter_crt_mode(auint mode);
 
+/* Lets the display filters keep the full width of each line (all 640 pixels,
+** not every other one) for hi-res games. The 2x scalers are skipped then. */
+void  guicore_set_full_width(boole enabled);
+boole guicore_get_full_width(void);
+
 /* Gets current render path. */
 auint guicore_get_render_path(void);
 

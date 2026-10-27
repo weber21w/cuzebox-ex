@@ -36,8 +36,12 @@ typedef enum {
 	FILTER_CRT_MASK_SCANLINES,
 	FILTER_CRT_BUMP_MAP,
 	FILTER_CRT_LUCID,
-	FILTER_CRT_HEATWAVE
+	FILTER_CRT_HEATWAVE,
+	FILTER_CRT_SCANLINES_12		/* 12.5%: appended, so saved mode numbers keep their meaning */
 } filter_crt_mode_t;
+
+/* The highest valid filter_crt_mode_t (7 and 8 are not offered). */
+#define FILTER_CRT_MODE_MAX FILTER_CRT_SCANLINES_12
 
 typedef struct {
 	uint32_t pal32[256];

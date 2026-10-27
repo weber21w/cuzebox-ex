@@ -930,12 +930,20 @@ boole mainui_get_area_weighted(void)
  return main_cfg.area_weighted_mode == 2U ||
   (main_cfg.area_weighted_mode == 0U && (main_video_hint() & VIDEO_AREA_WEIGHTED));
 }
+/* The hi-res selection: area sampling, and display filters that keep the full
+** width of each line, so a 3-cycle dot is neither unevenly sized nor dropped. */
+static void main_apply_area_weighted(void)
+{
+ boole hires = mainui_get_area_weighted();
+ frame_set_area_weighted(hires);
+ guicore_set_full_width(hires);
+}
 auint mainui_get_area_weighted_mode(void) { return main_cfg.area_weighted_mode; }
 void mainui_set_area_weighted_mode(auint mode)
 {
  if (mode > 2U || main_cfg.area_weighted_mode == mode) return;
  main_cfg.area_weighted_mode = mode;
- frame_set_area_weighted(mainui_get_area_weighted());
+ main_apply_area_weighted();
  main_cfg_mark_dirty();
 }
 void mainui_set_area_weighted(boole enabled)
@@ -947,7 +955,7 @@ static void main_interlace_apply_policy(void)
 {
  boole enabled = main_cfg.interlace_mode >= 2U ||
   (main_cfg.interlace_mode == 0U && (main_video_hint() & 1U));
- frame_set_area_weighted(mainui_get_area_weighted());
+ main_apply_area_weighted();
  cu_avr_set_interlace(enabled);
  guicore_set_field_presentation(main_cfg.interlace_presentation == 2U ||
   (main_cfg.interlace_presentation == 0U && (main_video_hint() & 3U) == 3U));
@@ -3132,7 +3140,7 @@ void mainui_set_filter_scale_mode(auint mode)
 
 void mainui_set_filter_crt_mode(auint mode)
 {
-	if ((mode == 7U) || (mode == 8U) || (mode > FILTER_CRT_HEATWAVE)){ mode = FILTER_CRT_NONE; }
+	if ((mode == 7U) || (mode == 8U) || (mode > FILTER_CRT_MODE_MAX)){ mode = FILTER_CRT_NONE; }
 	if (main_cfg.filter_crt_mode == mode){ return; }
 	main_cfg.filter_crt_mode = mode;
 	main_cfg_apply_runtime();
