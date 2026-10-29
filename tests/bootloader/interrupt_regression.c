@@ -200,6 +200,7 @@ static int pin_toggle_test(void (*step)(void))
  step();
  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x0FU, "OUT to PINC toggles PORTC");
  CHECK(cpu_state.iors[CU_IO_PINC] == 0x55U, "a PINC write leaves PINC");
+ CHECK(video_row.pixels[0] == 0x0FU, "OUT PINC reaches the picture on its own cycle, as OUT PORTC does");
  step();
  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x8FU, "SBI on PINC toggles only its bit");
  step();

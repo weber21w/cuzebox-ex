@@ -510,6 +510,10 @@ mul_tail_fmul:
 
   case 0x39U: /* OUT */
    tmp = cpu_state.iors[arg2];
+   if (arg1 == CU_IO_PINC){ /* The toggle reaches the picture on this cycle, as PIXEL does */
+    cu_avr_write_io(arg1, tmp);
+    goto cy1_tail;
+   }
    goto out_tail;
 
   case 0x3AU: /* ADIW */

@@ -752,6 +752,11 @@ static void op_38(auint arg1, auint arg2) /* IN */
 static void op_39(auint arg1, auint arg2) /* OUT */
 {
  auint tmp = cpu_state.iors[arg2];
+ if (arg1 == CU_IO_PINC){ /* The toggle reaches the picture on this cycle, as PIXEL does */
+  cu_avr_write_io(arg1, tmp);
+  cy1_tail();
+  return;
+ }
  out_tail();
 }
 
