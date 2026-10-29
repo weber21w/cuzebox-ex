@@ -21,8 +21,9 @@ make FLAG_AVR_TIMER1_CLOCK=1 FLAG_AVR_GPIO=1 \
 
 Add the normal platform and feature options for the desired build, such as
 `TSYS=linux FLAG_OPENSSL=1`. Leaving either flag out selects its default of `1`.
-Existing SEI/RETI interrupt delays, PINx write-one toggling, and Timer1
-normal/CTC compare corrections remain enabled independently of these options.
+Existing SEI/RETI interrupt delays, PINx write-one toggling, Timer1
+normal/CTC compare corrections and the Timer2 normal-mode counter (below)
+remain enabled independently of these options.
 
 Timer1 retains the existing compare-latch convention and interrupt priority.
 Compare blocking after a TCNT1 write lasts one actual timer clock, including
@@ -46,6 +47,19 @@ With both flags disabled, the separately compiled Linux `-O3` core's `.text`
 section matches the baseline byte for byte. No new instructions remain in that
 core's timer, I/O or rendering paths.
 
+## Timer2 in normal mode
+
+In every build, Timer2 counts in normal mode (WGM2 = 0) at the clock CS22..20
+selects. TCNT2 and TOV2 are brought up to date from the cycle counter when
+TCNT2 or TIFR2 is read or a Timer2 register is written, so only those accesses
+pay for it. A wrap sets TOV2, and writing a one to it clears it. The PWM modes,
+which drive Uzebox audio through OCR2A, behave as before, and CTC is not
+counted. TOV2 is a flag only: the overflow interrupt, the compare matches,
+ASSR's asynchronous clock and GTCCR.PSRASY are not modelled. TCNT2 is in the
+CPU structure, so save states keep their layout; after a restore or a reset the
+count goes on from TCNT2, with a fresh prescaler phase. `timer2-test`
+(`tests/bootloader/timer2_regression.c`) covers it.
+
 ## Save states and replay
 
 Enabled builds append a 24-byte `CZH1` hardware trailer to save states, carrying
@@ -62,7 +76,7 @@ does not guarantee timing equivalence with the original recording.
 
 ## Scope and checks
 
-These options do not implement Timer0/Timer2 general counters, Timer1 external
+These options do not implement a Timer0 general counter, Timer1 external
 T1 edges, PWM, input capture, force compare, OC pin waveforms, GPIO synchronizer
 delay, electrical contention, or additional external/pin-change interrupts.
 Timer1 external clock selections stay stopped in the enabled clock model.
@@ -74,7 +88,7 @@ Run the tests for each flag combination using a separate object directory:
 ```sh
 make -f tests/preferences/Makefile TSYS=linux \
   FLAG_AVR_TIMER1_CLOCK=1 FLAG_AVR_GPIO=1 OBD=_obj_/hardware \
-  interrupt-test timer1-test hardware-test storage-test input-movie-test
+  interrupt-test timer1-test timer2-test hardware-test storage-test input-movie-test
 ```
 
 Checks cover internal divider deadlines, stop/restart and divisor changes,

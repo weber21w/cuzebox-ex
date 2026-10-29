@@ -325,6 +325,15 @@ auint           cycle_next_event;
 auint           timer1_base;
 /* TCNT1 writes inhibit compare matches on the next running timer clock. */
 static boole    timer1_compare_blocked;
+/* Timer2 in normal mode, counted when it is read or set (a stopwatch's needs):
+** timer2_tick0 prescaler ticks at cycle timer2_base, timer2_ovf the overflows
+** already flagged in TOV2. Its PWM modes (the audio output) and CTC are not
+** counted, and TOV2 is a flag only: no overflow interrupt. Not in cpu_state (a
+** saved state keeps its layout): cu_avr_io_update() restarts it from TCNT2. */
+static auint    timer2_base;
+static auint    timer2_tick0;
+static auint    timer2_ovf;
+static const uint8 timer2_ps[8] = {0U, 0U, 3U, 5U, 6U, 7U, 8U, 10U}; /* log2 of the prescaler by CS2 */
 #if FLAG_AVR_TIMER1_CLOCK
 /* Internal Timer1 clock and shared synchronous prescaler phase. */
 typedef struct {
@@ -1046,6 +1055,33 @@ static void cu_avr_itcheck(void)
 
 
 /*
+** Brings Timer2's count up to the current cycle: TCNT2, and TOV2 if it
+** overflowed. Not counting (stopped, or a PWM mode), time passes with no tick.
+*/
+static void  cu_avr_timer2_sync(void)
+{
+ auint cs = cpu_state.iors[CU_IO_TCCR2B] & 7U;
+ auint t0;
+
+ if ( (cs == 0U) ||
+      ((cpu_state.iors[CU_IO_TCCR2A] & 3U) != 0U) ||
+      ((cpu_state.iors[CU_IO_TCCR2B] & 8U) != 0U) ){
+  timer2_base = cpu_state.cycle;
+  return;
+ }
+ t0 = WRAP32(cpu_state.cycle - timer2_base) >> timer2_ps[cs];
+ timer2_tick0 = WRAP32(timer2_tick0 + t0);
+ timer2_base  = WRAP32(timer2_base + (t0 << timer2_ps[cs]));
+ if ((timer2_tick0 >> 8) != timer2_ovf){
+  cpu_state.iors[CU_IO_TIFR2] |= 0x01U; /* TOV2 */
+  timer2_ovf = timer2_tick0 >> 8;
+ }
+ cpu_state.iors[CU_IO_TCNT2] = timer2_tick0 & 0xFFU;
+}
+
+
+
+/*
 ** Writes an I/O port
 */
 static void  cu_avr_write_io(auint port, auint val)
@@ -1337,6 +1373,24 @@ static void  cu_avr_write_io(auint port, auint val)
   case CU_IO_TIFR1:   /* Timer1 interrupt flags */
 
    cval  = pval & (~cval);
+   break;
+
+  case CU_IO_TCCR2A:  /* Timer2: counted up to here under the old setting */
+  case CU_IO_TCCR2B:
+
+   cu_avr_timer2_sync();
+   break;
+
+  case CU_IO_TCNT2:   /* Timer2 counter */
+
+   cu_avr_timer2_sync();
+   timer2_tick0 = (timer2_tick0 & (~0xFFU)) | cval;
+   break;
+
+  case CU_IO_TIFR2:   /* Timer2 interrupt flags: a one clears */
+
+   cu_avr_timer2_sync();
+   cval  = cpu_state.iors[CU_IO_TIFR2] & (~cval);
    break;
 
   case CU_IO_TIMSK1:
@@ -1682,6 +1736,12 @@ static auint cu_avr_read_io(auint port)
 
   case CU_IO_TCNT1H:
    ret = cpu_state.latch;
+   break;
+
+  case CU_IO_TCNT2:
+  case CU_IO_TIFR2:
+   cu_avr_timer2_sync();
+   ret = cpu_state.iors[port];
    break;
 
   case CU_IO_UDR0: /* read a UART byte */
@@ -2864,6 +2924,7 @@ cu_state_cpu_t* cu_avr_get_state(void)
 
  cpu_state.iors[CU_IO_TCNT1H] = (t0 >> 8) & 0xFFU;
  cpu_state.iors[CU_IO_TCNT1L] = (t0     ) & 0xFFU;
+ cu_avr_timer2_sync(); /* TCNT2 and TOV2 as they are now */
 
  return &cpu_state;
 }
@@ -2938,6 +2999,9 @@ void  cu_avr_io_update(void)
 #if FLAG_AVR_GPIO
  gpio_pixels = cpu_state.iors[CU_IO_PORTC] & cpu_state.iors[CU_IO_DDRC];
 #endif
+ timer2_base  = cpu_state.cycle; /* Timer2 goes on from TCNT2 */
+ timer2_tick0 = cpu_state.iors[CU_IO_TCNT2];
+ timer2_ovf   = 0U;
 
  cycle_next_event = WRAP32(cpu_state.cycle + 1U); /* Request HW processing */
  event_it         = TRUE; /* Request interrupt processing */

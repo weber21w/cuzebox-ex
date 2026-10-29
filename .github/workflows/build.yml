@@ -113,8 +113,8 @@ jobs:
           python3 tools/test_debug_elf_bounds.py
           node tests/gui/web_source_step_regression.js
           python3 tools/test_source_step_api.py ./cuzebox
-      - name: CPU interrupt, EEPROM and Timer1 regressions
-        run: make -j2 TSYS=linux -f tests/preferences/Makefile interrupt-test timer1-test hardware-test
+      - name: CPU interrupt, EEPROM, Timer1 and Timer2 regressions
+        run: make -j2 TSYS=linux -f tests/preferences/Makefile interrupt-test timer1-test hardware-test timer2-test
       - name: Writable SD and bootloader regressions
         run: |
           sh tests/sd_write/run.sh
