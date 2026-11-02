@@ -52,7 +52,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
-            make diffutils tar nasm
+            git make diffutils tar nasm
             mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-x264 mingw-w64-x86_64-python
@@ -65,9 +65,9 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
-          export DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
           bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/windows-native.log
-            command -v make gcc python3 ffmpeg ffprobe
+            command -v git make gcc python3 ffmpeg ffprobe
+            export DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
             make -j2 TSYS=windows_mingw OBD=_obj_/release OUT=_obj_/release/cuzebox.exe FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
             python3 tools/test_runtime_paths.py _obj_/release/cuzebox.exe
             python3 tools/test_headless_api.py _obj_/release/cuzebox.exe
