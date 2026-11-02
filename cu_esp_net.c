@@ -3648,19 +3648,30 @@ static sint16 cu_ping_icmp_impl(const char *host, sint16 timeout_ms)
 
 #else /* POSIX */
 
+/* The ICMP echo wire header is eight bytes on both BSD and Linux. Do not
+ * depend on Linux-only struct icmphdr/iphdr definitions on macOS. */
+typedef struct {
+	uint8 type;
+	uint8 code;
+	uint16 checksum;
+	uint16 id;
+	uint16 sequence;
+} cu_esp_icmp_echo_t;
+_Static_assert(sizeof(cu_esp_icmp_echo_t) == 8, "ICMP echo header size");
+
 static sint16 cu_ping_icmp_impl(const char *host, sint16 timeout_ms)
 {
 	struct addrinfo hints;
 	struct addrinfo *res = NULL;
 	struct sockaddr_in dst;
-	uint8 pkt[sizeof(struct icmphdr) + 32];
+	uint8 pkt[sizeof(cu_esp_icmp_echo_t) + 32];
 	uint8 rx[1500];
 	uint32 start_ms, end_ms;
 	fd_set rfds;
 	struct timeval tv;
 	int rc;
 	uint16 id;
-	struct icmphdr *ih;
+	cu_esp_icmp_echo_t *ih;
 
 	if(!host || !*host)
 		return -1;
@@ -3683,14 +3694,14 @@ static sint16 cu_ping_icmp_impl(const char *host, sint16 timeout_ms)
 	freeaddrinfo(res);
 
 	memset(pkt, 0, sizeof(pkt));
-	ih = (struct icmphdr *)pkt;
+	ih = (cu_esp_icmp_echo_t *)pkt;
 	ih->type = ICMP_ECHO;
 	ih->code = 0;
 	id = (uint16)getpid();
-	ih->un.echo.id = htons(id);
-	ih->un.echo.sequence = htons(esp_state.ping_seq++);
+	ih->id = htons(id);
+	ih->sequence = htons(esp_state.ping_seq++);
 	for(uint32 i = 0u; i < 32u; i++)
-		pkt[sizeof(struct icmphdr) + i] = (uint8)(i * 7u + 3u);
+		pkt[sizeof(cu_esp_icmp_echo_t) + i] = (uint8)(i * 7u + 3u);
 
 	ih->checksum = 0u;
 	ih->checksum = cu_esp_checksum_oc(pkt, (sint32)sizeof(pkt));
@@ -3719,19 +3730,19 @@ static sint16 cu_ping_icmp_impl(const char *host, sint16 timeout_ms)
 		if(n <= 0)
 			return -1;
 
-		if(n < (int)(sizeof(struct iphdr) + sizeof(struct icmphdr)))
+		if(n < (int)(20u + sizeof(cu_esp_icmp_echo_t)))
 			return -1;
 
 		{
-			struct iphdr *ip = (struct iphdr *)rx;
-			uint32 ihl = (uint32)(ip->ihl * 4u);
-			if(n < (int)(ihl + sizeof(struct icmphdr)))
+			uint32 ihl = (uint32)((rx[0] & 0x0Fu) * 4u);
+			if((rx[0] >> 4) != 4u || ihl < 20u ||
+			   n < (int)(ihl + sizeof(cu_esp_icmp_echo_t)))
 				return -1;
 
-			ih = (struct icmphdr *)(rx + ihl);
+			ih = (cu_esp_icmp_echo_t *)(rx + ihl);
 			if(ih->type != ICMP_ECHOREPLY)
 				return -1;
-			if(ntohs(ih->un.echo.id) != id)
+			if(ntohs(ih->id) != id)
 				return -1;
 		}
 	}

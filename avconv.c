@@ -462,6 +462,8 @@ void avconv_finalize(void)
 		if (avconv_pipe_a != NULL){ c1 = AVCONV_PCLOSE(avconv_pipe_a); avconv_pipe_a = NULL; }
 		quoted = avconv_shell_quote(qout, sizeof(qout), avconv_active_name);
 		rc = -1;
+		/* Both inputs are finite. -shortest can discard the final video frame
+		 * when audio sample rounding makes its duration slightly shorter. */
 		if ((c0 == 0) && (c1 == 0) && quoted){
 			snprintf(cmd, sizeof(cmd),
 					"ffmpeg"
@@ -483,7 +485,6 @@ void avconv_finalize(void)
 					" -b:a 192k"
 					" -ar 48000"
 					" -movflags +faststart"
-					" -shortest"
 					" -f mp4 %s"
 					" 1> ~capturemux.log"
 					" 2> ~capturemux.err",

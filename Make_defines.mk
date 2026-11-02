@@ -264,13 +264,13 @@ OUT=cuzebox
 CFLAGS+= -DTARGET_MACOS
 ifeq ($(FLAG_USE_SDL1),0)
 ifneq ($(SDL2_CONFIG_BIN),)
-CFLAGS+= $(shell $(SDL2_CONFIG_BIN) --cflags)
+CFLAGS+= $(shell $(SDL2_CONFIG_BIN) --cflags) -I$(shell $(SDL2_CONFIG_BIN) --prefix)/include
 LINKB+= $(shell $(SDL2_CONFIG_BIN) --libs)
 else ifeq ($(SDL2_PKG_OK),yes)
-CFLAGS+= $(shell $(PKG_CONFIG) --cflags sdl2)
+CFLAGS+= $(shell $(PKG_CONFIG) --cflags sdl2) -I$(shell $(PKG_CONFIG) --variable=includedir sdl2)
 LINKB+= $(shell $(PKG_CONFIG) --libs sdl2)
 else ifneq ($(SDL2_BREW_PREFIX),)
-CFLAGS+= -I$(SDL2_BREW_PREFIX)/include/SDL2 -D_THREAD_SAFE
+CFLAGS+= -I$(SDL2_BREW_PREFIX)/include -I$(SDL2_BREW_PREFIX)/include/SDL2 -D_THREAD_SAFE
 LINKB+= -L$(SDL2_BREW_PREFIX)/lib -lSDL2
 else
 LINKB+= -lSDL2

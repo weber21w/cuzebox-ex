@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -13,6 +14,39 @@ MAKE = os.environ.get("MAKE", "make")
 
 
 class DependenciesTest(unittest.TestCase):
+    def test_macos_sdl_header_parent(self):
+        # Homebrew's SDL flags point inside SDL2; CUEX uses <SDL2/SDL.h>.
+        with tempfile.TemporaryDirectory(prefix="cuex-macos-sdl-") as directory:
+            root = Path(directory)
+            prefix = root / "sdl"
+            (prefix / "include/SDL2").mkdir(parents=True)
+            (prefix / "include/SDL2/SDL.h").write_text("/* fixture */\n")
+            metadata = root / "metadata.py"
+            metadata.write_text(
+                "import sys\n"
+                f"prefix = {prefix.as_posix()!r}\n"
+                "arg = sys.argv[1]\n"
+                "print({'--prefix': prefix, '--cflags': '-I' + prefix + '/include/SDL2', "
+                "'--variable=includedir': prefix + '/include', '--libs': '-lSDL2'}.get(arg, ''))\n")
+            fixture = root / "flags.mk"
+            fixture.write_text(
+                "include Make_defines.mk\n$(info CUEX_FLAGS=$(CFLAGS))\nall:;\n")
+            helper = f'"{Path(sys.executable).as_posix()}" "{metadata.as_posix()}"'
+            for route, flags in (
+                ("sdl2-config", [f"SDL2_CONFIG_BIN={helper}", "SDL2_PKG_OK="]),
+                ("pkg-config", ["SDL2_CONFIG_BIN=", "SDL2_PKG_OK=yes", f"PKG_CONFIG={helper}"]),
+                ("brew", ["SDL2_CONFIG_BIN=", "SDL2_PKG_OK=", f"SDL2_BREW_PREFIX={prefix.as_posix()}"]),
+            ):
+                with self.subTest(route=route):
+                    result = subprocess.run(
+                        [MAKE, "--no-print-directory", "-f", str(fixture), "TSYS=macos",
+                         "FLAG_REMOTE_ROMS_LIBCURL=0"] + flags,
+                        cwd=ROOT, text=True, capture_output=True, timeout=30)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    line = next(line for line in result.stdout.splitlines() if line.startswith("CUEX_FLAGS="))
+                    includes = [Path(arg[2:]) for arg in shlex.split(line) if arg.startswith("-I")]
+                    self.assertTrue(any((base / "SDL2/SDL.h").is_file() for base in includes), line)
+
     def test_flags_includes_and_noop(self):
         with tempfile.TemporaryDirectory(prefix="cuzebox-dependencies-") as directory:
             root = Path(directory)
