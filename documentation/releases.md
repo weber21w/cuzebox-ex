@@ -13,7 +13,10 @@ PNG/video decoding, a packaged headless session, and an actual Cocoa-window
 launch of the extracted app. The bundle signature and its bundled-library paths
 are checked again after launch. Runner audio uses SDL's dummy driver; actual
 audio devices/controllers/serial hardware still require desktop testing.
-Build/FFmpeg/package diagnostics are retained as separate `debug-macos-*`
+Bundle creation, packaged headless recording, and Cocoa launch are separately
+timed stages. FFmpeg is cached by architecture, SDK/x264 version and the pinned
+recipe; the cache is saved after a successful helper build even if a later test
+fails. Build/FFmpeg/package diagnostics are retained as separate `debug-macos-*`
 artifacts, including on failure. Release collection includes only `cuex-*`
 package artifacts, so diagnostic logs do not become release downloads.
 
@@ -127,10 +130,26 @@ OS-provided curl helper for remote ROM downloads, retaining the OS certificate
 store instead of depending on a builder's OpenSSL/CA installation. Linux uses
 bundled libcurl with the target distribution's standard CA certificate files.
 
-On macOS, use native Apple Silicon/Intel runners and `TSYS=macos`; set
-`MACOSX_DEPLOYMENT_TARGET=15.0`. The packager builds CUEX.app, follows Mach-O
+On macOS, use native Apple Silicon/Intel runners and GNU make (Apple's bundled
+make is too old for these build rules):
+
+```sh
+brew install sdl2 x264 pkg-config nasm make
+export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
+export MACOSX_DEPLOYMENT_TARGET=15.0
+make -j4 TSYS=macos OBD=_obj_/release OUT=_obj_/release/cuzebox \
+  FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE=0x20261102
+bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg
+python3 tools/release_package.py build --platform macos --arch "$(uname -m)" \
+  --version preview --binary _obj_/release/cuzebox \
+  --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe
+```
+
+The packager builds CUEX.app, follows Mach-O
 dependencies, rewrites library references into Contents/Frameworks, includes
 helpers/resources, creates an icon and Info.plist, and ad-hoc signs the result.
+When the SDK supplies sdl2-compat, its dynamically loaded SDL3 runtime and its
+dependencies are also bundled; installed Homebrew libraries are not required.
 It does **not** use Developer ID or notarize. Public supported Mac releases
 should add Developer ID signing, hardened runtime and notarization, and be
 tested on actual Mac desktops/controllers/serial devices. The first pipeline
@@ -156,7 +175,8 @@ python3 tools/test_headless_api.py _obj_/release/cuzebox
 python3 tools/test_release_tools.py
 python3 tools/test_release_package.py --linux dist/linux/*.AppImage
 python3 tools/test_release_package.py --windows dist/windows/*windows*.zip
-python3 tools/test_release_package.py --macos dist/macos/*macos*.zip
+python3 tools/test_release_package.py --macos dist/*macos*.zip
+python3 tools/test_macos_app.py dist/*macos*.zip
 ```
 
 Package smoke tests start extracted payloads with a clean PATH, create a PNG,

@@ -37,6 +37,22 @@ class ReleaseTools(unittest.TestCase):
             self.assertTrue(any('@loader_path/libB.dylib' in c for c in calls))
             self.assertFalse((libs/'libSystem.B.dylib').exists())
 
+    def test_macos_sdl_compat_dynamic_runtime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base=Path(tmp).resolve();sdk=base/'sdk';sdk.mkdir()
+            sdl2=sdk/'libSDL2-2.0.0.dylib';sdl3=sdk/'libSDL3.dylib';extra=sdk/'libExtra.dylib'
+            sdl2.write_bytes(b'sdl2-compat\0libSDL3.dylib\0');sdl3.write_bytes(b'SDL3');extra.write_bytes(b'extra')
+            exe=base/'MacOS/cuzebox';exe.parent.mkdir();exe.write_bytes(b'EXEC')
+            def deps(path):
+                if path==exe:return [str(sdl2)]
+                if path==sdl3:return [str(sdl3),'@loader_path/libExtra.dylib']
+                return []
+            with patch.object(release,'macho_deps',side_effect=deps),patch.object(release,'run') as commands:
+                copied=release.macos_libraries([exe],base/'Frameworks')
+            self.assertEqual({p.name for p in copied},{sdl2.name,'libSDL3.dylib',extra.name})
+            self.assertEqual((base/'Frameworks/libSDL3.dylib').read_bytes(),b'SDL3')
+            self.assertFalse(any(cmd.args[0][1]=='-change' and cmd.args[0][2]=='@loader_path/libSDL3.dylib' for cmd in commands.call_args_list), 'dlopen dependency must not be treated as a load command')
+
     def test_asset_collision_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);src=root/'downloads'

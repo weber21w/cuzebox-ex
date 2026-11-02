@@ -188,7 +188,12 @@ def macos_libraries(executables,frameworks,license_dir=None):
     frameworks.mkdir();pending=[(Path(p),Path(p)) for p in executables];seen={};copied=[]
     while pending:
         original,target=pending.pop()
-        for dep in macho_deps(original):
+        # sdl2-compat dlopens SDL3 from its own directory; otool cannot see it.
+        # Its macOS loader explicitly searches @loader_path/libSDL3.dylib.
+        runtime=[]
+        if original.name.startswith('libSDL2') and b'libSDL3.dylib' in original.read_bytes():
+            runtime=['@loader_path/libSDL3.dylib']
+        for dep in macho_deps(original)+runtime:
             if dep.startswith(('/System/Library/','/usr/lib/')):continue
             candidates=[Path(dep)] if Path(dep).is_absolute() else []
             if dep.startswith('@loader_path/'):
@@ -198,16 +203,22 @@ def macos_libraries(executables,frameworks,license_dir=None):
                     prefix=prefix.replace('@loader_path',str(original.parent)).replace('@executable_path',str(executables[0].parent))
                     candidates.append(Path(prefix)/dep[len('@rpath/'):])
                 candidates += [Path('/opt/homebrew/lib')/Path(dep).name,Path('/usr/local/lib')/Path(dep).name]
+            if dep in runtime:
+                candidates += [Path('/opt/homebrew/lib')/Path(dep).name,Path('/usr/local/lib')/Path(dep).name]
             source=next((p.resolve() for p in candidates if p.is_file()),None)
             if source is None:raise RuntimeError(f'Cannot resolve macOS dependency {dep} of {original}')
-            dest=frameworks/source.name
+            # otool also lists a dylib's own LC_ID_DYLIB, not an import.
+            if source==original.resolve():continue
+            # dlopen needs the requested alias, even when Homebrew's symlink
+            # resolves to a versioned filename. Store one real signed file.
+            dest=frameworks/(Path(dep).name if dep in runtime else source.name)
             if dest.name in seen and seen[dest.name]!=source:raise RuntimeError(f'Conflicting library basename: {source}')
             if dest.name not in seen:
                 seen[dest.name]=source;shutil.copy2(source,dest);dest.chmod(0o755)
                 if license_dir:copy_notices(source.parent.parent,license_dir,dest.name)
                 run(['install_name_tool','-id','@rpath/'+dest.name,dest]);pending.append((source,dest));copied.append(dest)
             replacement=('@loader_path/' if target.parent==frameworks else '@executable_path/../Frameworks/')+dest.name
-            run(['install_name_tool','-change',dep,replacement,target])
+            if dep not in runtime:run(['install_name_tool','-change',dep,replacement,target])
     return copied
 
 def macos_package(stage,args):
