@@ -21,6 +21,7 @@ if [ -n "${CROSS_PREFIX:-}" ]; then
   cross_args+=(--enable-cross-compile --target-os=mingw32 --arch=x86_64
     --cross-prefix="$CROSS_PREFIX" --pkg-config=pkg-config --pkg-config-flags=--static)
 fi
+# Bash 3.2 with nounset needs this guarded expansion for an empty array.
 "$WORK/source/configure" --prefix="$WORK/prefix" \
   ${cross_args[@]+"${cross_args[@]}"} \
   --disable-everything --disable-autodetect --disable-doc --disable-debug \

@@ -50,7 +50,7 @@ jobs:
       - name: Build and test native CUEX
         run: |
           export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
-          DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
+          export DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
           bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/native.log
             make -j2 TSYS=macos OBD=_obj_/release OUT=_obj_/release/cuzebox FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
             python3 tools/source_audit.py
