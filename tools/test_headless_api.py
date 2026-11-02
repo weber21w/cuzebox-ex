@@ -70,10 +70,13 @@ def main():
             time.sleep(.15)
             assert command("GET_STATE")["frame"] == state["frame"], "paused execution advanced"
             start = time.monotonic()
-            command("RUN_FRAMES 12")
-            finished = client.wait_run_complete()
-            assert .1 < time.monotonic() - start < 5, "default headless pacing ignored"
-            assert finished["frame"] == state["frame"] + 12
+            # Measure a full second: the limiter intentionally tolerates drift
+            # and catch-up bursts, which make a 12-frame timing window flaky.
+            command("RUN_FRAMES 60")
+            finished = client.wait_run_complete(timeout=15)
+            elapsed = time.monotonic() - start
+            assert .5 < elapsed < 15, f"default headless pacing ignored: {elapsed:.3f}s for 60 frames"
+            assert finished["frame"] == state["frame"] + 60
             info = command("SCREENSHOT_CAPTURE")
             assert info["width"] > 0 and info["height"] > 0 and info["size"] > 54
             screenshot = command("SCREENSHOT_READ 0 54")
