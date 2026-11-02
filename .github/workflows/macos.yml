@@ -40,7 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Dependencies
-        run: brew install sdl2 x264 pkg-config nasm
+        run: |
+          brew install sdl2 x264 pkg-config nasm make
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
       - name: Build recording helper
         run: |
           mkdir -p _obj_/ci-logs

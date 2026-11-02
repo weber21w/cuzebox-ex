@@ -22,7 +22,7 @@ if [ -n "${CROSS_PREFIX:-}" ]; then
     --cross-prefix="$CROSS_PREFIX" --pkg-config=pkg-config --pkg-config-flags=--static)
 fi
 "$WORK/source/configure" --prefix="$WORK/prefix" \
-  "${cross_args[@]}" \
+  ${cross_args[@]+"${cross_args[@]}"} \
   --disable-everything --disable-autodetect --disable-doc --disable-debug \
   --disable-shared --enable-static --disable-avdevice --disable-network \
   --enable-ffmpeg --enable-ffprobe --enable-gpl --enable-libx264 \
