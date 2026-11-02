@@ -188,12 +188,13 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(bytes(int(v) & 0xFF for v in vals)); off += n
 
     def _screenshot_download(self, parsed: urllib.parse.ParseResult) -> None:
-        qs = urllib.parse.parse_qs(parsed.query); name = self._safe_name(qs.get("name", ["cuzebox-screenshot.bmp"])[0], "cuzebox-screenshot.bmp")
-        info = self.bridge.command("SCREENSHOT_CAPTURE")
+        qs = urllib.parse.parse_qs(parsed.query); name = self._safe_name(qs.get("name", ["cuzebox-screenshot.png"])[0], "cuzebox-screenshot.png")
+        bmp = name.lower().endswith('.bmp')
+        info = self.bridge.command("SCREENSHOT_CAPTURE BMP" if bmp else "SCREENSHOT_CAPTURE")
         if not info.get("ok") or int(info.get("size", 0)) <= 0:
             self._json({"ok": 0, "error": "screenshot capture failed"}, HTTPStatus.BAD_REQUEST); return
         size = int(info["size"]); width = int(info.get("width", 0)); height = int(info.get("height", 0))
-        self.send_response(HTTPStatus.OK); self.send_header("Content-Type", "image/bmp"); self.send_header("Content-Length", str(size)); self.send_header("Content-Disposition", f'attachment; filename="{name}"'); self.send_header("Cache-Control", "no-store"); self.send_header("X-CUzeBox-Image-Size", f"{width}x{height}"); self.end_headers()
+        self.send_response(HTTPStatus.OK); self.send_header("Content-Type", "image/bmp" if bmp else "image/png"); self.send_header("Content-Length", str(size)); self.send_header("Content-Disposition", f'attachment; filename="{name}"'); self.send_header("Cache-Control", "no-store"); self.send_header("X-CUzeBox-Image-Size", f"{width}x{height}"); self.send_header("X-CUEX-Capture-Metadata", json.dumps(info.get("capture", {}), separators=(",", ":"))); self.end_headers()
         try:
             off = 0
             while off < size:

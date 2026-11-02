@@ -198,9 +198,40 @@ longer depends on the ESP AT-network timer, which is bypassed by raw serial
 backends.
 
 Polling-only UART software is also supported correctly. `TXC0` represents an
-idle or completed transmitter, but it only enters the USART TX interrupt vector
+latched transmission completion, rather than the idle level
+of an attached serial peer. It only enters the USART TX interrupt vector
 when `TXCIE0` is enabled. This distinction is required by link games that poll
 `UCSR0A` from a scanline service routine while leaving UART interrupts disabled.
+
+### USART transmit-complete scanline timer
+
+Writing `UDR0` with the transmitter enabled schedules an AVR hardware event.
+Completion runs even without an attached ESP/serial peer and without polling
+`UCSR0A`. This supports video modes that use the USART TX interrupt to end a
+scanline. The old fixed 1,304-cycle timer is not used: the deadline follows
+`UBRR0`, `U2X0`, character size, parity and stop bits. Synchronous master timing
+uses the two-clock divider; MSPIM uses eight bits without UART framing.
+External XCK input edges and baud-generator start phase are not modeled.
+
+The model retains a transmit shift register and a one-byte holding register.
+`UDRE0` becomes clear while the holding register is occupied; another write
+while full is ignored. `TXC0` latches only after both registers empty. It starts
+clear after reset, remains set until acknowledged, and is cleared by writing
+one to `TXC0` or servicing its interrupt. Status reads do not acknowledge or
+reassert it. Enabling `TXCIE0` after completion exposes the pending interrupt;
+the global interrupt mask and normal vector priority still apply. Disabling TX
+lets an already scheduled frame finish; reset cancels it.
+
+The timing/holding state uses the existing saved CPU fields, so the CPU blob
+layout is unchanged. The existing serial endpoint still handles byte delivery
+and receive status. This change does not add USART receive or data-register-
+empty interrupt vectors.
+
+Run `make -f tests/preferences/Makefile interrupt-test timer1-test hardware-test`
+for the CPU timing and polling regressions. The UART checks exercise both
+instruction decoders, frame formats, buffering, masks, flag acknowledgment,
+CPU-cycle wrap and reset, including an actual non-polling AVR loop interrupted
+by transmit completion.
 
 The Serial window uses a wider 620-by-420 layout. TCP mode, connection status,
 and the last socket error are displayed independently so `CONNECTED` and error

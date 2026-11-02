@@ -26,12 +26,14 @@ static cu_state_spir_t spir_state;
 static cu_state_spisd_t spisd_state;
 static cu_state_esp_t esp_state_test;
 static int reset_network_calls, vfat_load_calls, crom_calls, io_calls, spir_update_calls, spisd_update_calls;
+static int capture_reset_calls;
 
 cu_state_cpu_t* cu_avr_get_state(void){return &cpu_state;}
 void cu_avr_crom_update(auint b,auint l){(void)b;(void)l;crom_calls++;}
 void cu_avr_io_update(void){io_calls++;}
 void cu_avr_cancel_execution_hook(void){}
 void cu_avr_timer1_restore_compare_block(boole blocked){(void)blocked;}
+void frame_capture_reset(void){capture_reset_calls++;}
 cu_state_spir_t* cu_spir_get_state(void){return &spir_state;}
 void cu_spir_set_size(auint banks){(void)banks;}
 void cu_spir_update(void){spir_update_calls++;}
@@ -59,6 +61,7 @@ int main(void){
     if(((uint8*)&cpu_state)[0]!=0x3c){fprintf(stderr,"CPU not restored\n");return 4;}
     if(vfat_load_calls!=1||crom_calls!=1||io_calls!=1||spir_update_calls!=1||spisd_update_calls!=1){fprintf(stderr,"subsystem restore counts wrong\n");return 5;}
     if(reset_network_calls!=1){fprintf(stderr,"ESP network reset not invoked\n");return 6;}
+    if(capture_reset_calls!=1){fprintf(stderr,"stale screenshot cache not cleared\n");return 9;}
     if(esp_state_test.at_firmware_profile!=CU_ESP_AT_FW_ESPAT_230){fprintf(stderr,"current ESP config was overwritten\n");return 7;}
     if(esp_state_test.socks[0]!=ESP_INVALID_SOCKET||esp_state_test.socks[4]!=ESP_INVALID_SOCKET||esp_state_test.host_serial_enabled){fprintf(stderr,"volatile ESP state not sanitized\n");return 8;}
     free(blob.data);printf("esp_legacy_savestate_regression: PASS (132512-byte ESP block)\n");return 0;

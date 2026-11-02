@@ -422,16 +422,19 @@ static void pump_file_download(web_client_t* c)
 
 static void start_screenshot_download(web_client_t* c,char const* query)
 {
-	char name_in[256],name[256],reply[WEB_API_REPLY_CAP],h[1024];
+	char name_in[256],name[256],reply[WEB_API_REPLY_CAP],h[4096],metadata[1400]="{}";
 	auint size=0U,width=0U,height=0U;
 	wsock_t s;
-	if(!query_value(query,"name",name_in,sizeof(name_in)))snprintf(name_in,sizeof(name_in),"screenshot.bmp");
-	sanitize_filename(name,sizeof(name),name_in,"screenshot.bmp");
+	if(!query_value(query,"name",name_in,sizeof(name_in)))snprintf(name_in,sizeof(name_in),"screenshot.png");
+	sanitize_filename(name,sizeof(name),name_in,"screenshot.png");
+	boole bmp=strrchr(name,'.')&&!SDL_strcasecmp(strrchr(name,'.'),".bmp");
 	s=api_open_socket();
 	if(s==WSOCK_INVALID){static const unsigned char e[]="{\"ok\":0,\"error\":\"CUzeBox API unavailable\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
-	if(!api_socket_command(s,"SCREENSHOT_CAPTURE",reply,sizeof(reply))||strstr(reply,"\"ok\":1")==NULL||!json_uint(reply,"size",&size)||size==0U){WSOCK_CLOSE(s);static const unsigned char e[]="{\"ok\":0,\"error\":\"screenshot capture failed\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
+	if(!api_socket_command(s,bmp?"SCREENSHOT_CAPTURE BMP":"SCREENSHOT_CAPTURE",reply,sizeof(reply))||strstr(reply,"\"ok\":1")==NULL||!json_uint(reply,"size",&size)||size==0U){WSOCK_CLOSE(s);static const unsigned char e[]="{\"ok\":0,\"error\":\"screenshot capture failed\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
 	json_uint(reply,"width",&width);json_uint(reply,"height",&height);
-	snprintf(h,sizeof(h),"HTTP/1.1 200 OK\r\nContent-Type: image/bmp\r\nContent-Length: %u\r\nContent-Disposition: attachment; filename=\"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-CUzeBox-Image-Size: %ux%u\r\nConnection: close\r\n\r\n",(unsigned)size,name,(unsigned)width,(unsigned)height);
+	{char const* p=strstr(reply,"\"capture\":{");if(p){char const* end;p+=10;end=strchr(p,'}');
+	 if(end&&(auint)(end-p+1)<sizeof(metadata)&&!memchr(p,'\r',(size_t)(end-p+1))&&!memchr(p,'\n',(size_t)(end-p+1))){memcpy(metadata,p,(size_t)(end-p+1));metadata[end-p+1]=0;}}}
+	snprintf(h,sizeof(h),"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %u\r\nContent-Disposition: attachment; filename=\"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-CUzeBox-Image-Size: %ux%u\r\nX-CUEX-Capture-Metadata: %s\r\nConnection: close\r\n\r\n",bmp?"image/bmp":"image/png",(unsigned)size,name,(unsigned)width,(unsigned)height,metadata);
 	queue_raw(c,h,(auint)strlen(h));
 	c->dump_sock=s;c->dump_active=TRUE;c->dump_kind=WEB_DUMP_SCREENSHOT;c->keep_open=TRUE;c->dump_addr=0U;c->dump_remaining=size;c->dump_region[0]=0;
 }

@@ -1,0 +1,264 @@
+CUzeBoxEX / UNOS Linux migration handoff
+LATEST UPDATE - 2026-11-01 PRE-PUSH REGRESSION REVIEW
+Compared the entire active publishable tree with freshly cloned GitHub main
+bd553618efb1401972a7d99e282a72d1e8b8921d. No upstream files are missing.
+An isolated review branch is under _obj_/prepush-review/candidate/; the dirty
+parent checkout remains untouched. No push, tag, PR or publication occurred.
+Read documentation/prepush-review-2026-11-01.md and its complete file inventory.
+
+Fixed during review: /build/ was not ignored (118 generated files, including
+configs and ROM fixtures); source audit now also rejects build/dist artifacts.
+Seven portable firmware pins depended on CRLF; the manifest now specifies LF
+canonical hashes and verifies complete C/header coverage. All 27 portable files
+match C:/uzenet-master/custom-firmware/ after LF normalization. CI runs the
+portable adapter check. Extensionless/non-PNG screenshot names retain legacy
+BMP output; a new API check failed before this correction and now passes.
+The legacy ESP save-state fixture supplies and asserts the new capture reset.
+Pre-existing Linux test issues were repaired: whisper's missing diagnostic
+clock stub, and playback video's lowercase expectation for its .MP4 output.
+PNG/clean-video checks were added to normal CI, with hardware-test included.
+
+USER DECISION: native Timer1/GPIO models default ON as the new standard.
+Do not revert these defaults for old recordings or ship a compatibility variant.
+Older strict movie behavior IDs are intentionally incompatible. Existing build
+flags remain available; Emscripten keeps its separate overlay defaults.
+
+Windows full distribution build and path/API/PNG tests pass. Linux full, lean,
+compile-time headless and alternate-option builds pass. Full native GUI/core,
+replay/storage, SD, ESP/TCP/MQTT/SoftAP, UART, source/debugger, PNG/video decode
+and Chromium browser smoke checks pass. Twenty portable firmware protocol tests
+also pass against the vendored CUEX sources using matching firmware fixtures.
+Logs/scripts: _obj_/prepush-review/. Mac runner builds and actual Mac/physical
+serial/controller tests still have not run. Keep Mac downloads experimental.
+Earlier dist artifacts were built before this review; use regenerated artifacts
+with the review source inventory/checksums, not hashes in the older checkpoint.
+
+LATEST UPDATE - 2026-11-01 NATIVE DOWNLOAD PACKAGES
+Windows portable ZIP and Linux x86-64 AppImage/relocatable tar.gz are built
+locally under dist/windows/ and dist/linux/, version 2026.11.01-preview.
+The new release workflow also prepares separate macOS 15+ arm64 and Intel
+app ZIPs. Mac builds are ad-hoc signed test packages, not notarized; the Mac
+jobs and actual Mac desktop/device tests have NOT run on this host.
+Manual Actions runs produce artifacts. v* tags create a DRAFT release after
+all jobs succeed. No workflow, tag, release or source was pushed here.
+
+runtime_paths.h adds --user-data, --data-dir, --portable, --resource-dir and
+--print-paths. Existing unmarked developer/handheld builds keep their CWD.
+Windows ZIPs use portable data; Linux/macOS markers select SDL user data.
+Existing config/theme files are never replaced. CLI ROM/config paths resolve
+before changing CWD. A loaded ROM keeps its directory as the virtual SD root;
+no-ROM package launches expose writable roms/ to the built-in Bootloader 5.
+Distribution builds default the API server off. Explicit API/headless flags
+still enable it. Packaged FFmpeg is found independently of the builder PATH.
+
+Current release executables: _obj_/release-packaging/cuzebox.exe and
+_obj_/release-packaging/cuzebox-linux, VER_DATE=0x20261101, distribution profile.
+Earlier UART, PINC, screenshot, save-state and clean-video changes are retained.
+Windows/Linux runtime-path, headless API and packaged PNG/recording checks
+pass. Interrupt/UART/PINx, storage, preferences and screenshot regressions pass.
+The reduced Linux helper initially lacked u8 input/fd protocol support;
+the corrected FFmpeg 9.0.2 recipe includes both, and video regression/decode
+checks pass. Use the current helper, not the first failed helper checkpoint.
+Build logs, path checks and helper locations: _obj_/release-packaging/.
+
+Read documentation/releases.md and .github/workflows/release.yml before
+continuing packaging. Tools/source inputs have pinned SHA256s; outputs include
+SHA256SUMS, BUILDINFO hashes and a deterministic matching CUEX source archive.
+The active nested source is still not its own Git checkout. Do not publish
+the unrelated dirty parent or treat its HEAD as the nested source revision.
+
+LATEST UPDATE - 2026-11-01 VIDEO OMIT MESSAGES (#18)
+Tools > Dump Video now has OMIT MESSAGES, default on and saved as
+VideoDumpOmitMessages=1. A clean 640x228 recording frame is staged before
+textgui_draw; the display keeps its messages and normal lifetimes. Disabling
+the option records visible notices as before. Existing video geometry,
+filtering/scaling and audio timing remain unchanged. No copy occurs outside
+recording or when omission is off. The omission choice is latched per rendered
+frame, so GUI/API changes before encoding cannot discard a video/audio frame.
+Finalization clears staging; missing clean staging never falls back to OSD pixels.
+Web Controls and EMU_STATUS/EMU_SET video_dump_omit_messages expose the option.
+Old configs default to omission; replay-to-video uses the same saved setting.
+Tests cover GUI clicks, saved/legacy preferences, both modes with actual FFmpeg
+clips, visible on-screen notices, independent decoding, API persistence and
+replay-to-video ownership/EOF. See tests/preferences/README.md for commands.
+Current native builds remain under _obj_/screenshot-cycles/. This is local,
+not pushed or deployed. See documentation/video-omit-messages.patch and
+_obj_/video-omit-messages/ for the checkpoint and tests.
+
+LATEST UPDATE - 2026-11-01 SAVE-STATE DIRECTORY (#12)
+SavePath is now used directly: default savestates/<ROM>/slot_N.czs, without
+the extra savestates level. Slot indicators and failed loads create no dirs.
+Old SavePath/savestates/<ROM>/slot_N.czs files remain readable when the new
+slot file is missing; the new path takes priority. Old files are not moved,
+deleted or overwritten. An invalid newer save fails rather than selecting
+an older nested save. New writes always use the corrected path.
+Windows/Linux storage regressions pass, including default/custom paths,
+read-only queries, actual legacy/current restoration and corrupt-file priority.
+The screenshot-cycles native executables have been rebuilt with this fix.
+Local only; see documentation/save-state-path-fix.patch and
+_obj_/save-state-path-fix/ for regression evidence.
+
+LATEST UPDATE - 2026-11-01 PINC PIXEL TIMING (PR #16)
+Applied the PR #16 correction locally in cu_avr_e.h and cu_avr_n.h: OUT PINC
+commits its toggle before advancing the video cycle, matching OUT PORTC.
+The interrupt regression now checks the first pixel, not only PORTC's final
+register value. This assertion failed before the fix. Earlier PINx semantics,
+Timer1/interrupt and UART TXC fixes did not include this pixel-phase correction.
+No GitHub merge or push was performed. The rebuilt screenshot-cycles Windows
+and Linux executables include it alongside the prior UART and PNG work.
+See documentation/pinc-timing-fix.patch and _obj_/pinc-cycle-fix/ test logs.
+
+LATEST UPDATE - 2026-11-01 SCREENSHOT WORK
+Native screenshots now default to PNG, no emulator HUD/frame, and saved
+BYPASS FILTERS=on. The default CYCLE preset is X=1440 (1X), Y=5X.
+Native Tools > Screenshot and web Controls have X/Y/preset/sampling dropdowns;
+SCREENSHOT_SETTINGS exposes them through the API. Presets set both axes, which
+remain independently editable. X supports 256/240/192/160 and other widths;
+sampling supports NEAREST, AREA and LINEAR. Scale applies to bypass captures.
+Progressive rows repeat Y times; interlaced rows weave at nearest-neighbor
+Y/2 scaling to preserve aspect. GUI Include GUI remains an explicit override.
+PNG tEXt CUEX.Capture, API capture metadata, and web download headers describe
+source/crop, dimensions, orientation, sampling and cycle accuracy for agents.
+BMP is retained through explicit .bmp paths / SCREENSHOT_CAPTURE BMP.
+Read documentation/screenshots.md for the complete contract and Linux checks.
+The screenshot change is also LOCAL, NOT PUSHED by this conversation.
+Current builds/evidence are under _obj_/screenshot-cycles/; a portable patch
+and validation record are in documentation/screenshot-cycle-handoff/.
+The original UART checkpoint below remains useful, but its Windows executable
+predates the screenshot work. Use the newer screenshot build for both fixes.
+
+Written 2026-11-01. Work and measurements described below were completed
+2026-10-29; source/artifact hashes were rechecked on 2026-11-01.
+
+START HERE
+The latest work in this conversation is a local USART0 transmit-complete
+interrupt fix for CUzeBoxEX. It is implemented, tested and built, but NOT
+committed or pushed by this conversation. The forum reporter's particular
+game ROM was not supplied, so that game itself remains unverified.
+
+WORKSPACE AND TRANSFER
+- Active emulator source: C:/cuzebox-dev-green-led/cuzebox-ex-main/.
+- Actual Git root: C:/cuzebox-dev-green-led/, remote origin:
+  https://github.com/weber21w/cuzebox-ex.git.
+- The nested active project appears as an untracked directory in the parent
+  checkout. The parent also has older source and unrelated user changes.
+  Do not reset, clean or replace either tree. Do not stage the whole parent.
+- A fresh GitHub clone alone does NOT contain the UART fix. Copy this active
+  source tree, or review/apply the portable patch against a suitable checkout.
+- Durable patch, result summaries, valid performance samples and original
+  manifest are in documentation/uart-txc-handoff/. They were copied out of
+  ignored _obj_ output so the handoff does not depend on copying build caches.
+- _obj_/uart-txc-fix/ contains the Windows executable, original snapshots,
+  build/test logs, and Windows-specific benchmark harness/scripts.
+- Windows .o/.exe files are not Linux build inputs. Use a fresh Linux object
+  directory. Preserve any needed saves, ROM assets and private test runtimes
+  separately; source copies do not contain all guest/runtime assets.
+
+UART FIX: WHAT CHANGED
+Production change: cu_avr.c.
+Regression changes: tests/bootloader/interrupt_regression.c and a reset
+dependency stub in tests/bootloader/resident_bootloader_regression.c.
+Documentation: documentation/serial.md, USART transmit-complete scanline timer.
+
+The old usr0_tran/usr0_end scheduler and TX ISR existed, but the UDR write
+code that armed the old fixed 1,304-clock timer was commented out. Endpoint
+status polling therefore worked while interrupt-driven scanline termination
+did not reliably run.
+
+The AVR core now schedules TX completion independently of the ESP/serial peer.
+Frame duration follows UBRR, U2X, data bits, parity/stop bits, and synchronous
+master/MSPIM framing. Existing saved CPU fields hold the shift deadline;
+UDRE distinguishes an occupied one-byte holding register. No CPU-blob layout
+change was made. Full/disabled UDR writes are ignored. TXC is a latched event,
+not an idle-level flag imported from the peer. It starts clear, acknowledges
+on write-one-to-clear or ISR dispatch, and obeys TXCIE/global interrupt masks.
+Mask-only writes and TXC acknowledgment avoid reconfiguring/flushing RX.
+Watchdog reset cancels the MCU and peer pending transmitter state.
+
+This is a TX-complete timer fix, not a full USART interrupt implementation.
+RX and UDRE interrupt vectors, external XCK edges and baud-generator start
+phase are not implemented. No browser binary was rebuilt or deployed.
+
+VALIDATION ALREADY COMPLETED
+- New regression failed against the original core before the fix.
+- Windows native full build plus interrupt-test, timer1-test, hardware-test,
+  storage-test passed with ESP and the Timer1/GPIO models enabled.
+- Both production CPU decoders interrupt a non-polling AVR loop on TX complete.
+- Frame formats, divisors, queued bytes, full-buffer writes, masks, W1C,
+  cycle-counter wrap, watchdog reset and I/O restoration covered.
+- CPU + actual loopback endpoint tested in FAST/BALANCED/DEBUG profiles.
+- Lean/no-ESP interrupt test passed with Timer1/GPIO models disabled; its
+  Timer1 and hardware regressions also passed.
+- Linux (WSL) tests/serial_link/run.sh and tests/bootloader/run.sh passed.
+- Built Windows executable passed tools/test_headless_api.py.
+- Full Linux emulator rebuild and specific forum-game validation are sensible
+  next checks on the new machine; do not claim they were already completed.
+
+LINUX REBUILD / CHECKS
+Read readme.md for native dependencies (compiler, make, SDL2/ALSA development
+libraries, Python, and optional curl/OpenSSL features). From this directory:
+
+  make -j2 TSYS=linux FLAG_AVR_TIMER1_CLOCK=1 FLAG_AVR_GPIO=1 \
+    OBD=_obj_/linux-uart OUT=_obj_/linux-uart/cuzebox
+  make -j2 -f tests/preferences/Makefile TSYS=linux \
+    FLAG_AVR_TIMER1_CLOCK=1 FLAG_AVR_GPIO=1 OBD=_obj_/linux-uart \
+    interrupt-test timer1-test hardware-test storage-test
+  bash tests/serial_link/run.sh
+  bash tests/bootloader/run.sh
+  python3 tools/test_headless_api.py _obj_/linux-uart/cuzebox
+
+Increase -j if appropriate. Keep flag combinations/OS targets in separate
+object directories. Old flag combinations should not reuse stale objects.
+The portable patch is a delta from our local pre-fix source, not a guarantee
+that every future upstream revision accepts it without review. Test reverse
+application first if unsure whether the active source already includes it:
+
+  git apply --reverse --check documentation/uart-txc-handoff/uart-txc-timer.patch
+
+PERFORMANCE RESULT AND LIMITS
+Seven alternating old/new Windows runs per case; 115,200,000 emulated clocks
+each. Production switch core compiled separately with matched -O3 flags and
+no core LTO; same UART/AT and dependency objects. No rendering/audio, physical
+serial adapter or live network. GetProcessTimes measures host CPU time.
+
+Idle: unchanged median. ESP AT at ~224 kbaud: +3.28% median CPU time.
+Raw serial at ~9,600 baud: unchanged; ~224k and ~1.79M: about 1.5-1.6% lower
+medians, treated as approximately unchanged rather than a universal speedup.
+Every paired run had identical emulated cycles and transmitted byte counts.
+Thus no measured UART bandwidth loss in these synthetic cases; do not turn
+the CPU-time result into a whole-app FPS or physical-adapter guarantee.
+
+The initial performance-invalid-harness files are INVALID: setup overwrote
+the new core's read-only UDRE flag and it sent no data. Only performance.json
+and PERFORMANCE.txt are valid. benchmark_uart.py/uart_perf.c under _obj_ use
+Windows APIs and require adaptation before rerunning on Linux.
+
+SOURCE / PUBLICATION CHECKPOINT
+Validated current cu_avr.c SHA256:
+18347fdd55f5ca8a43d2f64f84c4ce7080b47b6ba9bd75ce56629e9e911d771f
+Windows build SHA256:
+083224e295ee9de789b74a8d3f106a258e904562a02c8738a8e7c4af2774beaa
+Portable patch SHA256:
+c62e9b4db2247f675668412d4241771afaf23ed5b45ff75f20266c456a27bdf0
+Full validated manifest is in documentation/uart-txc-handoff/manifest.json.
+
+GitHub was checked live on 2026-10-29, NOT rechecked for this handoff:
+- PINx write-one toggling published in 07766f85463c1457f9ca79138c5d27db0fe42e47.
+- Timer1/GPIO models published in bd553618efb1401972a7d99e282a72d1e8b8921d.
+- At that check, core/decoders/tests matched local pre-UART-fix source.
+- Published defaults for FLAG_AVR_TIMER1_CLOCK / FLAG_AVR_GPIO were 0;
+  local native defaults are 1. This is a separate local configuration change.
+- The UART patch remains local. Confirm live upstream, Git root, branch and
+  complete diff before preparing any publication; no push is implied here.
+
+OLDER HANDOFF WARNING
+The parent AGENTS.md referenced OPTIMIZATION_HANDOFF.md, which was absent.
+A replacement navigation note has now been created. Parent text calls
+SEI/RETI delays unfixed; current regression/docs cover those corrections.
+Current readme also says Compact/Full Debug capture modes are implemented.
+Use actual source/tests and current docs, not those stale status statements.
+
+RELATED UNOS WORK
+Active game/client: C:/uzenet-master/client-programs/UNOS/.
+Read its DEVELOPMENT_HANDOFF.txt for Build 10, remote apps/radio, the proposed
+CRC-based ROM discovery (NOT implemented), and the unfinished local cleanup.

@@ -338,6 +338,20 @@ auint cu_uart_get_frame_cycles(void)
 	return cu_uart_timing_cache.frame_cycles;
 }
 
+static auint cu_uart_get_esp_rx_frame_cycles(void)
+{
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+	/* The ESP transmitter has its own 80 MHz clock and integer divider;
+	 * the AVR receive divider does not set the incoming wire speed. */
+	if(esp_state.at_firmware_profile>=CU_ESP_AT_FW_ESPAT_230 &&
+	   esp_state.baud_rate && esp_state.baud_rate<=80000000u){
+		uint64_t n=(uint64_t)ESP_UZEBOX_CORE_FREQUENCY*(80000000u/esp_state.baud_rate)*cu_uart_get_frame_bits();
+		return (auint)((n+40000000u)/80000000u);
+	}
+#endif
+	return cu_uart_get_frame_cycles();
+}
+
 static auint cu_uart_get_tx_ready_cycles(void)
 {
 	if(cu_uart_profile_is_fast())
@@ -422,8 +436,18 @@ static auint cu_uart_poll_next_cycle(auint cycle)
 	 * counter naturally wraps during long emulator sessions. */
 	if(esp_state.read_ready_cycle != 0u){
 		auint ready_delta = WRAP32(esp_state.read_ready_cycle - cycle);
-		if(ready_delta < 0x80000000u && ready_delta < poll_delta)
-			next = esp_state.read_ready_cycle;
+		if(ready_delta < 0x80000000u && ready_delta < poll_delta){
+			next = esp_state.read_ready_cycle;poll_delta=ready_delta;
+		}
+	}
+	/* A queued AT reply has a device deadline even before its first UART
+	 * frame starts. Host polling must not quantize that readiness event. */
+	if(cu_uart_route_uses_esp_rules())for(auint i=0;i<sizeof(esp_state.delay_len)/sizeof(esp_state.delay_len[0]);i++){
+		if(esp_state.delay_len[i] && esp_state.delay_pos[i]==esp_state.read_buf_pos_out){
+			auint deadline=WRAP32(esp_state.last_cycle_tick+esp_state.delay_len[i]);
+			auint delta=WRAP32(deadline-cycle);
+			if(delta<0x80000000u && delta<poll_delta){next=deadline;poll_delta=delta;}
+		}
 	}
 	return next;
 }
@@ -488,7 +512,15 @@ static void cu_uart_poll_cache_refresh_esp(auint cycle)
 		}else if(esp_state.read_buf_pos_in != esp_state.read_buf_pos_out){
 			if(buf_next != esp_state.read_buf_pos_out){
 				if(esp_state.read_ready_cycle == 0u){
-					auint frame_cycles = cu_uart_get_frame_cycles();
+					auint frame_cycles = cu_uart_get_esp_rx_frame_cycles();
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+					for(auint i=0;i<sizeof(esp_state.delay_len)/sizeof(esp_state.delay_len[0]);i++){
+						auint pos=esp_state.delay_pos[i];
+						if(esp_state.delay_len[i] && (pos&CU_ESP_CAPTURE_RELATIVE) &&
+						   ((pos>>CU_ESP_CAPTURE_BASE_SHIFT)&CU_ESP_CAPTURE_POS_MASK)==esp_state.read_buf_pos_out)
+							esp_state.delay_pos[i]=pos&CU_ESP_CAPTURE_POS_MASK;
+					}
+#endif
 					esp_state.read_ready_cycle = WRAP32(cycle + frame_cycles);
 				}else{
 					rx_ready = 1u;
@@ -499,7 +531,7 @@ static void cu_uart_poll_cache_refresh_esp(auint cycle)
 		          (esp_state.wifi_mode == ESP_WIFI_MODE_SOFTAP ||
 		           esp_state.wifi_mode == ESP_WIFI_MODE_SOFTAP_STATION)))){
 			if(cu_esp_process_ipd() > 0){
-				auint frame_cycles = cu_uart_get_frame_cycles();
+				auint frame_cycles = cu_uart_get_esp_rx_frame_cycles();
 				esp_state.read_ready_cycle = WRAP32(cycle + frame_cycles);
 			}
 		}
@@ -1143,7 +1175,11 @@ static void cu_uart_emit_tx_byte(uint8 val, auint cycle)
 		return;
 	}
 
-	if((esp_state.state & ESP_ECHO) && esp_state.user_input_mode < ESP_USER_MODE_UNVARNISHED){
+	if((esp_state.state & ESP_ECHO) && esp_state.user_input_mode < ESP_USER_MODE_UNVARNISHED
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+	   && !(esp_state.at_firmware_profile>=CU_ESP_AT_FW_ESPAT_230 && esp_state.user_input_mode==ESP_USER_MODE_AT)
+#endif
+	){
 		/* Legacy Espressif AT echoes CR, then emits CRLF when LF completes
 		 * the command (at_port.c). Tank Fu's MAC extraction relies on this. */
 		if(send_val == '\n' && esp_state.user_input_mode == ESP_USER_MODE_AT &&
@@ -1225,6 +1261,9 @@ static void cu_uart_emit_tx_byte(uint8 val, auint cycle)
 		if(send_val == '\n' && esp_state.write_buf_pos_in > 1u &&
 		   esp_state.write_buf[esp_state.write_buf_pos_in - 2u] == '\r'){
 			esp_state.write_buf[esp_state.write_buf_pos_in] = '\0';
+			/* Advance old timers before a command creates new delays, so a
+			 * reply cannot inherit elapsed time from before the command. */
+			(void)cu_esp_update_timer_counts(cycle);
 			cu_esp_process_at(esp_state.write_buf);
 			esp_state.write_buf_pos_in = 0u;
 			esp_state.write_buf[0] = '\0';
@@ -1273,6 +1312,16 @@ static void cu_uart_pump_tx(auint cycle)
 static void cu_uart_schedule_rx_ready(auint cycle)
 {
 	auint ready_cycles = cu_uart_get_rx_ready_cycles();
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+	if(cu_uart_route_uses_esp_rules() && esp_state.at_firmware_profile>=CU_ESP_AT_FW_ESPAT_230){
+		ready_cycles=cu_uart_get_esp_rx_frame_cycles();
+		/* Reading UDR does not restart the ESP's continuous transmission.
+		 * Preserve the preceding frame's deadline when software reads it
+		 * promptly; slow-reader buffering remains the existing model. */
+		if(esp_state.read_ready_cycle && WRAP32(cycle-esp_state.read_ready_cycle)<ready_cycles)
+			cycle=esp_state.read_ready_cycle;
+	}
+#endif
 
 	if(ready_cycles == 0u)
 		ready_cycles = 1u;
@@ -1460,6 +1509,17 @@ auint cu_esp_uzebox_read(auint cycle)
 		cu_esp_serial_trace_push(CU_ESP_SERIAL_TRACE_EVT_RX, (uint8)val, 0u, cycle);
 		esp_state.uart_rx_error_flags = 0u;
 		esp_state.uart_overrun = 0u;
+		/* A delayed chunk has not started shifting yet. Reusing the next
+		 * byte deadline here would expose it at readiness rather than one
+		 * complete UART frame later (notably between echo and reply). */
+		if(!rx_empty && cu_uart_route_uses_esp_rules()){
+			for(auint i=0;i<sizeof(esp_state.delay_len)/sizeof(esp_state.delay_len[0]);i++){
+				if(esp_state.delay_len[i] && esp_state.delay_pos[i]==esp_state.read_buf_pos_out &&
+				   WRAP32(esp_state.last_cycle_tick+esp_state.delay_len[i]-cycle)<0x80000000u){
+					rx_empty=TRUE;break;
+				}
+			}
+		}
 		if(rx_empty)
 			esp_state.read_ready_cycle = 0UL;
 		else

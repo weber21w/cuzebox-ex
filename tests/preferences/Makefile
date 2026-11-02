@@ -44,7 +44,22 @@ headless-test: $(OBD)/headless_regression.exe
 $(OBD)/headless_regression.exe: tests/gui/headless_regression.c guicore.c audio.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
 	$(CC) -o $@ $< $(filter-out $(OBD)/guicore.o $(OBD)/audio.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
 
-.PHONY: screenshot-test
+.PHONY: screenshot-test cycle-screenshot-test
+.PHONY: video-messages-test
+video-messages-test: $(OBD)/video_messages_regression.exe
+	mkdir -p $(OBD)/video-messages-run
+	cd $(OBD)/video-messages-run && ../video_messages_regression.exe
+
+$(OBD)/video_messages_regression.exe: tests/gui/video_messages_regression.c main.c avconv.c frame.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
+	$(CC) -o $@ $< $(filter-out $(OBD)/avconv.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+
+cycle-screenshot-test: $(OBD)/cycle_screenshot_regression.exe
+	mkdir -p $(OBD)/cycle-screenshot-run
+	cd $(OBD)/cycle-screenshot-run && ../cycle_screenshot_regression.exe
+
+$(OBD)/cycle_screenshot_regression.exe: tests/gui/cycle_screenshot_regression.c main.c frame.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
+	$(CC) -I. -o $@ $< $(filter-out $(OBD)/frame.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+
 screenshot-test: $(OBD)/screenshot_regression.exe
 	mkdir -p $(OBD)/screenshot-run
 	cd $(OBD)/screenshot-run && ../screenshot_regression.exe

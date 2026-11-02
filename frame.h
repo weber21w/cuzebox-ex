@@ -49,6 +49,17 @@ auint frame_run(boole drop, boole merge);
 /* Discard shifted previous-frame samples after a display timing change. */
 void frame_invalidate_merge(void);
 void frame_set_area_weighted(boole enabled);
+/* Latest completed cycle-domain field, prior to sampling, filters or blending.
+ * Each DAC clock is one column; progressive rows repeat five times. Woven
+ * interlaced rows use nearest-neighbor 5/2 scaling to retain the same aspect.
+ * The caller owns the returned native-pixel-format buffer. */
+boole frame_capture_cycle_pixels(uint32** pixels,auint* width,auint* height);
+/* Configurable cycle export: width 1..2880, Y 1..10, sampling
+ * 0=nearest, 1=area RGB average, 2=linear. Rotation follows scaling. */
+boole frame_capture_cycle_pixels_ex(uint32** pixels,auint* width,auint* height,auint x_width,auint y_scale,auint sampling);
+/* Bounds in pulse-counter rows; a reset/no completed field has valid=FALSE. */
+void frame_capture_geometry(auint* first_row,auint* rows,boole* valid,boole* interlaced);
+void frame_capture_reset(void);
 
 
 /*

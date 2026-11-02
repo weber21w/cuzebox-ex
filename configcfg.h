@@ -116,12 +116,17 @@ typedef struct{
 	char  video_dump_file[APPCFG_PATH_MAX];
 	boole video_dump_autoinc;
 	boole video_dump_reset_first;
+	boole video_dump_omit_messages;
 	uint8 gui_colors[APPCFG_GUI_COLOR_COUNT][4];
 	char gui_theme_name[32];
 	char gui_theme_file[APPCFG_PATH_MAX];
 	char  rom_path[APPCFG_PATH_MAX];
 	char  screenshot_path[APPCFG_PATH_MAX];
 	boole screenshot_include_gui;
+	boole screenshot_bypass_filters;
+	auint screenshot_x_width;
+	auint screenshot_y_scale;
+	auint screenshot_sampling;
 	char  save_path[APPCFG_PATH_MAX];
 	ginput_controller_options_t controller_options[GINPUT_MAX_CONTROLLERS];
 	shortcut_binding_t shortcuts[SHORTCUT_COUNT];

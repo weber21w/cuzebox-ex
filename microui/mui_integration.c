@@ -207,8 +207,8 @@ static mui_window_desc_t const mui_window_descs[MUI_WIN_COUNT] = {
 	MUI_WINDOW_DESC("REMOTE ROMS",    show_remote,          16,    MUI_BAR_HEIGHT + 6,  640, 452, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_CHILD),
 	MUI_WINDOW_DESC("RECENT ROMS",    show_quick,           0,     MUI_BAR_HEIGHT + 2,  520, 342, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_MENU),
 	MUI_WINDOW_DESC("PICK STATE",     show_statepick,       256,   MUI_BAR_HEIGHT + 6,  244, 132, MU_OPT_NORESIZE,                 MUI_WCLASS_CHILD),
-	MUI_WINDOW_DESC("SCREENSHOT",     show_tool_screenshot, 210,   MUI_BAR_HEIGHT + 18, 330, 148, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
-	MUI_WINDOW_DESC("DUMP VIDEO",     show_tool_video,      108,   MUI_BAR_HEIGHT + 18, 396, 284, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+	MUI_WINDOW_DESC("SCREENSHOT",     show_tool_screenshot, 108,   MUI_BAR_HEIGHT + 18, 424, 330, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+	MUI_WINDOW_DESC("DUMP VIDEO",     show_tool_video,      108,   MUI_BAR_HEIGHT + 18, 396, 308, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
 	MUI_WINDOW_DESC("ROM VIEW",       show_tool_romview,    52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
 	MUI_WINDOW_DESC("SRAM EDIT",      show_tool_sram,       52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
 	MUI_WINDOW_DESC("SPI RAM EDIT",   show_tool_spiram,     52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
@@ -7961,14 +7961,40 @@ static void mui_build_tool_mem_window(mu_Context* ctx, mui_window_id_t win_id, a
 	mui_window_end(ctx, win_id);
 }
 
+#include "../screenshot_options.h"
 static void mui_build_tool_screenshot_window(mu_Context* ctx)
 {
  int include_gui = mainui_get_screenshot_include_gui() ? 1 : 0;
+ int bypass = mainui_get_screenshot_bypass_filters() ? 1 : 0;
+ auint w=mainui_get_screenshot_x_width(),y=mainui_get_screenshot_y_scale(),s=mainui_get_screenshot_sampling();
+ auint i,choice,preset=shot_preset_index(w,y);
+ char custom[32];
+ char const* widths[SHOT_WIDTH_COUNT];char const* presets[SHOT_PRESET_COUNT];
+ static char const* const ys[]={"1X","2X","3X","4X","5X","6X","7X","8X","9X","10X"};
+ static char const* const samplings[]={"NEAREST","AREA","LINEAR"};
  if (!mui_window_begin(ctx, MUI_WIN_SCREENSHOT)){ return; }
  mu_layout_row(ctx, 1, (int[]){ -1 }, 20);
  if (mu_checkbox(ctx, "INCLUDE GUI", &include_gui)){
   mainui_set_screenshot_include_gui(include_gui ? TRUE : FALSE);
  }
+ if(mu_checkbox(ctx,"BYPASS FILTERS",&bypass))mainui_set_screenshot_bypass_filters(bypass?TRUE:FALSE);
+ for(i=0U;i<SHOT_PRESET_COUNT;i++)presets[i]=shot_preset_name(i);
+ if(mui_labeled_choice_popup(ctx,"PRESET","shot_preset",shot_preset_name(preset),presets,SHOT_PRESET_COUNT,&preset,128,244)){
+  w=shot_preset_width(preset);y=shot_preset_y(preset);mainui_set_screenshot_scale(w,y,s);
+ }
+ choice=0U;for(i=0U;i<SHOT_WIDTH_COUNT;i++){widths[i]=shot_width_name(i);if(shot_width(i)==w)choice=i;}
+ snprintf(custom,sizeof(custom),"%u",(unsigned)w);
+ if(mui_labeled_choice_popup(ctx,"X WIDTH","shot_x",shot_width(choice)==w?widths[choice]:custom,widths,SHOT_WIDTH_COUNT,&choice,128,244)){
+  w=shot_width(choice);mainui_set_screenshot_scale(w,y,s);
+ }
+ choice=y-1U;
+ if(mui_labeled_choice_popup(ctx,"Y SCALE","shot_y",ys[choice],ys,10U,&choice,128,244)){
+  y=choice+1U;mainui_set_screenshot_scale(w,y,s);
+ }
+ if(mui_labeled_choice_popup(ctx,"SAMPLE X","shot_sampling",samplings[s],samplings,3U,&s,128,244))mainui_set_screenshot_scale(w,y,s);
+ mu_layout_row(ctx,1,(int[]){-1},20);
+ if(include_gui||!bypass)mu_label(ctx,"Scale: bypass only");
+ else mu_label(ctx,"Full cycle window");
  if (mu_button(ctx, "SAVE NOW")){
   mui_screenshot_pending = TRUE;
  }
@@ -8005,6 +8031,11 @@ static void mui_build_tool_video_window(mu_Context* ctx)
 			if (mu_checkbox(ctx, "RESET FIRST", &reset_first)){
 				mainui_set_video_dump_reset_first(reset_first ? TRUE : FALSE);
 			}
+		}
+		mu_layout_row(ctx,1,(int[]){-1},22);
+		{
+			int omit=mainui_get_video_dump_omit_messages()?1:0;
+			if(mu_checkbox(ctx,"OMIT MESSAGES",&omit))mainui_set_video_dump_omit_messages(omit?TRUE:FALSE);
 		}
 		mu_layout_row(ctx, 1, (int[]){ -1 }, 20);
 		mu_label(ctx, mainui_get_video_dump_status());

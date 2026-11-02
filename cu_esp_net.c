@@ -1708,19 +1708,21 @@ static sint32 cu_sock_connect_timeout(ESP_SOCKET s, const struct sockaddr *sa, s
 		timeout_ms = 5000;
 
 	{
-		fd_set wfds;
+		fd_set wfds, efds;
 		struct timeval tv;
 
 		FD_ZERO(&wfds);
 		FD_SET(s, &wfds);
+		FD_ZERO(&efds);
+		FD_SET(s, &efds);
 
 		tv.tv_sec = (long)(timeout_ms / 1000);
 		tv.tv_usec = (long)((timeout_ms % 1000) * 1000);
 
 #if defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-		rc = select(0, NULL, &wfds, NULL, &tv);
+		rc = select(0, NULL, &wfds, &efds, &tv);
 #else
-		rc = select((int)(s + 1), NULL, &wfds, NULL, &tv);
+		rc = select((int)(s + 1), NULL, &wfds, &efds, &tv);
 #endif
 		if(rc <= 0)
 			return -1;
@@ -1730,10 +1732,10 @@ static sint32 cu_sock_connect_timeout(ESP_SOCKET s, const struct sockaddr *sa, s
 		int soerr = 0;
 #if defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 		int slen = (int)sizeof(soerr);
-		getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&soerr, &slen);
+		if(getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&soerr, &slen)!=0)return -WSAGetLastError();
 #else
 		socklen_t slen = (socklen_t)sizeof(soerr);
-		getsockopt(s, SOL_SOCKET, SO_ERROR, &soerr, &slen);
+		if(getsockopt(s, SOL_SOCKET, SO_ERROR, &soerr, &slen)!=0)return -errno;
 #endif
 		if(soerr != 0)
 			return -soerr;
@@ -1832,8 +1834,12 @@ static void cu_worker_do_connect(const cu_async_job_t *j)
 	cu_async_evt_t e; memset(&e,0,sizeof(e));e.kind=CU_EVT_CONNECT_DONE;e.sock=j->sock;e.type=j->type;e.new_sock=ESP_INVALID_SOCKET;
 	/* TLS servers may require ClientHello immediately after TCP connects. */
 	e.ready_ms=cu_esp_now_ms();
+#ifndef CU_ESP_AT_CAPTURE_PROFILE
 	if((j->type & ESP_PROTO_SSL)==0u)
 		e.ready_ms+=50u+(uint32)(rand()%200u);
+#endif
+	/* The hardware timing profile queues measured AT readiness. Keep
+	 * real host completion, but do not add unrelated synthetic jitter. */
 	int family=(j->type&ESP_PROTO_IPV6)?AF_INET6:AF_INET;
 	int stype=(j->type&ESP_PROTO_UDP)?SOCK_DGRAM:SOCK_STREAM;
 	int proto=(j->type&ESP_PROTO_UDP)?IPPROTO_UDP:IPPROTO_TCP;

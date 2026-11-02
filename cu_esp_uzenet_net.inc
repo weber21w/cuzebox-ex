@@ -212,5 +212,14 @@ static void un_net_poll(void) {
         if(un_peer_query==un_client.peer)un_peer_query=(un_peer_query+1)&3;
         un_inject[0]=UR_PEER_INFO;un_inject[1]=un_peer_query;un_inject_pos=0;un_inject_count=2;un_capture=un_ticket_pending=true;
     }
+    /* Optional transport diagnosis; never log tickets or traffic keys. */
+    if(getenv("CUZEBOX_UZENET_TRACE")){
+        static unsigned previous=255;
+        if(previous!=un_client.state){
+            fprintf(stderr,"Uzenet state=%u error=%u pending=%u transparent=%u\n",
+                un_client.state,un_client.error,un_inject_count,un_transparent);
+            fflush(stderr);previous=un_client.state;
+        }
+    }
     if(un_client.state==UC_FAILED)un_net_disconnect();
 }

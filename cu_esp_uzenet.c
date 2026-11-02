@@ -28,7 +28,8 @@ static uint8_t un_tx[UN_ENCODED_MAX], un_tx_used, un_tx_pos;
 static uint8_t un_rx[1024];
 static unsigned un_rx_head, un_rx_count;
 static bool un_exiting, un_ack_low, un_io_failed, un_raw_output;
-static bool un_clock_valid, un_servicing;
+static bool un_clock_valid, un_servicing, un_entry_pending;
+static uint32_t un_entry_at;
 static uint32_t un_cycle, un_ms, un_remainder;
 static uint32_t un_ack_at, un_last_rx, un_sample_at, un_service_at;
 
@@ -77,7 +78,7 @@ void cu_uzenet_reset(void)
  un_peer_query_at=un_direct_at=0;
  un_tx_used=un_tx_pos=0;un_rx_head=un_rx_count=0;
  un_exiting=un_ack_low=un_io_failed=un_raw_output=false;
- un_clock_valid=un_servicing=false;un_ms=un_remainder=0;
+ un_clock_valid=un_servicing=un_entry_pending=false;un_entry_at=0;un_ms=un_remainder=0;
  un_ack_at=un_last_rx=un_sample_at=un_service_at=0;
 }
 static void un_flush_reply(void)
@@ -97,7 +98,7 @@ static void un_exit(void)
  un_net_close();
  while(un_deferred_pop(&un_session,&bytes[count]))count++;
  un_session.active=0;un_session_rx_reset(&un_session);
- un_exiting=un_ack_low=false;
+ un_exiting=un_ack_low=un_entry_pending=false;
  memset(&un_trigger,0,sizeof(un_trigger));
  if(count)un_raw_write(bytes,count);
 }
@@ -117,10 +118,18 @@ void cu_uzenet_tick(auint cycle)
  if(un_ms-un_sample_at>=5){
   un_sample_at=un_ms;
   if(!un_session.active && un_trigger_sample(&un_trigger,un_line_high(),un_ms)){
+   un_entry_pending=true;un_entry_at=un_ms;
+  }
+  if(un_entry_pending){
    cu_state_esp_t *es=cu_esp_get_state();
-   /* Do not steal an AT command, transparent payload or old UART output. */
-   if(un_output_empty() && !es->write_buf_pos_in && !es->unvarnished_bytes &&
-      !es->uart_tx_shift_valid && !es->uart_tx_udr_valid && es->baud_rate){
+   /* The ESP waits up to 250 ms for existing stock UART output to drain.
+    * Retain a valid GPIO request across that drain instead of losing it
+    * whenever a Room beacon happens to occupy the output FIFO. */
+   if(un_ms-un_entry_at>250 || !un_line_high() || es->write_buf_pos_in ||
+      es->unvarnished_bytes || es->uart_tx_shift_valid || es->uart_tx_udr_valid)
+    un_entry_pending=false;
+   else if(un_output_empty() && es->baud_rate){
+    un_entry_pending=false;
     un_session.capabilities=UN_CAPABILITIES|UN_CAP_RELAY|UN_CAP_DIRECT|UN_CAP_GAME|UN_CAP_OOB;
     un_session.tx_batch=UN_PA7_TX_BATCH_FOR_BAUD(es->baud_rate);
     un_io_failed=un_exiting=false;un_tx_used=un_tx_pos=0;

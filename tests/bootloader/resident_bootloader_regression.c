@@ -9,6 +9,7 @@
 void cu_ctr_reset(void){}
 void cu_spi_reset(auint cycle){ (void)cycle; }
 void cu_esp_reset_pin(uint8 state, auint cycle){ (void)state; (void)cycle; }
+void cu_esp_uzebox_modify(auint port, auint val, auint cycle){ (void)port; (void)val; (void)cycle; }
 
 static int hexbyte(char const *p)
 {

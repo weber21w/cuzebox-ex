@@ -1,0 +1,167 @@
+--- a/savestate.c
++++ b/savestate.c
+@@ -212,20 +212,37 @@
+ 	return TRUE;
+ }
+ 
+-static char const* savestate_slot_name(auint slot)
+-{
+-	static char path[1024];
++static void savestate_slot_directory(char* path,auint cap,boole legacy)
++{
+ 	char romdir[256];
+ 	char savedir[512];
++	char const* root=mainui_get_save_path();
++	if(root==NULL||root[0]==0){ root="savestates"; }
++	savestate_sanitize_name(romdir, sizeof(romdir), mainui_get_current_rom_name());
++	/* SavePath already names the state directory. The extra component is
++	 * retained only for reading files written before the path correction. */
++	if(legacy){ savestate_join_path(savedir,sizeof(savedir),root,"savestates"); }
++	else{ savestate_copy_str(savedir,sizeof(savedir),root); }
++	savestate_join_path(path,cap,savedir,romdir);
++}
++
++static char const* savestate_slot_name(auint slot,boole legacy)
++{
++	static char path[1024];
+ 	char base[512];
+ 	char leaf[64];
+-	savestate_sanitize_name(romdir, sizeof(romdir), mainui_get_current_rom_name());
+-	savestate_join_path(savedir, sizeof(savedir), mainui_get_save_path(), "savestates");
+-	savestate_join_path(base, sizeof(base), savedir, romdir);
+-	(void)savestate_mkdirs(base);
++	savestate_slot_directory(base,sizeof(base),legacy);
+ 	snprintf(leaf, sizeof(leaf), "slot_%u.czs", (unsigned)(slot % SAVESTATE_SLOT_COUNT));
+ 	savestate_join_path(path, sizeof(path), base, leaf);
+ 	return path;
++}
++
++static FILE* savestate_open_slot_read(auint slot)
++{
++	FILE* fp=fopen(savestate_slot_name(slot,FALSE),"rb");
++	/* An unreadable or invalid newer save must not silently select stale data. */
++	if(fp==NULL&&errno==ENOENT){ fp=fopen(savestate_slot_name(slot,TRUE),"rb"); }
++	return fp;
+ }
+ 
+ static void savestate_sanitize_esp(cu_state_esp_t *esp)
+@@ -685,6 +702,7 @@
+ {
+ 	savestate_blob_t blob;
+ 	FILE *fp;
++	char directory[512];
+ 	boole ok = FALSE;
+ 
+ 	slot %= SAVESTATE_SLOT_COUNT;
+@@ -694,7 +712,8 @@
+ 		return FALSE;
+ 	}
+ 
+-	fp = fopen(savestate_slot_name(slot), "wb");
++	savestate_slot_directory(directory,sizeof(directory),FALSE);
++	fp = savestate_mkdirs(directory) ? fopen(savestate_slot_name(slot,FALSE), "wb") : NULL;
+ 	if (fp == NULL){
+ 		print_error("savestate: unable to open slot file for write\n");
+ 	}else if (fwrite(blob.data, 1U, blob.size, fp) != blob.size){
+@@ -724,7 +743,7 @@
+ 
+ 	slot %= SAVESTATE_SLOT_COUNT;
+ 	savestate_blob_reset(&blob);
+-	fp = fopen(savestate_slot_name(slot), "rb");
++	fp = savestate_open_slot_read(slot);
+ 	if (fp == NULL){
+ 		savestate_system_message("SAVE STATE %u LOAD FAILED", (unsigned)slot);
+ 		return FALSE;
+@@ -768,7 +787,7 @@
+ boole savestate_slot_exists(auint slot)
+ {
+ 	FILE* fp;
+-	fp = fopen(savestate_slot_name(slot), "rb");
++	fp = savestate_open_slot_read(slot);
+ 	if (fp == NULL){ return FALSE; }
+ 	fclose(fp);
+ 	return TRUE;
+--- a/tests/input_movie/storage_regression.c
++++ b/tests/input_movie/storage_regression.c
+@@ -7,6 +7,20 @@
+ #include "../../capture.c"
+ #include "../../savestate.c"
+ #include <time.h>
++#include <sys/stat.h>
++#if defined(_WIN32)
++#include <process.h>
++#define STATE_TEST_PID _getpid
++#define STATE_TEST_CWD _getcwd
++#define STATE_TEST_CD _chdir
++#define STATE_TEST_RMDIR _rmdir
++#else
++#include <unistd.h>
++#define STATE_TEST_PID getpid
++#define STATE_TEST_CWD getcwd
++#define STATE_TEST_CD chdir
++#define STATE_TEST_RMDIR rmdir
++#endif
+ 
+ #define CHECK(c, message) do { \
+  if (!(c)){ fprintf(stderr, "FAIL: %s (line %d)\n", message, __LINE__); return 1; } \
+@@ -181,10 +195,59 @@
+  return 0;
+ }
+ 
++static int state_paths_test(void)
++{
++ char original[1024],work[64],absolute[1024];struct stat info;FILE* file;
++ char const* current="savestates/Path_Test/slot_0.czs";
++ char const* legacy="savestates/savestates/Path_Test/slot_0.czs";
++ CHECK(STATE_TEST_CWD(original,sizeof(original)),"get original test directory");
++ snprintf(work,sizeof(work),"statepaths-%u",(unsigned)STATE_TEST_PID());
++ CHECK(SAVESTATE_MKDIR(work)==0&&STATE_TEST_CD(work)==0,"isolated save-path fixture");
++ appcfg_defaults(&main_cfg);savestate_init();
++ main_copy_str(main_rom_name,sizeof(main_rom_name),"Path Test");
++ CHECK(!savestate_slot_exists(0U)&&!savestate_load_slot(0U),"empty slots remain absent");
++ CHECK(stat("savestates",&info)!=0&&errno==ENOENT,"slot queries and failed loads do not create directories");
++ cu_avr_get_state()->pc=111U;
++ CHECK(savestate_save_slot(0U)&&stat(current,&info)==0,"default save path has one savestates level");
++ CHECK(stat("savestates/savestates",&info)!=0,"saving does not add a second savestates directory");
++ CHECK(savestate_mkdirs("savestates/savestates/Path_Test")&&rename(current,legacy)==0,"legacy-only fixture");
++ cu_avr_get_state()->pc=222U;
++ CHECK(savestate_slot_exists(0U)&&savestate_load_slot(0U)&&cu_avr_get_state()->pc==111U,"legacy slot remains visible and loadable");
++ CHECK(stat(current,&info)!=0,"legacy read does not migrate or create a new file");
++ cu_avr_get_state()->pc=123U;
++ CHECK(savestate_save_slot(0U)&&stat(current,&info)==0&&stat(legacy,&info)==0,"new writes use corrected path and preserve old save");
++ cu_avr_get_state()->pc=222U;
++ CHECK(savestate_load_slot(0U)&&cu_avr_get_state()->pc==123U,"corrected slot takes priority over old save");
++ file=fopen(current,"wb");CHECK(file,"invalid current slot fixture");
++ CHECK(fwrite("bad",1U,3U,file)==3U&&fclose(file)==0,"write invalid current slot");
++ cu_avr_get_state()->pc=222U;
++ CHECK(!savestate_load_slot(0U)&&cu_avr_get_state()->pc==222U,"invalid current save does not silently load an older save");
++ CHECK(remove(current)==0&&savestate_load_slot(0U)&&cu_avr_get_state()->pc==111U,"missing current slot permits legacy fallback");
++ CHECK(remove(legacy)==0,"remove owned legacy fixture");
++ CHECK(STATE_TEST_CWD(absolute,sizeof(absolute)),"absolute custom root");
++ CHECK(strlen(absolute)+sizeof("/custom states/")<=sizeof(main_cfg.save_path),"custom fixture fits configured path");
++ main_copy_str(main_cfg.save_path,sizeof(main_cfg.save_path),absolute);
++ strcat(main_cfg.save_path,"/custom states/");
++ cu_avr_get_state()->pc=321U;
++ CHECK(savestate_save_slot(1U)&&stat("custom states/Path_Test/slot_1.czs",&info)==0,"absolute custom path with spaces and trailing slash used directly");
++ cu_avr_get_state()->pc=222U;
++ CHECK(savestate_load_slot(1U)&&cu_avr_get_state()->pc==321U,"custom-root state restores");
++ main_copy_str(main_rom_name,sizeof(main_rom_name),"Unused ROM");
++ CHECK(!savestate_slot_exists(2U)&&!savestate_load_slot(2U)&&stat("custom states/Unused_ROM",&info)!=0,"browsing another ROM creates no empty directory");
++ CHECK(remove("custom states/Path_Test/slot_1.czs")==0,"remove owned custom fixture");
++ CHECK(STATE_TEST_RMDIR("custom states/Path_Test")==0&&STATE_TEST_RMDIR("custom states")==0,"remove empty custom fixture directories");
++ CHECK(STATE_TEST_RMDIR("savestates/savestates/Path_Test")==0&&STATE_TEST_RMDIR("savestates/savestates")==0,"remove empty legacy fixture directories");
++ CHECK(STATE_TEST_RMDIR("savestates/Path_Test")==0&&STATE_TEST_RMDIR("savestates")==0,"remove empty canonical fixture directories");
++ savestate_shutdown();appcfg_defaults(&main_cfg);main_rom_name[0]=0;
++ CHECK(STATE_TEST_CD(original)==0&&STATE_TEST_RMDIR(work)==0,"restore test directory and remove owned fixture root");
++ puts("Save-state paths: PASS (direct configured root, read-only queries, legacy fallback and canonical priority)");
++ return 0;
++}
++
+ int main(int argc, char **argv)
+ {
+  (void)argv;
+- if (crc_test(argc > 1) || chunks_test() || blocks_test() || states_test()) return 1;
++ if (crc_test(argc > 1) || chunks_test() || blocks_test() || states_test() || state_paths_test()) return 1;
+  puts("Movie CRC/buffer and savestate validation regression passed.");
+  return 0;
+ }

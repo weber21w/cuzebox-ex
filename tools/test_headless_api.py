@@ -37,6 +37,9 @@ def main():
             assert boot["stream_valid"] and boot["stream"][:3] == [0xEB, 0x3C, 0x90], boot
             assert boot["fs"]["role"] == "BOOT", boot
             assert command("EMU_STATUS")["tv_sync_pll"] == 0
+            assert command("EMU_STATUS")["video_dump_omit_messages"] == 1
+            command("EMU_SET video_dump_omit_messages 0")
+            assert command("EMU_STATUS")["video_dump_omit_messages"] == 0
             assert command("EMU_STATUS")["tv_sync_recovery"] == 100
             command("EMU_SET tv_sync_recovery 0")
             assert command("EMU_STATUS")["tv_sync_recovery"] == 25
@@ -49,12 +52,15 @@ def main():
             command("EMU_SET tv_sync_recovery 400")
             command("EMU_SET tv_sync_pll 1")
             command("CONFIG SAVE")
+            command("EMU_SET video_dump_omit_messages 1")
             assert "TvSyncPll=1" in (directory / "config.cfg").read_text()
             command("EMU_SET tv_sync_pll 0")
             command("EMU_SET tv_sync_strength 0")
             assert command("EMU_STATUS")["tv_sync_strength"] == 0
             command("EMU_SET tv_sync_recovery 100")
             command("CONFIG RELOAD")
+            assert command("EMU_STATUS")["video_dump_omit_messages"] == 0
+            command("EMU_SET video_dump_omit_messages 1")
             assert command("EMU_STATUS")["tv_sync_pll"] == 1
             assert command("EMU_STATUS")["tv_sync_recovery"] == 400
             assert command("EMU_STATUS")["tv_sync_strength"] == 35
@@ -71,7 +77,7 @@ def main():
             info = command("SCREENSHOT_CAPTURE")
             assert info["width"] > 0 and info["height"] > 0 and info["size"] > 54
             screenshot = command("SCREENSHOT_READ 0 54")
-            assert screenshot, "in-memory BMP inaccessible"
+            assert info["format"] == "png" and screenshot["values"][:8] == [137,80,78,71,13,10,26,10], "in-memory PNG inaccessible"
             assert command("READ_REGS")
             before = command("AUDIO_SCOPE SOURCE 262")["samples"]
             time.sleep(.1)

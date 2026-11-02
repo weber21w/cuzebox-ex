@@ -1,0 +1,4 @@
+PASS: cycle screenshots, one-clock pixels, vertical duplication, filters, partial fields, JAMMA, interlace and reset
+PASS: 64 screenshot layouts, JAMMA rotations/mirrors, upright HUD, file/API pixel agreement
+PASS: all config fields including screenshot GUI preference, GUI save/reload, audio, themes, netplay, serial/MIDI, FAST FLASH, logging, legacy defaults, failed replacement
+PASS: screenshot checkbox/persistence, deferred GUI capture, game-only crop, OSD ownership, guest keyboard routing

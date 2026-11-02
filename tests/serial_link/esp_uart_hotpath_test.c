@@ -36,7 +36,19 @@ void cu_esp_process_at(sint8 *b){
     snprintf(at_command, sizeof(at_command), "%s", (char const*)b);
 }
 sint32 cu_esp_process_ipd(void){ ipd_calls++; return 0; }
-auint cu_esp_update_timer_counts(auint cycle){ (void)cycle; timer_calls++; return test_state.read_buf_pos_in; }
+auint cu_esp_update_timer_counts(auint cycle){
+    auint delta=WRAP32(cycle-test_state.last_cycle_tick);test_state.last_cycle_tick=cycle;timer_calls++;
+    for(unsigned i=0;i<sizeof(test_state.delay_len)/sizeof(test_state.delay_len[0]);i++){
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+        if(test_state.delay_pos[i]&CU_ESP_CAPTURE_RELATIVE)continue;
+#endif
+        if(test_state.delay_len[i]<=delta)test_state.delay_len[i]=0;
+        else test_state.delay_len[i]-=delta;
+    }
+    for(unsigned i=0;i<sizeof(test_state.delay_len)/sizeof(test_state.delay_len[0]);i++)
+        if(test_state.delay_len[i]&&test_state.delay_pos[i]==test_state.read_buf_pos_out)return test_state.read_buf_pos_out;
+    return test_state.read_buf_pos_in;
+}
 void cu_esp_service_host_state(void){ host_calls++; }
 
 static void init_esp_uart(void){
@@ -101,6 +113,7 @@ static int test_tx_buffering(void){
     if((rc=req(at_calls == 0u && test_state.write_buf_pos_in == 3u, 17, "AT command completed before final UART frame"))) return rc;
     (void)cu_esp_uzebox_status(frame * 4u);
     if((rc=req(at_calls == 1u && strcmp(at_command, "AT\r\n") == 0, 18, "AT command not delivered after final frame"))) return rc;
+    if((rc=req(test_state.last_cycle_tick==frame*4u,19,"AT delay clock was not anchored at command completion")))return rc;
     return 0;
 }
 
@@ -148,9 +161,68 @@ static int test_fast_poll_budget(void){
     if((rc=req(host_calls == 0u, 43, "TX-only UDRE/TXC polling serviced host networking"))) return rc;
     return 0;
 }
+static int test_reply_deadline(void){
+    const auint base=200000u,delay=1234u,frame=29760u;
+    int rc;init_esp_uart();
+    test_state.read_buf[0]='O';test_state.read_buf_pos_in=1u;
+    test_state.last_cycle_tick=base;test_state.delay_len[0]=delay;test_state.delay_pos[0]=0u;
+    (void)cu_esp_uzebox_status(base);
+    (void)cu_esp_uzebox_status(base+delay-1u);
+    (void)cu_esp_uzebox_status(base+delay);
+    if((rc=req(test_state.read_ready_cycle==base+delay+frame,60,"host cache hid AT reply deadline")))return rc;
+    if((rc=req((cu_esp_uzebox_status(base+delay+frame)&(1u<<RXC0))!=0u,61,"delayed reply missed frame boundary")))return rc;
+    return 0;
+}
+
+static int test_reply_chunk_boundary(void){
+    const auint base=200000u,frame=29760u,pause=12000u;
+    int rc;init_esp_uart();
+    test_state.read_buf[0]='A';test_state.read_buf[1]='O';test_state.read_buf_pos_in=2u;
+    test_state.last_cycle_tick=base;test_state.delay_pos[0]=1u;
+    test_state.delay_len[0]=frame+pause;
+    (void)cu_esp_uzebox_status(base);
+    (void)cu_esp_uzebox_status(base+frame);
+    if((rc=req(cu_esp_uzebox_read(base+frame)=='A',62,"echo byte mismatch")))return rc;
+    if((rc=req(test_state.read_ready_cycle==0u,63,"delayed reply started shifting before chunk readiness")))return rc;
+    (void)cu_esp_uzebox_status(base+frame);
+    (void)cu_esp_uzebox_status(base+frame+pause);
+    if((rc=req(test_state.read_ready_cycle==base+frame+pause+frame,64,"reply did not receive a full frame after pause")))return rc;
+    if((rc=req(!(cu_esp_uzebox_status(base+frame+pause+frame-1u)&(1u<<RXC0)),65,"reply RXC arrived early")))return rc;
+    if((rc=req(cu_esp_uzebox_status(base+frame+pause+frame)&(1u<<RXC0),66,"reply RXC missing after pause and frame")))return rc;
+    return 0;
+}
 
 int main(void){
     int rc;
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+    /* The host completes late. The ESP's internal chunk pause must still
+     * follow actual reply transmission, rather than expiring beforehand. */
+    init_esp_uart();
+    test_state.last_cycle_tick=200000u;
+    test_state.delay_pos[0]=CU_ESP_CAPTURE_RELATIVE|1u;
+    test_state.delay_len[0]=29760u+1234u;
+    (void)cu_esp_uzebox_status(200000u);
+    (void)cu_esp_uzebox_status(400000u);
+    if((rc=req(test_state.delay_len[0]==30994u,70,"internal pause expired while host connect was pending")))return rc;
+    test_state.read_buf[0]='A';test_state.read_buf[1]='B';test_state.read_buf_pos_in=2u;
+    (void)cu_esp_uzebox_status(500000u);
+    if((rc=req(test_state.delay_pos[0]==1u,71,"relative pause did not anchor at actual first frame")))return rc;
+    (void)cu_esp_uzebox_status(529760u);(void)cu_esp_uzebox_read(529760u);
+    (void)cu_esp_uzebox_status(530994u);
+    if((rc=req(test_state.read_ready_cycle==560754u,72,"late host result lost internal response gap")))return rc;
+    init_esp_uart();
+    test_state.at_firmware_profile=CU_ESP_AT_FW_ESPAT_230;
+    test_state.baud_rate=115200u;test_state.uart_baud_bits=30u;test_state.uart_double_speed=1u;
+    test_state.read_buf[0]='A';test_state.read_buf[1]='B';test_state.read_buf_pos_in=2u;
+    (void)cu_esp_uzebox_status(200000u);
+    if((rc=req(test_state.read_ready_cycle==202484u,67,"ESP frame uses AVR rather than module divider")))return rc;
+    (void)cu_esp_uzebox_status(202484u);
+    (void)cu_esp_uzebox_read(202514u);
+    if((rc=req(test_state.read_ready_cycle==204968u,68,"prompt UDR read restarted continuous module TX")))return rc;
+    if((rc=req(cu_esp_uzebox_status(204968u)&(1u<<RXC0),69,"continuous module frame boundary missing")))return rc;
+#endif
+    if((rc=test_reply_deadline()))return rc;
+    if((rc=test_reply_chunk_boundary()))return rc;
     init_esp_uart();
     test_state.uart_baud_rate_default = 9600u;
     test_state.baud_rate = 19200u;

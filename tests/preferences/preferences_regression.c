@@ -76,6 +76,7 @@ static int roundtrip(void)
 	expected.netplay_relay_port = 43815U;
 	expected.video_dump_autoinc = !expected.video_dump_autoinc;
 	expected.video_dump_reset_first = !expected.video_dump_reset_first;
+	expected.video_dump_omit_messages = FALSE;
 	expected.resident_bootloader_enable = !expected.resident_bootloader_enable;
 	expected.fast_flash = !expected.fast_flash;
 	expected.recent_roms_frozen = !expected.recent_roms_frozen;
@@ -93,6 +94,8 @@ static int roundtrip(void)
 	snprintf(expected.rom_path, sizeof(expected.rom_path), "test=value # spaces");
 	snprintf(expected.screenshot_path, sizeof(expected.screenshot_path), "test=value # spaces");
 	expected.screenshot_include_gui = TRUE;
+	expected.screenshot_bypass_filters = FALSE;
+	expected.screenshot_x_width=256U;expected.screenshot_y_scale=3U;expected.screenshot_sampling=2U;
 	snprintf(expected.save_path, sizeof(expected.save_path), "test=value # spaces");
 	snprintf(expected.controllerdb_path, sizeof(expected.controllerdb_path), "test=value # spaces");
 	snprintf(expected.resident_bootloader_file, sizeof(expected.resident_bootloader_file), "test=value # spaces");
@@ -192,6 +195,7 @@ static int roundtrip(void)
 	CHECK(strcmp(expected.video_dump_file, loaded.video_dump_file) == 0, "video_dump_file round trip");
 	CHECK(memcmp(&expected.video_dump_autoinc, &loaded.video_dump_autoinc, sizeof(expected.video_dump_autoinc)) == 0, "video_dump_autoinc round trip");
 	CHECK(memcmp(&expected.video_dump_reset_first, &loaded.video_dump_reset_first, sizeof(expected.video_dump_reset_first)) == 0, "video_dump_reset_first round trip");
+	CHECK(!loaded.video_dump_omit_messages,"video_dump_omit_messages round trip");
 	CHECK(memcmp(&expected.gui_colors, &loaded.gui_colors, sizeof(expected.gui_colors)) == 0, "gui_colors round trip");
 	CHECK(strcmp(expected.gui_theme_name, loaded.gui_theme_name) == 0, "gui_theme_name round trip");
 	CHECK(strcmp(expected.gui_theme_file, loaded.gui_theme_file) == 0, "gui_theme_file round trip");
@@ -199,6 +203,8 @@ static int roundtrip(void)
 	CHECK(strcmp(expected.screenshot_path, loaded.screenshot_path) == 0, "screenshot_path round trip");
 	CHECK(!loaded.input_movie_compact, "Full Debug recording preference round trip");
 	CHECK(loaded.screenshot_include_gui, "screenshot_include_gui round trip");
+	CHECK(!loaded.screenshot_bypass_filters, "screenshot_bypass_filters round trip");
+	CHECK(loaded.screenshot_x_width==256U&&loaded.screenshot_y_scale==3U&&loaded.screenshot_sampling==2U,"screenshot scales and sampling round trip");
 	CHECK(strcmp(expected.save_path, loaded.save_path) == 0, "save_path round trip");
 	CHECK(strcmp(expected.controllerdb_path, loaded.controllerdb_path) == 0, "controllerdb_path round trip");
 	CHECK(memcmp(&expected.resident_bootloader_enable, &loaded.resident_bootloader_enable, sizeof(expected.resident_bootloader_enable)) == 0, "resident_bootloader_enable round trip");
@@ -311,37 +317,37 @@ static int fast_flash_regression(void)
   CHECK(cpu->crom[0x200U] == (mode == 2U ? 0xFFU : 0x5AU), "SPM changed target page");
   for (i = 0U; i < 100U && cpu->spm_prge; i++){ (void)cu_avr_run(); }
   CHECK(!cpu->spm_prge && cu_avr_flash_active(FALSE), "completed operation remains latched across a frame");
-  main_fast_flash_tick(100U);
-  CHECK(main_fast_flash_active, "flash enables acceleration");
-  main_fast_flash_tick(101U);
-  CHECK(!main_fast_flash_active, "idle frame stops acceleration");
+  main_acceleration_tick(100U);
+  CHECK(main_acceleration_active, "flash enables acceleration");
+  main_acceleration_tick(101U);
+  CHECK(!main_acceleration_active, "idle frame stops acceleration");
  }
  cpu->spm_prge = TRUE;
  mainui_set_fast_flash(FALSE);
- main_fast_flash_tick(102U);
- CHECK(!main_fast_flash_active && main_cfg_dirty, "checkbox disables acceleration and marks preference modified");
+ main_acceleration_tick(102U);
+ CHECK(!main_acceleration_active && main_cfg_dirty, "checkbox disables acceleration and marks preference modified");
  mainui_set_fast_flash(TRUE);
  main_ispause = TRUE;
- main_fast_flash_tick(103U);
- CHECK(!main_fast_flash_active, "pause prevents acceleration");
+ main_acceleration_tick(103U);
+ CHECK(!main_acceleration_active, "pause prevents acceleration");
  main_ispause = FALSE;
  main_np_session_active = TRUE;
- main_fast_flash_tick(104U);
- CHECK(!main_fast_flash_active, "netplay session prevents acceleration");
+ main_acceleration_tick(104U);
+ CHECK(!main_acceleration_active, "netplay session prevents acceleration");
  main_np_session_active = FALSE;
  mainui_set_serial_route(CU_ESP_SERIAL_HOST_SERIAL);
- main_fast_flash_tick(104U);
- CHECK(!main_fast_flash_active, "external serial prevents acceleration");
+ main_acceleration_tick(104U);
+ CHECK(!main_acceleration_active, "external serial prevents acceleration");
  mainui_set_serial_route(CU_ESP_SERIAL_DISCONNECTED);
 #ifdef ENABLE_VCAP
  main_isvcap = TRUE;
- main_fast_flash_tick(105U);
- CHECK(!main_fast_flash_active, "video recording prevents acceleration");
+ main_acceleration_tick(105U);
+ CHECK(!main_acceleration_active, "video recording prevents acceleration");
  main_isvcap = FALSE;
 #endif
  cu_avr_reset();
- main_fast_flash_tick(106U);
- CHECK(!main_fast_flash_active && !cu_avr_flash_active(FALSE), "reset clears flash activity");
+ main_acceleration_tick(106U);
+ CHECK(!main_acceleration_active && !cu_avr_flash_active(FALSE), "reset clears flash activity");
  mainui_set_fast_flash(FALSE);
  mainui_config_save_now();
  mainui_set_fast_flash(TRUE);
@@ -363,6 +369,7 @@ int main(void)
  CHECK(appcfg_load_or_create(&saved, "legacy.cfg"), "old config loads with defaults");
  CHECK(saved.audio_master_volume == 72U && saved.netplay_max_players == 2U, "legacy settings and new defaults");
  CHECK(saved.fast_flash, "older configs default FAST FLASH on");
+ CHECK(saved.video_dump_omit_messages,"older configs default video OMIT MESSAGES on");
  CHECK(!saved.tv_sync_pll, "older configs default TV sync PLL off");
  CHECK(saved.tv_sync_recovery == 100U, "legacy PLL recovery default");
  CHECK(saved.tv_sync_strength == 100U, "legacy PLL strength default");

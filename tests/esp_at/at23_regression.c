@@ -61,6 +61,27 @@ int main(void){
     esp_state.wifi_mode=2;
     esp_state.soft_ap_max_conn=4;
     esp_state.soft_ap_dhcp_lease_min=5;
+    out_clear();cu_esp_at();
+    CHECK(!strcmp(out_text(),"\r\nOK\r\n"),"physical RTOS AT exact CRLF bytes");
+    out_clear();{sint8 c[]="AT+SLEEP?\r\n";cu_esp_at_sleep(c);}
+    CHECK(!strcmp(out_text(),"+SLEEP:0\r\n\r\nOK\r\n"),"physical RTOS query exact CRLF bytes");
+    out_clear();cu_esp_txp_error();
+    CHECK(!strcmp(out_text(),"\r\nERROR\r\n"),"physical RTOS error exact CRLF bytes");
+    esp_state.baud_rate=115200;out_clear();cu_esp_uart_emit(FALSE);
+    CHECK(!strcmp(out_text(),"+UART_CUR:115273,8,1,0,0\r\n\r\nOK\r\n"),"physical RTOS UART divider query");
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+    /* Physical capture 30 pauses between the query payload and final OK.
+     * Exercise the selected trace and ring wrap without running a host net. */
+    esp_state.sleep_mode=1;esp_state.last_cycle_tick=30u*ESP_AT_MS_DELAY;
+    memset(esp_state.delay_len,0,sizeof(esp_state.delay_len));
+    cu_esp_at_capture_pause("AT+CIPMUX?\r\n",sizeof(esp_state.read_buf)-4u);
+    CHECK(esp_state.delay_pos[0]==7u && esp_state.delay_len[0]==95948u,"physical internal pause position and deadline");
+    memset(esp_state.delay_len,0,sizeof(esp_state.delay_len));
+    esp_state.last_cycle_tick=29u*ESP_AT_MS_DELAY;
+    cu_esp_at_capture_pause("AT+CIPMUX?\r\n",0u);
+    CHECK(!esp_state.delay_len[0],"ordinary captured reply has no invented internal pause");
+    esp_state.sleep_mode=0;esp_state.last_cycle_tick=0;
+#endif
 
     esp_state.uart_double_speed=0;
     CHECK(!cu_esp_set_baud_rate(19200) && esp_state.uart_baud_bits_module==92,"normal-speed 19200 baud divisor");
@@ -87,7 +108,17 @@ int main(void){
     out_clear(); { sint8 c[]="AT+SYSMSG=7\r\n"; cu_esp_at_sysmsg(c); }
     CHECK(esp_state.sysmsg_flags==7 && has("OK\r\n"),"SYSMSG set");
     out_clear(); { sint8 c[]="AT+SYSMSG?\r\n"; cu_esp_at_sysmsg(c); }
-    CHECK(has("+SYSMSG:7\r\n"),"SYSMSG query");
+    CHECK(!strcmp(out_text(),"+SYSMSG:7\r\nOK\r\n"),"physical SYSMSG query exact CRLF bytes");
+    esp_state.state|=ESP_AUTOCONNECT;out_clear();
+    {sint8 c[]="AT+CWAUTOCONN?\r\n";cu_esp_at_cwautoconn(c);}
+    CHECK(!strcmp(out_text(),"+CWAUTOCONN:1\r\nOK\r\n"),"physical CWAUTOCONN query exact bytes");
+    out_clear();{sint8 c[]="AT+CWAUTOCONN=0\r\n";cu_esp_at_cwautoconn(c);}
+    out_clear();{sint8 c[]="AT+CWAUTOCONN?\r\n";cu_esp_at_cwautoconn(c);}
+    CHECK(!strcmp(out_text(),"+CWAUTOCONN:0\r\nOK\r\n"),"CWAUTOCONN query reflects setter");
+    esp_state.at_firmware_profile=CU_ESP_AT_FW_LEGACY_17;out_clear();
+    {sint8 c[]="AT+CWAUTOCONN?\r\n";cu_esp_at_cwautoconn(c);}
+    CHECK(!strcmp(out_text(),"ERROR\r\n"),"legacy CWAUTOCONN query behavior retained");
+    esp_state.at_firmware_profile=CU_ESP_AT_FW_ESPAT_230;
 
     save_count=0; esp_state.sysstore_mode=0;
     { sint8 c[]="AT+CWSAP=\"TEST\",\"12345678\",6,3,7,1\r\n"; cu_esp_at_cwsap(c); }
@@ -100,7 +131,20 @@ int main(void){
 
     esp_state.state|=ESP_MUX; out_clear();
     { const uint8 d[3]={'a','b','c'}; cu_esp_cipbuf_push(&esp_state,0,d,3); sint8 c[]="AT+CIPRECVLEN?\r\n"; cu_esp_at_ciprecvlen(c); }
-    CHECK(has("+CIPRECVLEN:3,,,,\r\n"),"CIPRECVLEN five-link blank-zero wire format");
+    CHECK(!strcmp(out_text(),"+CIPRECVLEN:3,0,0,0,0\r\n\r\nOK\r\n"),"physical RTOS CIPRECVLEN explicit zero fields");
+    esp_state.at_firmware_profile=CU_ESP_AT_FW_LEGACY_17;out_clear();
+    {sint8 c[]="AT+CIPRECVLEN?\r\n";cu_esp_at_ciprecvlen(c);}
+    CHECK(has("+CIPRECVLEN:3,,,,\r\n"),"legacy CIPRECVLEN blank-zero format retained");
+    out_clear();{sint8 c[]="AT+CIPDINFO?\r\n";cu_esp_at_cipdinfo(c);}
+    CHECK(!strcmp(out_text(),"ERROR\r\n"),"legacy unsupported CIPDINFO query retained");
+    esp_state.at_firmware_profile=CU_ESP_AT_FW_ESPAT_230;
+    esp_state.state&=~ESP_CIPDINFO;out_clear();
+    {sint8 c[]="AT+CIPDINFO?\r\n";cu_esp_at_cipdinfo(c);}
+    CHECK(!strcmp(out_text(),"+CIPDINFO:false\r\nOK\r\n"),"physical CIPDINFO false query exact bytes");
+    out_clear();{sint8 c[]="AT+CIPDINFO=1\r\n";cu_esp_at_cipdinfo(c);}
+    CHECK(esp_state.state&ESP_CIPDINFO,"CIPDINFO setter still enables peer fields");
+    out_clear();{sint8 c[]="AT+CIPDINFO?\r\n";cu_esp_at_cipdinfo(c);}
+    CHECK(!strcmp(out_text(),"+CIPDINFO:true\r\nOK\r\n"),"CIPDINFO query reflects enabled peer fields");
 
     out_clear(); { sint8 c[]="AT+CIPSSLCCONF=5,3,0,0\r\n"; cu_esp_at_cipsslcconf(c); }
     for(int i=0;i<ESP_MAX_LINKS;i++) CHECK(esp_state.ssl_auth_mode[i]==3,"SSL all-link CCONF");

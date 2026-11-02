@@ -1,0 +1,3493 @@
+{
+  "baseline_commit": "bd553618efb1401972a7d99e282a72d1e8b8921d",
+  "baseline_file_count": 441,
+  "input_file_count": 495,
+  "counts": {
+    "identical": 369,
+    "modified": 72,
+    "added": 54
+  },
+  "excluded_generated_build_files": 118,
+  "hashes": "Git checkout bytes with LF text line endings; review artifacts omit recursive self hashes.",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "status": "identical",
+      "upstream_sha256": "b612a75f434a6653b38d2dca8803b7ecf1d10c2a6ba1cbefe20e819f1fc46221",
+      "candidate_sha256": "b612a75f434a6653b38d2dca8803b7ecf1d10c2a6ba1cbefe20e819f1fc46221",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": ".github/workflows/build.yml",
+      "status": "modified",
+      "upstream_sha256": "9ad611dc5aa33eca000c6ee7f9f731834309644487837b0a1d394b1ed38beb26",
+      "candidate_sha256": "03142e8b7214201a99d5711ba0dceea4a5133b5cbb89bef2bcb15a075fcd64fe",
+      "review": "Retain existing jobs; add portable firmware/PNG/video/hardware coverage and repair .MP4 fixture spelling."
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "3221a2ede95ee3fa8e4fa2eaf4a65c72d985e029f7bba1db4ee6118e2347eea9",
+      "review": "Native release packaging; verified input hashes; draft-only publication; Mac execution remains unverified."
+    },
+    {
+      "path": ".gitignore",
+      "status": "modified",
+      "upstream_sha256": "736442767178e80ca786b1668f5a8540fdc24924afaf013ff9016b36586ece0f",
+      "candidate_sha256": "10fd1677f110d6902824ba5d39cce4deea4d81e97a23b0929a89cd77c1ca2e93",
+      "review": "Exclude generated build results; retain files on disk."
+    },
+    {
+      "path": "Bootloader.hex",
+      "status": "identical",
+      "upstream_sha256": "be04074bee85f98c6005676a4c4b0d2eeadd442ee55e1d3f9a935b5852ae090a",
+      "candidate_sha256": "be04074bee85f98c6005676a4c4b0d2eeadd442ee55e1d3f9a935b5852ae090a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "DEVELOPMENT_HANDOFF.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "66ca469c60c1447d97d0eae92ec1d5db9262eeed7e11c2e9e12ceda48e096799",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "LICENSE",
+      "status": "identical",
+      "upstream_sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2",
+      "candidate_sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "Make_config.mk",
+      "status": "modified",
+      "upstream_sha256": "3c6753a56faa5c1f324f81b6eebf1db61e4387fc949cbf24a25e9d895008fb42",
+      "candidate_sha256": "8a8c220c872b91846256a552dba9c7c1ba5c4a5c803ad59bd495a752e4a01b4d",
+      "review": "User-approved native Timer1/GPIO defaults ON; measured AT timing enabled."
+    },
+    {
+      "path": "Make_defines.mk",
+      "status": "modified",
+      "upstream_sha256": "4fac2b3ffc393d82c3ce443919976e87c27ae7deaaecd9993c74c2398c83cdf1",
+      "candidate_sha256": "e5ad4727f3a678a01813a361799daa883d40c9ef4b08a2e97ee6cc0170f6917e",
+      "review": "Keep browser overlay defaults; expose calibrated AT timing define without removing feature flags."
+    },
+    {
+      "path": "Make_platform.mk",
+      "status": "identical",
+      "upstream_sha256": "43728ac527aff00070eeab348b3e7c064c4266ff3040c671a317b3541bc6b959",
+      "candidate_sha256": "43728ac527aff00070eeab348b3e7c064c4266ff3040c671a317b3541bc6b959",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "Makefile",
+      "status": "identical",
+      "upstream_sha256": "95040dbd0ea79f5e22d6aea770c20170e9c2e2f10cc24af3b63c9bae4fac34bb",
+      "candidate_sha256": "95040dbd0ea79f5e22d6aea770c20170e9c2e2f10cc24af3b63c9bae4fac34bb",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "OPTIMIZATION_HANDOFF.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "c8cd57c2d4cf407c9e90edd41b2c4be25bda1feb87a1cfa4b23433388bf154d6",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "api_server.c",
+      "status": "modified",
+      "upstream_sha256": "558ed93bf59fea10566306522da8205c2b74107ed20794d2886c26d37fda7db6",
+      "candidate_sha256": "a1d4f0cee8b4e30b0a69e625a7e482a5eaebf8a4533ab287bed4ea4e6c83a747",
+      "review": "Add screenshot format/settings/metadata and recording omission controls; retain prior command dispatch."
+    },
+    {
+      "path": "api_server.h",
+      "status": "identical",
+      "upstream_sha256": "20b0f7e8e5e978a905ed6c6cec8e6ebb1fa7e447bfeda80b5d7f6286100d5a5c",
+      "candidate_sha256": "20b0f7e8e5e978a905ed6c6cec8e6ebb1fa7e447bfeda80b5d7f6286100d5a5c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "audio.c",
+      "status": "identical",
+      "upstream_sha256": "6b9a1f6c50b2e2f196076055c2fdd754090aa9ad49439d0e8b0dc6265b8817db",
+      "candidate_sha256": "6b9a1f6c50b2e2f196076055c2fdd754090aa9ad49439d0e8b0dc6265b8817db",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "audio.h",
+      "status": "identical",
+      "upstream_sha256": "917387596a9c87b4232e83febb6c4fae6ed20b4ebc5cff0613372b7129892a2d",
+      "candidate_sha256": "917387596a9c87b4232e83febb6c4fae6ed20b4ebc5cff0613372b7129892a2d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "avconv.c",
+      "status": "modified",
+      "upstream_sha256": "0f118e7e1633e4b79bcce67bc99f49b6b1605c66a342a01864b17d03d56c4f18",
+      "candidate_sha256": "9f67bd3a11fd739e9e7adc427ec3d2493d98de300ff0db2b680963955eaa074c",
+      "review": "Stage clean recording pixels and latch policy per frame; retain image geometry/audio pipeline."
+    },
+    {
+      "path": "avconv.h",
+      "status": "modified",
+      "upstream_sha256": "a3fb7d87adfdae920a7267527a0b133834c9adc798abbf030e03bace89145839",
+      "candidate_sha256": "5175284dacb20185cdca1af8234a2275eb0bffc95404969823cea86664f3144d",
+      "review": "Add recording staging/policy interface; retain prior interface."
+    },
+    {
+      "path": "avr_inst_table.txt",
+      "status": "identical",
+      "upstream_sha256": "5d12a25f68df96b332fdde8d851f890f1fbcb72b7077e6877c35ab056e4e8bc7",
+      "candidate_sha256": "5d12a25f68df96b332fdde8d851f890f1fbcb72b7077e6877c35ab056e4e8bc7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "bootloader_builtin.h",
+      "status": "identical",
+      "upstream_sha256": "dea1f7fa25cbef637cc716a065f6725fcf53d0245687d297984b4f9d51226341",
+      "candidate_sha256": "dea1f7fa25cbef637cc716a065f6725fcf53d0245687d297984b4f9d51226341",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "browser_endpoint.c",
+      "status": "identical",
+      "upstream_sha256": "2a2ee0219304d20e5b33950bef5308808e6b9181665ef75d7e94e8a2d2ae93f3",
+      "candidate_sha256": "2a2ee0219304d20e5b33950bef5308808e6b9181665ef75d7e94e8a2d2ae93f3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "browser_uart.inc",
+      "status": "identical",
+      "upstream_sha256": "73365146ea2a1b63adb614356cee9725e45c1acc4f37bacd04aece4d211fa86f",
+      "candidate_sha256": "73365146ea2a1b63adb614356cee9725e45c1acc4f37bacd04aece4d211fa86f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "capture.c",
+      "status": "identical",
+      "upstream_sha256": "311bbfd9370aa328f353c9dc28e8eb2691d750085e36b4fe12f826763157da2c",
+      "candidate_sha256": "311bbfd9370aa328f353c9dc28e8eb2691d750085e36b4fe12f826763157da2c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "capture.h",
+      "status": "identical",
+      "upstream_sha256": "4e6be54bf25b19de091d3bd554dfbe27221620e8f52950c8fa1532afd900c01e",
+      "candidate_sha256": "4e6be54bf25b19de091d3bd554dfbe27221620e8f52950c8fa1532afd900c01e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "capture_checkpoint.inc",
+      "status": "identical",
+      "upstream_sha256": "f1813c9572554130e217c243ed25526f5fe9684b60c7ea9a80f276c74290f3ad",
+      "candidate_sha256": "f1813c9572554130e217c243ed25526f5fe9684b60c7ea9a80f276c74290f3ad",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "capture_stream.inc",
+      "status": "identical",
+      "upstream_sha256": "72fd7dc38cf51ffd468144d6ab9f828528dfe33f66d2d74e5e862ed223b4bb15",
+      "candidate_sha256": "72fd7dc38cf51ffd468144d6ab9f828528dfe33f66d2d74e5e862ed223b4bb15",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "chars.c",
+      "status": "identical",
+      "upstream_sha256": "1f233a2f3265876a80fcf98453cfc3d4b0d6358dfa43c4e04a7d7da463c5c60a",
+      "candidate_sha256": "1f233a2f3265876a80fcf98453cfc3d4b0d6358dfa43c4e04a7d7da463c5c60a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "chars.h",
+      "status": "identical",
+      "upstream_sha256": "b23fbd4ca503b31da948ec4d089d6ab00b729699df6e40d869926f6867e09f1c",
+      "candidate_sha256": "b23fbd4ca503b31da948ec4d089d6ab00b729699df6e40d869926f6867e09f1c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cheats.c",
+      "status": "identical",
+      "upstream_sha256": "ea4754d404a532eaed8d0b069e64d6bf922c2938ab5591bca624e4b15f46501f",
+      "candidate_sha256": "ea4754d404a532eaed8d0b069e64d6bf922c2938ab5591bca624e4b15f46501f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cheats.h",
+      "status": "identical",
+      "upstream_sha256": "6f810e237a4c7fb3efb3045aa9e43179c2db43ee297262464479b8e52e59bcca",
+      "candidate_sha256": "6f810e237a4c7fb3efb3045aa9e43179c2db43ee297262464479b8e52e59bcca",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "configcfg.c",
+      "status": "modified",
+      "upstream_sha256": "d3d99e80d0019c574408493230a8b815b40d930cb6e59e612af34768942da09d",
+      "candidate_sha256": "72e2671cd75e4b66ff0297802967d52152b0382ceda8a11bb9f43134448d301e",
+      "review": "Round-trip new preferences; API-off default only in distribution builds."
+    },
+    {
+      "path": "configcfg.h",
+      "status": "modified",
+      "upstream_sha256": "5f8e694cbadef99e1ed9235d57036e504aadc837206632b8208addea23bd340b",
+      "candidate_sha256": "fd6368a9c3fb41d8ed81014e9be891b28b08024ac398119d3b301e7014c5fa75",
+      "review": "Add preferences without removing old settings."
+    },
+    {
+      "path": "configfile.h",
+      "status": "identical",
+      "upstream_sha256": "17b6e72c105fb1723c0a0290965705a4ffbf372e668490b243f0912a9311e58f",
+      "candidate_sha256": "17b6e72c105fb1723c0a0290965705a4ffbf372e668490b243f0912a9311e58f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "conout.c",
+      "status": "identical",
+      "upstream_sha256": "045968796f51c65067a05b1aa5fcc3635279773a36bd035270360ef90784e5a8",
+      "candidate_sha256": "045968796f51c65067a05b1aa5fcc3635279773a36bd035270360ef90784e5a8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "conout.h",
+      "status": "identical",
+      "upstream_sha256": "e115ecbea4515ea76c556be433039d7e4be0521c61b27d6e182f06c247776f9d",
+      "candidate_sha256": "e115ecbea4515ea76c556be433039d7e4be0521c61b27d6e182f06c247776f9d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avr.c",
+      "status": "modified",
+      "upstream_sha256": "4b1c79b5b96e3d962c668f113228b09e04c4a1337ccda1b32ac0b2458bd17de7",
+      "candidate_sha256": "18347fdd55f5ca8a43d2f64f84c4ce7080b47b6ba9bd75ce56629e9e911d771f",
+      "review": "MCU-owned USART TX completion and flags; preserve CPU state structure; exercise both decoders."
+    },
+    {
+      "path": "cu_avr.h",
+      "status": "identical",
+      "upstream_sha256": "93c0e228c01c5dbae8b4b256dcdafccce04a620ea32311d777f7faaa50bb51a9",
+      "candidate_sha256": "93c0e228c01c5dbae8b4b256dcdafccce04a620ea32311d777f7faaa50bb51a9",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avr_e.h",
+      "status": "modified",
+      "upstream_sha256": "7118f7816f52082de089dda7aa891c3b0c0a85d73c5abb13b8e2abef075c071b",
+      "candidate_sha256": "9a62129f2e714f232074a4a29a845e560d9760e7d8855c19126f826eafe7de4b",
+      "review": "OUT PINC pixel-cycle fix in function-table decoder."
+    },
+    {
+      "path": "cu_avr_n.h",
+      "status": "modified",
+      "upstream_sha256": "ebd3df9f4e44533bfab754d0a9e1dd29ffa790175bf837b036cda4e30a9d2464",
+      "candidate_sha256": "be387e256eb4aab5a3155cbbff772910f9b1c55615810e8380e80331a3fad3f3",
+      "review": "Matching OUT PINC fix in switch decoder."
+    },
+    {
+      "path": "cu_avr_spi.h",
+      "status": "identical",
+      "upstream_sha256": "15deb861a8712ed0e8ec871af5da893f49a31f374bb87814e18bc42a34126d07",
+      "candidate_sha256": "15deb861a8712ed0e8ec871af5da893f49a31f374bb87814e18bc42a34126d07",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avrc.c",
+      "status": "identical",
+      "upstream_sha256": "d2910b734aacf0eec2574ad5949907c0e4f0f29016b68e9c807d04da3fa0173a",
+      "candidate_sha256": "d2910b734aacf0eec2574ad5949907c0e4f0f29016b68e9c807d04da3fa0173a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avrc.h",
+      "status": "identical",
+      "upstream_sha256": "2741e22abb711fa077b6ada1e0530a60092a845b62913a14da32762b32199302",
+      "candidate_sha256": "2741e22abb711fa077b6ada1e0530a60092a845b62913a14da32762b32199302",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avrfg.c",
+      "status": "identical",
+      "upstream_sha256": "777b3e702ab042bcb67f751fd155613a7e34157843a847d1f65a3195c54578e5",
+      "candidate_sha256": "777b3e702ab042bcb67f751fd155613a7e34157843a847d1f65a3195c54578e5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_avrfg.h",
+      "status": "identical",
+      "upstream_sha256": "fab23621cf4047b0280a0203c79afcab93033239994635622638912f8a8faf23",
+      "candidate_sha256": "fab23621cf4047b0280a0203c79afcab93033239994635622638912f8a8faf23",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_ctr.c",
+      "status": "identical",
+      "upstream_sha256": "d3069683299825428683a632282c1f0e8aea2049843eb603a60e07cb29dfc855",
+      "candidate_sha256": "d3069683299825428683a632282c1f0e8aea2049843eb603a60e07cb29dfc855",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_ctr.h",
+      "status": "identical",
+      "upstream_sha256": "ca71933b8f4c85094a4a9749f51d1685560a7523e068cd0a2e8eb51bcdcdd9c6",
+      "candidate_sha256": "ca71933b8f4c85094a4a9749f51d1685560a7523e068cd0a2e8eb51bcdcdd9c6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp.h",
+      "status": "modified",
+      "upstream_sha256": "2635d80d8c9aac499f2b51321a64588dc561fee5db441cb875d326f002d75ae3",
+      "candidate_sha256": "1bb71bd550a6cd129e27be59f855d779924639fc35222bebf06cf2dc540eba84",
+      "review": "Add measured-delay constants without extending saved ESP layout."
+    },
+    {
+      "path": "cu_esp_ap.c",
+      "status": "identical",
+      "upstream_sha256": "6eafdbb3d3653e06524b90d4c5e4a55196c6fc050cd7f5858a7bfd0253545492",
+      "candidate_sha256": "6eafdbb3d3653e06524b90d4c5e4a55196c6fc050cd7f5858a7bfd0253545492",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_at.c",
+      "status": "modified",
+      "upstream_sha256": "3e86706e3ccc4b3d2bed8924126838d770078c8cd712a5e68923e87a78a3f27f",
+      "candidate_sha256": "0425e12e2bff4482d56919b4a62f70def389b3b9aa00a8cb6d0b2852a31949e3",
+      "review": "Modern AT byte fidelity/readiness; legacy response branches retained."
+    },
+    {
+      "path": "cu_esp_at23.inc",
+      "status": "identical",
+      "upstream_sha256": "5e7c40c389804be4897dae99e180bce493606567019e362b0f574665b50952b2",
+      "candidate_sha256": "5e7c40c389804be4897dae99e180bce493606567019e362b0f574665b50952b2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_at_capture.inc",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "36110ca6825a60fcf53736328ed8520aec817c4861c04042bd879205b4386557",
+      "review": "Measured timing table and bounded deterministic selectors; 80 cases/1096 observations."
+    },
+    {
+      "path": "cu_esp_data.c",
+      "status": "identical",
+      "upstream_sha256": "de11704f6c154b727800349503de7741714e844f7f7f124593e226dc293decd0",
+      "candidate_sha256": "de11704f6c154b727800349503de7741714e844f7f7f124593e226dc293decd0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_lan_udp.inc",
+      "status": "identical",
+      "upstream_sha256": "dc1182b39a82264cfa8907d1f6bc5294bb6cf1a932ec83c1fd44e0e1fe8d2130",
+      "candidate_sha256": "dc1182b39a82264cfa8907d1f6bc5294bb6cf1a932ec83c1fd44e0e1fe8d2130",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_mqtt.inc",
+      "status": "identical",
+      "upstream_sha256": "8d8330ddd7d69814dcc2402e412ff28a5f2e0848ea151ab1da65917d10975ec5",
+      "candidate_sha256": "8d8330ddd7d69814dcc2402e412ff28a5f2e0848ea151ab1da65917d10975ec5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_net.c",
+      "status": "modified",
+      "upstream_sha256": "22cb4721d8769e60ab5dae4308c483af0663089e30cafa6a4b9b7de3bb6c7a05",
+      "candidate_sha256": "91ef091e2bb45269d9d5899d9ace981bdeda3adf3ed82c69b131b2d044267fd2",
+      "review": "Winsock exception-ready connection failure handling and hardware-profile jitter policy."
+    },
+    {
+      "path": "cu_esp_rom.c",
+      "status": "identical",
+      "upstream_sha256": "a9db7eaa5d44ba4c54c280471d4c310a3721468601ec74078098824cda7d5e4f",
+      "candidate_sha256": "a9db7eaa5d44ba4c54c280471d4c310a3721468601ec74078098824cda7d5e4f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_rom.h",
+      "status": "identical",
+      "upstream_sha256": "17ccd11e93f26deadc371309cb94fcefa7a3c0f6f6f667d7dbb378e6af6ec16f",
+      "candidate_sha256": "17ccd11e93f26deadc371309cb94fcefa7a3c0f6f6f667d7dbb378e6af6ec16f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_uzenet.c",
+      "status": "modified",
+      "upstream_sha256": "d239a7f875fac8896244bc3980184778517c3689975a816cd0b27cd827c60eab",
+      "candidate_sha256": "255bb249dd125a043ef35741f39ca234f1ec030114f8a8c3c82c7a3cad94ae73",
+      "review": "Retain GPIO entry request while pending stock UART output drains, bounded to 250 ms."
+    },
+    {
+      "path": "cu_esp_uzenet.h",
+      "status": "identical",
+      "upstream_sha256": "599cc880f8a229fc63c0bff35e5997b3f32e9612233b82afb71930538b99d368",
+      "candidate_sha256": "599cc880f8a229fc63c0bff35e5997b3f32e9612233b82afb71930538b99d368",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_esp_uzenet_net.inc",
+      "status": "modified",
+      "upstream_sha256": "ac3e348c4180f6f524290d991d2da6ce2920c598542f188f19b2d82b30106ce3",
+      "candidate_sha256": "1b745c14302b5b5b9d24270515ebc71ab90cc554efb6138be1779ce784e27141",
+      "review": "Opt-in state/error tracing; no traffic keys or ticket logging."
+    },
+    {
+      "path": "cu_gun.c",
+      "status": "identical",
+      "upstream_sha256": "c4f6ef058b1afb862a86715ed3558bbc113d7cbcbff62486f9539b8f8d7fb6be",
+      "candidate_sha256": "c4f6ef058b1afb862a86715ed3558bbc113d7cbcbff62486f9539b8f8d7fb6be",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_gun.h",
+      "status": "identical",
+      "upstream_sha256": "463cda7bb91cd207636e4f991e92246c5ec6c7a3b496c71e1faa4b61d5ce2c97",
+      "candidate_sha256": "463cda7bb91cd207636e4f991e92246c5ec6c7a3b496c71e1faa4b61d5ce2c97",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_haptic.c",
+      "status": "identical",
+      "upstream_sha256": "fdd86b4e1d6d41a8a799583eb082e543d37c70ad13383a56761332cffa025eca",
+      "candidate_sha256": "fdd86b4e1d6d41a8a799583eb082e543d37c70ad13383a56761332cffa025eca",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_haptic.h",
+      "status": "identical",
+      "upstream_sha256": "6a3992b4894a6afb1093d2c94daf8fba66efe4c38b95e62f78a646f555615cf3",
+      "candidate_sha256": "6a3992b4894a6afb1093d2c94daf8fba66efe4c38b95e62f78a646f555615cf3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_hfile.c",
+      "status": "identical",
+      "upstream_sha256": "97e27570ea9a9f805cde51f9c4c2c25606ddc7517b831c261c16909621968f63",
+      "candidate_sha256": "97e27570ea9a9f805cde51f9c4c2c25606ddc7517b831c261c16909621968f63",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_hfile.h",
+      "status": "identical",
+      "upstream_sha256": "3c1f53dd0dcf3fe175b900ae2d8dcb4754f32768804ece8d7d8cbd43bcd0b74f",
+      "candidate_sha256": "3c1f53dd0dcf3fe175b900ae2d8dcb4754f32768804ece8d7d8cbd43bcd0b74f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_hw_features.h",
+      "status": "identical",
+      "upstream_sha256": "c878a4134733cea2c14c3a9e04009da3ad9d2c751a6af6e63306c2cb81553419",
+      "candidate_sha256": "c878a4134733cea2c14c3a9e04009da3ad9d2c751a6af6e63306c2cb81553419",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_kbd.c",
+      "status": "identical",
+      "upstream_sha256": "47a6202c3f28f8684feda609c373685df3a65b1f9d05c3222f464da5a221ce3f",
+      "candidate_sha256": "47a6202c3f28f8684feda609c373685df3a65b1f9d05c3222f464da5a221ce3f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_kbd.h",
+      "status": "identical",
+      "upstream_sha256": "e7f59e708330788f142e8cc2d870b9b68e86e145944701c10ab4f22007b0c9cf",
+      "candidate_sha256": "e7f59e708330788f142e8cc2d870b9b68e86e145944701c10ab4f22007b0c9cf",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_link_net.inc",
+      "status": "identical",
+      "upstream_sha256": "58622f6217195a51c94a101d19563a7bce86c9a9135622e10d46db8634ea183a",
+      "candidate_sha256": "58622f6217195a51c94a101d19563a7bce86c9a9135622e10d46db8634ea183a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_master.c",
+      "status": "identical",
+      "upstream_sha256": "09f7cc13202c33a2c7eb7c24823d3c954531690ca522afe5024628a3b68ec7b8",
+      "candidate_sha256": "09f7cc13202c33a2c7eb7c24823d3c954531690ca522afe5024628a3b68ec7b8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_master.h",
+      "status": "identical",
+      "upstream_sha256": "c4f7f579c750f103b8da1af7ccf92de8dd694455638f0a9a19b37dd4536878e5",
+      "candidate_sha256": "c4f7f579c750f103b8da1af7ccf92de8dd694455638f0a9a19b37dd4536878e5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_mouse.c",
+      "status": "identical",
+      "upstream_sha256": "a26b5143d92d04628d5df0f8fd2863f7ebbd3d87f641b339a1d19a20d55d8aaa",
+      "candidate_sha256": "a26b5143d92d04628d5df0f8fd2863f7ebbd3d87f641b339a1d19a20d55d8aaa",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_mouse.h",
+      "status": "identical",
+      "upstream_sha256": "06b641ac9d55eb4198e174ac0b4b8f59d895ad10df90ca887f76f082cd1749c2",
+      "candidate_sha256": "06b641ac9d55eb4198e174ac0b4b8f59d895ad10df90ca887f76f082cd1749c2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_multitap.c",
+      "status": "identical",
+      "upstream_sha256": "57e70aa17d68a2b17a763bd5b203b34f1d3aba7dbeb96e976a421de0b9964721",
+      "candidate_sha256": "57e70aa17d68a2b17a763bd5b203b34f1d3aba7dbeb96e976a421de0b9964721",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_multitap.h",
+      "status": "identical",
+      "upstream_sha256": "33474d676edbec95cab4fc539dae9031dd33e20bff80347ca314612548e042f5",
+      "candidate_sha256": "33474d676edbec95cab4fc539dae9031dd33e20bff80347ca314612548e042f5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spi.c",
+      "status": "identical",
+      "upstream_sha256": "c0121aa89bf7207c6cd99bf3c20d369c32aff88c31cff21bd8c965e52f8ada38",
+      "candidate_sha256": "c0121aa89bf7207c6cd99bf3c20d369c32aff88c31cff21bd8c965e52f8ada38",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spi.h",
+      "status": "identical",
+      "upstream_sha256": "6f006c12d9a5b17c47a0db5c311e7d464022501978598bee064ae83a7b31c480",
+      "candidate_sha256": "6f006c12d9a5b17c47a0db5c311e7d464022501978598bee064ae83a7b31c480",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spir.c",
+      "status": "identical",
+      "upstream_sha256": "9303689958d8b3d0a3925e3146f90ddc2395c0ae52a80beddddd8e254a51d331",
+      "candidate_sha256": "9303689958d8b3d0a3925e3146f90ddc2395c0ae52a80beddddd8e254a51d331",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spir.h",
+      "status": "identical",
+      "upstream_sha256": "f65a1aa348968e36afa8d2f7ceb7229dc2899bcae0536ba8017f6f0a5ee78e9f",
+      "candidate_sha256": "f65a1aa348968e36afa8d2f7ceb7229dc2899bcae0536ba8017f6f0a5ee78e9f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spisd.c",
+      "status": "identical",
+      "upstream_sha256": "87ad604b36272a1d8dd0be7d9de269b418c88ce8415e9189733e57119570f8f3",
+      "candidate_sha256": "87ad604b36272a1d8dd0be7d9de269b418c88ce8415e9189733e57119570f8f3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_spisd.h",
+      "status": "identical",
+      "upstream_sha256": "5606c7a0316bc2639b2982c8ea4cdba11fc290c7acf8b7086cf2fda8397478e7",
+      "candidate_sha256": "5606c7a0316bc2639b2982c8ea4cdba11fc290c7acf8b7086cf2fda8397478e7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_timer1_clock.h",
+      "status": "identical",
+      "upstream_sha256": "60216ff9d15e316671f2acba053729c41277f6b4103d0241b74d4bc1ced2d66a",
+      "candidate_sha256": "60216ff9d15e316671f2acba053729c41277f6b4103d0241b74d4bc1ced2d66a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_types.h",
+      "status": "identical",
+      "upstream_sha256": "caf29e52373487a983489ae1f96672f5e2da585146c95097054b64666deb017a",
+      "candidate_sha256": "caf29e52373487a983489ae1f96672f5e2da585146c95097054b64666deb017a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_uart.c",
+      "status": "modified",
+      "upstream_sha256": "d631da1da94d972971c7440d1332f93e76ff4a8936b6c5abab0b759cbb81d603",
+      "candidate_sha256": "2fabb3b732f0d6c5d0a46792cb609c0b1715eac8f48fd0646f06bfd4433f6d52",
+      "review": "Anchor device readiness and relative pauses; preserve host-serial/raw-route separation."
+    },
+    {
+      "path": "cu_uart.h",
+      "status": "identical",
+      "upstream_sha256": "e1dd1a915870a1b4994a72ff25a2cf9cf3b07a1a4043a7137d9db63a432f9022",
+      "candidate_sha256": "e1dd1a915870a1b4994a72ff25a2cf9cf3b07a1a4043a7137d9db63a432f9022",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_ufile.c",
+      "status": "identical",
+      "upstream_sha256": "3c3bf5e3e35e062dac803df43278804f06e169dea4dee37c844f14c0c6f65bb5",
+      "candidate_sha256": "3c3bf5e3e35e062dac803df43278804f06e169dea4dee37c844f14c0c6f65bb5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_ufile.h",
+      "status": "identical",
+      "upstream_sha256": "ed17266b30bdbd0da9e0f9b73a3b36ba872be9663cfadb4999cd90c0a47d5b73",
+      "candidate_sha256": "ed17266b30bdbd0da9e0f9b73a3b36ba872be9663cfadb4999cd90c0a47d5b73",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_vdev.c",
+      "status": "identical",
+      "upstream_sha256": "e0b78fc05e7f18d07e8e1d836429a985d6982f1c5f214c2520f1660436aee8b4",
+      "candidate_sha256": "e0b78fc05e7f18d07e8e1d836429a985d6982f1c5f214c2520f1660436aee8b4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_vdev.h",
+      "status": "identical",
+      "upstream_sha256": "c3e24aa1878c78a7c03039f4f0d1f6b533b1867dbbc1fe68a246130cc30cb909",
+      "candidate_sha256": "c3e24aa1878c78a7c03039f4f0d1f6b533b1867dbbc1fe68a246130cc30cb909",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_vfat.c",
+      "status": "identical",
+      "upstream_sha256": "1057b062c2bb0b37c0898f7e2d3e7dbce9a135c8503dde45aabd44d2b7a6ab08",
+      "candidate_sha256": "1057b062c2bb0b37c0898f7e2d3e7dbce9a135c8503dde45aabd44d2b7a6ab08",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cu_vfat.h",
+      "status": "identical",
+      "upstream_sha256": "bfc12709a5608a3084adfccb11fd084067f2210b459a0653696777c93062c23d",
+      "candidate_sha256": "bfc12709a5608a3084adfccb11fd084067f2210b459a0653696777c93062c23d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "cuzebox_minimal.html",
+      "status": "identical",
+      "upstream_sha256": "d1e10b5827ec3fcbabf76cb1c55f78fc09ad3b17431abbb115b077a96d502322",
+      "candidate_sha256": "d1e10b5827ec3fcbabf76cb1c55f78fc09ad3b17431abbb115b077a96d502322",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_dwarf.c",
+      "status": "identical",
+      "upstream_sha256": "d3d175a7a6d45e515f140abce61c398d7adf27730d3a60bd77dc58831690dccf",
+      "candidate_sha256": "d3d175a7a6d45e515f140abce61c398d7adf27730d3a60bd77dc58831690dccf",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_dwarf.h",
+      "status": "identical",
+      "upstream_sha256": "dbf73015e666c20b72ff247276d3eda30be1d368d4c82d9aa1762d0255ec6e61",
+      "candidate_sha256": "dbf73015e666c20b72ff247276d3eda30be1d368d4c82d9aa1762d0255ec6e61",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_sd_fs_history.c",
+      "status": "identical",
+      "upstream_sha256": "6542d7f84661ada41de045dbe9aae2180293b11ff27d7fd32acacb1b751eae9e",
+      "candidate_sha256": "6542d7f84661ada41de045dbe9aae2180293b11ff27d7fd32acacb1b751eae9e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_sd_fs_history.h",
+      "status": "identical",
+      "upstream_sha256": "e55ac0886bda596dc6205f427564154c057e388aaa0996eef49f4bb78e41e0c5",
+      "candidate_sha256": "e55ac0886bda596dc6205f427564154c057e388aaa0996eef49f4bb78e41e0c5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_sd_timing_analysis.c",
+      "status": "identical",
+      "upstream_sha256": "791af0f5d1e41cd0a550cb1782d7ab44838d214b379b330737ee191ca8e07c13",
+      "candidate_sha256": "791af0f5d1e41cd0a550cb1782d7ab44838d214b379b330737ee191ca8e07c13",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_sd_timing_analysis.h",
+      "status": "identical",
+      "upstream_sha256": "c19edd71a023a3601c566fea63ac19dfe6e3ee379e9c2d0202ada04632955a57",
+      "candidate_sha256": "c19edd71a023a3601c566fea63ac19dfe6e3ee379e9c2d0202ada04632955a57",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_source.c",
+      "status": "identical",
+      "upstream_sha256": "4ec4e0bb587974b2ec97d19f2027dd9f3fbce660b29282aad7f74cdb763a69f4",
+      "candidate_sha256": "4ec4e0bb587974b2ec97d19f2027dd9f3fbce660b29282aad7f74cdb763a69f4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_source.h",
+      "status": "identical",
+      "upstream_sha256": "0d19743ae110d52933f192f7ce5d46b36ce71ab0b621aedfcc1e3b840310e362",
+      "candidate_sha256": "0d19743ae110d52933f192f7ce5d46b36ce71ab0b621aedfcc1e3b840310e362",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_timing.c",
+      "status": "identical",
+      "upstream_sha256": "a74492965259effe27a1be603f00cfe4c0fc987dae160004934b80088508e002",
+      "candidate_sha256": "a74492965259effe27a1be603f00cfe4c0fc987dae160004934b80088508e002",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "debug_timing.h",
+      "status": "identical",
+      "upstream_sha256": "56427602204c1ac8afe7fc0de644723e2eb2e1a1136d76c954997e7c3b2e88b4",
+      "candidate_sha256": "56427602204c1ac8afe7fc0de644723e2eb2e1a1136d76c954997e7c3b2e88b4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "diagnostics.c",
+      "status": "identical",
+      "upstream_sha256": "289dbe31c675038105bfee8240892308960a6ea5b0ff27da85574d89d7297c65",
+      "candidate_sha256": "289dbe31c675038105bfee8240892308960a6ea5b0ff27da85574d89d7297c65",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "diagnostics.h",
+      "status": "identical",
+      "upstream_sha256": "27494476e8cc72affd531e240ab01c770f6f0556cb84113e45cfc289c3869ca7",
+      "candidate_sha256": "27494476e8cc72affd531e240ab01c770f6f0556cb84113e45cfc289c3869ca7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-breakpoints.md",
+      "status": "identical",
+      "upstream_sha256": "667e0c2ca479489d3fd608261a415699c07eaf34388f79a3dbe601cbd20b6535",
+      "candidate_sha256": "667e0c2ca479489d3fd608261a415699c07eaf34388f79a3dbe601cbd20b6535",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-memory-scans.md",
+      "status": "identical",
+      "upstream_sha256": "f76fc04cf0abacb0995dcec920c96f299026d5515e8a8b7ba32b61dcf89c397b",
+      "candidate_sha256": "f76fc04cf0abacb0995dcec920c96f299026d5515e8a8b7ba32b61dcf89c397b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-memory-snapshots.md",
+      "status": "identical",
+      "upstream_sha256": "1c484880aa02f9b890239c32a41ef0ca9d1d88cb0ce7aef5810414a94392e8d7",
+      "candidate_sha256": "1c484880aa02f9b890239c32a41ef0ca9d1d88cb0ce7aef5810414a94392e8d7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-profiler.md",
+      "status": "identical",
+      "upstream_sha256": "c9053cac3ba131025966719d12a057309460ec7bb6bb64ecd0cd0c81bf173472",
+      "candidate_sha256": "c9053cac3ba131025966719d12a057309460ec7bb6bb64ecd0cd0c81bf173472",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-run-control.md",
+      "status": "identical",
+      "upstream_sha256": "4e01f6e33c6f5ace66c6cc602dd9d740a75995df32b2f01a178be2c98cf73992",
+      "candidate_sha256": "4e01f6e33c6f5ace66c6cc602dd9d740a75995df32b2f01a178be2c98cf73992",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-stack.md",
+      "status": "identical",
+      "upstream_sha256": "a6fb290ca26acc080c9c7c23d191cd2184f9acdfaec305293e3948eee0e5e2a0",
+      "candidate_sha256": "a6fb290ca26acc080c9c7c23d191cd2184f9acdfaec305293e3948eee0e5e2a0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api-watchpoints.md",
+      "status": "identical",
+      "upstream_sha256": "4b21bde8e3490313b3ff3ded46ee44b2fc0dd386238d27b73fa2b1cff977a5d1",
+      "candidate_sha256": "4b21bde8e3490313b3ff3ded46ee44b2fc0dd386238d27b73fa2b1cff977a5d1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api/commands.md",
+      "status": "modified",
+      "upstream_sha256": "d85904bf622e406ef817f03d00832bd77d3a31e272b18858a5cf66a9ed865e20",
+      "candidate_sha256": "7ef83060ee587b8617f9e274fbf7ee23a26c1e82d6d2993fddcd708d934f33a4",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/api/index.md",
+      "status": "identical",
+      "upstream_sha256": "8ac9b2a7b752498f5578f959f887d2cce1d68113877b58465ede64ee88498f8d",
+      "candidate_sha256": "8ac9b2a7b752498f5578f959f887d2cce1d68113877b58465ede64ee88498f8d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/api/testing.md",
+      "status": "identical",
+      "upstream_sha256": "363ea6dc1b7bfbcf7763ce9fbef4b74de797c11f828bf16f8678cf42a83562de",
+      "candidate_sha256": "363ea6dc1b7bfbcf7763ce9fbef4b74de797c11f828bf16f8678cf42a83562de",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/assets/images/.gitkeep",
+      "status": "identical",
+      "upstream_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "candidate_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/avr-hardware-options.md",
+      "status": "modified",
+      "upstream_sha256": "628d72ab1f46f27ede499b517ec61b0c188bd8d8be73b71513a93105d4b480ad",
+      "candidate_sha256": "a9aa769a0ed126191c8055f441eb2ab0c32d07cfec907e0106db5e4bc31d2b7b",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/building.md",
+      "status": "identical",
+      "upstream_sha256": "a3af669e9705d1744d16e0bb8a136192001ef87db01bd8acd6a431b297169616",
+      "candidate_sha256": "a3af669e9705d1744d16e0bb8a136192001ef87db01bd8acd6a431b297169616",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/cheats.md",
+      "status": "identical",
+      "upstream_sha256": "badc709bfcb6d46b5d78aab90ec4285b8768d51e5efbb6ae4291ae605a9b00d7",
+      "candidate_sha256": "badc709bfcb6d46b5d78aab90ec4285b8768d51e5efbb6ae4291ae605a9b00d7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/codebase-review-2026-10-15.md",
+      "status": "identical",
+      "upstream_sha256": "4751c382838547d5f46eb86dd17ad9af14162bada93271abfe34680faf1a9120",
+      "candidate_sha256": "4751c382838547d5f46eb86dd17ad9af14162bada93271abfe34680faf1a9120",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/controller-mapping.md",
+      "status": "identical",
+      "upstream_sha256": "e34a2488faf9ebb1e6f3de72f6ebcea70f4745a9873707a0768effd84fbc50cc",
+      "candidate_sha256": "e34a2488faf9ebb1e6f3de72f6ebcea70f4745a9873707a0768effd84fbc50cc",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/debugger.md",
+      "status": "identical",
+      "upstream_sha256": "f2ff5b295a1273bc4776cb34285e5033c86fe3339fde7f5fe7e8a1fd4671e044",
+      "candidate_sha256": "f2ff5b295a1273bc4776cb34285e5033c86fe3339fde7f5fe7e8a1fd4671e044",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/emscripten.md",
+      "status": "identical",
+      "upstream_sha256": "878e301c342d3a39ab0371714a08c0db77bea42fafbb25b14b63a1608cf14740",
+      "candidate_sha256": "878e301c342d3a39ab0371714a08c0db77bea42fafbb25b14b63a1608cf14740",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/emulator-speed-hints.md",
+      "status": "identical",
+      "upstream_sha256": "e212ff0a5c7b8ff59f8ce798b48f40761abe38c9593e8cc12b261c129aacedd6",
+      "candidate_sha256": "e212ff0a5c7b8ff59f8ce798b48f40761abe38c9593e8cc12b261c129aacedd6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/esp-rom-loader.md",
+      "status": "identical",
+      "upstream_sha256": "a03547393d50a1e3aaa0442fae47e710e40e0b926b831966d543f374b311b0f6",
+      "candidate_sha256": "a03547393d50a1e3aaa0442fae47e710e40e0b926b831966d543f374b311b0f6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/esp8266-emulation.md",
+      "status": "modified",
+      "upstream_sha256": "36668705bcc3d7ff911419f99e52a902e92bdd14720d2e513e56890648d94c12",
+      "candidate_sha256": "2dea76e420ce71c5479e79b72d59c1b255f6ad490bdb39b077b6d1fc1ac46c53",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/game-test-advanced.md",
+      "status": "identical",
+      "upstream_sha256": "74ff782d20e9d74005af4fb19c26505f744f842465f349ae9f16e029cc31d052",
+      "candidate_sha256": "74ff782d20e9d74005af4fb19c26505f744f842465f349ae9f16e029cc31d052",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/game-test-manifests.md",
+      "status": "identical",
+      "upstream_sha256": "41db7839eb2b9c05aa4d46d21c45ed8d92c70d3b936e621d50071e6b1e045eb1",
+      "candidate_sha256": "41db7839eb2b9c05aa4d46d21c45ed8d92c70d3b936e621d50071e6b1e045eb1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/github-comparison-2026-10-15.md",
+      "status": "identical",
+      "upstream_sha256": "720097bc3b8b155089ee30770ec540d7fcf985db6e85de69fe3c1b0e6ecde89c",
+      "candidate_sha256": "720097bc3b8b155089ee30770ec540d7fcf985db6e85de69fe3c1b0e6ecde89c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/handhelds-rgb30.md",
+      "status": "identical",
+      "upstream_sha256": "8ca81ae5024b72564b044fc8b9e01e3464a2d527ea4f52629ea0f2d1a3f6f622",
+      "candidate_sha256": "8ca81ae5024b72564b044fc8b9e01e3464a2d527ea4f52629ea0f2d1a3f6f622",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/hardware-diagnostics.md",
+      "status": "identical",
+      "upstream_sha256": "39e4f1fc8fa42d389c0456556bfefece877d861f569e31db3b20a9e469e425de",
+      "candidate_sha256": "39e4f1fc8fa42d389c0456556bfefece877d861f569e31db3b20a9e469e425de",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/hex-hints.md",
+      "status": "identical",
+      "upstream_sha256": "ca48c2f2c3abe8b14edbd3935e02707d6a5a7836bca1f27962a7a3417a4046dc",
+      "candidate_sha256": "ca48c2f2c3abe8b14edbd3935e02707d6a5a7836bca1f27962a7a3417a4046dc",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/index.md",
+      "status": "identical",
+      "upstream_sha256": "393d8fd144901f56728cb295495ea3a9e4b62c3aeda2d73805c65af71138dbac",
+      "candidate_sha256": "393d8fd144901f56728cb295495ea3a9e4b62c3aeda2d73805c65af71138dbac",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/input-capture-modes.md",
+      "status": "identical",
+      "upstream_sha256": "de4d9f3ccd27b7211d21fdf76d282c4b13534e190776ba894919556e588295df",
+      "candidate_sha256": "de4d9f3ccd27b7211d21fdf76d282c4b13534e190776ba894919556e588295df",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/input-files.md",
+      "status": "identical",
+      "upstream_sha256": "d99a84426e2b4189d976e75f9995fb5246555534d03a96c94bb2d9da1abb8346",
+      "candidate_sha256": "d99a84426e2b4189d976e75f9995fb5246555534d03a96c94bb2d9da1abb8346",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/input-movie-format.md",
+      "status": "identical",
+      "upstream_sha256": "39799f134025fe571457c8bf9f0b2e915b5e1a8025aaa19c633f9ed7b3bd3e9c",
+      "candidate_sha256": "39799f134025fe571457c8bf9f0b2e915b5e1a8025aaa19c633f9ed7b3bd3e9c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/input-topology.md",
+      "status": "identical",
+      "upstream_sha256": "cda19b9e170ddab68372c73f719df89eafcc7c178b1c72862f859dd871652326",
+      "candidate_sha256": "cda19b9e170ddab68372c73f719df89eafcc7c178b1c72862f859dd871652326",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/logging.md",
+      "status": "identical",
+      "upstream_sha256": "799f631fc286e8a7ad8bc969ded871422b36edae25e376d0d5768089850eea04",
+      "candidate_sha256": "799f631fc286e8a7ad8bc969ded871422b36edae25e376d0d5768089850eea04",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/logical-development-tests.md",
+      "status": "identical",
+      "upstream_sha256": "41e8fed8621639a835f7882626d488ff786e1977dd26d5b9a5c7519999c62e44",
+      "candidate_sha256": "41e8fed8621639a835f7882626d488ff786e1977dd26d5b9a5c7519999c62e44",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/netplay.md",
+      "status": "identical",
+      "upstream_sha256": "a61969587f5ebe36f618476252bbb000e0e48977696d4d2394143f9b2f7467c7",
+      "candidate_sha256": "a61969587f5ebe36f618476252bbb000e0e48977696d4d2394143f9b2f7467c7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/overview.md",
+      "status": "identical",
+      "upstream_sha256": "65ea9cf0b0806889bc7c784466a085e5832a097b28fb36b902e2f09644569586",
+      "candidate_sha256": "65ea9cf0b0806889bc7c784466a085e5832a097b28fb36b902e2f09644569586",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/pinc-timing-fix.patch",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "883fcba7001f358a576d80ab490804ce4dde21481639b1c3fe4a02e5896dc846",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/preference-persistence.md",
+      "status": "modified",
+      "upstream_sha256": "3a730a86ee294031b2f9b6b71b62ec77dfef69736de450a8f10701f55c5b8dad",
+      "candidate_sha256": "56cbf64533b27e98d7fddd40b782acca4260dc81e045e86c5974f3d7282d33b1",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/release-validation-20261022.md",
+      "status": "identical",
+      "upstream_sha256": "c3bfad447d45be7ef291ac65f36244facb1b3096bbba10685b2471b108b91b8b",
+      "candidate_sha256": "c3bfad447d45be7ef291ac65f36244facb1b3096bbba10685b2471b108b91b8b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/releases.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "16e93666c9f2c6a76f74ad4e1eca78984e1b363745c93873c4c33461f8cb5b1c",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/save-state-path-fix.patch",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "c4d5e70fcdeaa75d6bba156acae6012dce5514a02bab039cd7526a287d4052b3",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/README.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "e4acdb38a74146c68b5fb44261985703b1cbc6a249c27bfd6858bada92ac1353",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/artifact-hashes.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "56e9797befa5efcdcfa03f8928bd8b0e4d4f96a03cd202da522e6fd577580864",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/cycle.png",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "7b2176c3306bc2d3c3847f05726dc26843f539dfd95be9e968fa942f9013ff06",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/linux-api-result.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "abc73ed0b2d6f06b63b0889aa6fa1bb3aaa3e486263b80b055fd135c38e8004d",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/linux-tests.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "5970f44476582a1dbba8d5db097ad9e70f92b286d9e9748d42e5e061a71790e0",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/native-api-result.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "abc73ed0b2d6f06b63b0889aa6fa1bb3aaa3e486263b80b055fd135c38e8004d",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/native-tests.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "47e8fadee8094233ea2c163eefb2210e6fa63293ad942af6bc21bfe9a25ec2fa",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/screenshot-cycles.patch",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "594b92145c5c92a5c74da1a4d0e4739b4515936119b48eaa096bde16f1ac15be",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/screenshots.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "84372d256f446a833be0c885477817994097a7f7462baa51cd6be570a7ae087c",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/source-manifest.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "296b646e9c8dcdca490efbd560acc2a561b0eb82f11fb0da5cddbb2fe7c98385",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/width-160.png",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "43d111d75b9761bfae6a28546de6df87b360971d2e25344c786a46601a258a42",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/width-192.png",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "134d54c5726b2e45e4a461864e0bc0dd506ca4595062b638c74dc572dafbac7f",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/width-240.png",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "7a96466e19f9a71960e3be9e802bbe56f5cab66fc6654635159545bcfdc870c8",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshot-cycle-handoff/width-256.png",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "096b15799ae84b5ce75cd27aaef092e170e4bd9ed0426c8a5f800bb5f0179acc",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/screenshots.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "0c82bcdff6caf0e8cfc9da396a77997b83113591f8cb9718bfce4944e83d01b4",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/serial.md",
+      "status": "modified",
+      "upstream_sha256": "aab72fba4a99c540805666a9a67e2fdb079d48c2e12cc1bf8bf87818c01c49ff",
+      "candidate_sha256": "3927df598fe27892265b917ee2e13926bed7393e362ad03c8b2527183749b997",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/shortcuts.md",
+      "status": "identical",
+      "upstream_sha256": "202929c0e95eb19ccad5f2ed05e8d5aedded394ca5132d023a54e4880aca3088",
+      "candidate_sha256": "202929c0e95eb19ccad5f2ed05e8d5aedded394ca5132d023a54e4880aca3088",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/sound.md",
+      "status": "identical",
+      "upstream_sha256": "0a3fa7223a326cb922f00e0383184110d9174eeca6260cef238de2c6d9f73860",
+      "candidate_sha256": "0a3fa7223a326cb922f00e0383184110d9174eeca6260cef238de2c6d9f73860",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/spiram.md",
+      "status": "identical",
+      "upstream_sha256": "54d0ebfdb39285eb6e353543900772786131721b4ce814d01a8ed5d44bbeb859",
+      "candidate_sha256": "54d0ebfdb39285eb6e353543900772786131721b4ce814d01a8ed5d44bbeb859",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/timer1.md",
+      "status": "modified",
+      "upstream_sha256": "487c9e924043d74624382fe874fffcb37470b50ac3d486ad8656775a56fec4de",
+      "candidate_sha256": "662e1b49ba68cc86f305f2b8d940d364a1c10a30a133c343d9bde191a48d7507",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/PERFORMANCE.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "a3432a8397f2680620774ea3b9db3a890b26596aef7fc0f346f3ca53bdaf5492",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/README.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "231fb069c8b0ba0e983bf3253bfb6deea315438f00d051ca37817d9c4a9a2c60",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/VALIDATION.txt",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "98bf38264ad3bdb3effbe992e4d27f70a6f9146fe4c7eefe496ae3ee38dbfcef",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/manifest.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "7ed4c8d4dc5b050309ac59dc02a8da7df55119e9176e129088ec3094b5be2b69",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/performance.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "a93dafb94078e461004255694ca0be98739f6f3215df00f1a6d27dfd55432d57",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uart-txc-handoff/uart-txc-timer.patch",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "c62e9b4db2247f675668412d4241771afaf23ed5b45ff75f20266c456a27bdf0",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/uze-uart-metadata.md",
+      "status": "identical",
+      "upstream_sha256": "5de13b41aa8ad5786fda409b035d9c56e9a319c408e0e5a0a2637dbcacf05e19",
+      "candidate_sha256": "5de13b41aa8ad5786fda409b035d9c56e9a319c408e0e5a0a2637dbcacf05e19",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/uzenet-firmware.md",
+      "status": "identical",
+      "upstream_sha256": "ccbebefdd1fbc0efb57fa23b64adc76930517b0edf5e7ab53b491c958d6ee459",
+      "candidate_sha256": "ccbebefdd1fbc0efb57fa23b64adc76930517b0edf5e7ab53b491c958d6ee459",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/uzenet-local-testing.md",
+      "status": "identical",
+      "upstream_sha256": "90f1e0f9ef3e05ccd60b574326a6ded11cfa5b910498477448f9b7035d363459",
+      "candidate_sha256": "90f1e0f9ef3e05ccd60b574326a6ded11cfa5b910498477448f9b7035d363459",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/validation.md",
+      "status": "identical",
+      "upstream_sha256": "76aa12aa37c99430583990be838a0dc1c71c25f88205c21291a1721015509b64",
+      "candidate_sha256": "76aa12aa37c99430583990be838a0dc1c71c25f88205c21291a1721015509b64",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/video-filters.md",
+      "status": "identical",
+      "upstream_sha256": "b1d3ecb00f7880477f1d71ff77023f3a39201d4aaf6cfcf22985505f59b40488",
+      "candidate_sha256": "b1d3ecb00f7880477f1d71ff77023f3a39201d4aaf6cfcf22985505f59b40488",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/video-omit-messages.patch",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "8d22fe7486ef3e92f205159d564776e121b0bb601338cc765999afdca0232196",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "documentation/web-debugger.md",
+      "status": "identical",
+      "upstream_sha256": "999c9d71fbdf6591df75e370b50010996595af45846765bd88661f8a15fcced9",
+      "candidate_sha256": "999c9d71fbdf6591df75e370b50010996595af45846765bd88661f8a15fcced9",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "eepdump.c",
+      "status": "identical",
+      "upstream_sha256": "2774ff6e2fe45b78ace350c9b5420720f21456d0b71d2cda25d53f479fd961b0",
+      "candidate_sha256": "2774ff6e2fe45b78ace350c9b5420720f21456d0b71d2cda25d53f479fd961b0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "eepdump.h",
+      "status": "identical",
+      "upstream_sha256": "6e10ab5459c4d7a6ef66368c4d0608065d54eea0d4c1bb7516f3cb28e5665b77",
+      "candidate_sha256": "6e10ab5459c4d7a6ef66368c4d0608065d54eea0d4c1bb7516f3cb28e5665b77",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "extras/cuzebox_hex_hints.h",
+      "status": "identical",
+      "upstream_sha256": "dd2896ab298c6837e5c63eaada9987173aa46201a72a92d97aae9bcc9a4e140f",
+      "candidate_sha256": "dd2896ab298c6837e5c63eaada9987173aa46201a72a92d97aae9bcc9a4e140f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "filesmin.c",
+      "status": "identical",
+      "upstream_sha256": "f8162c2ccce5b7881da4903e122a5ac3ab4d8c3ab0195c5fadae1feb3254b60f",
+      "candidate_sha256": "f8162c2ccce5b7881da4903e122a5ac3ab4d8c3ab0195c5fadae1feb3254b60f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "filesys.c",
+      "status": "identical",
+      "upstream_sha256": "a5b0a51f42ceeb0c048f26e570f2805519a5eeda9d7eadc79897f820ff60f1ed",
+      "candidate_sha256": "a5b0a51f42ceeb0c048f26e570f2805519a5eeda9d7eadc79897f820ff60f1ed",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "filesys.h",
+      "status": "identical",
+      "upstream_sha256": "ca96b9147f25169cf1d81144104dc93e3cc96095c7fcbc3ff0439e1e2a098340",
+      "candidate_sha256": "ca96b9147f25169cf1d81144104dc93e3cc96095c7fcbc3ff0439e1e2a098340",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "filters.c",
+      "status": "identical",
+      "upstream_sha256": "672a7efc7ed530f1e6fce08a8269d230c5d13daf855310417606e9df98a41967",
+      "candidate_sha256": "672a7efc7ed530f1e6fce08a8269d230c5d13daf855310417606e9df98a41967",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "filters.h",
+      "status": "identical",
+      "upstream_sha256": "f05de90211de72a72e098741d8760e110a740676fb153313ac70246738e1014b",
+      "candidate_sha256": "f05de90211de72a72e098741d8760e110a740676fb153313ac70246738e1014b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "frame.c",
+      "status": "modified",
+      "upstream_sha256": "69d46fd98d667d1b9998ba04a2c72acf8ceef069bc4dcbaa658a5def44066728",
+      "candidate_sha256": "8e045b1f46833a8457e4442b7c25112ad413c13ef4b08a0e5bbde71104fd1fda",
+      "review": "Cycle-domain screenshot cache; stage recording before messages; existing display path retained."
+    },
+    {
+      "path": "frame.h",
+      "status": "modified",
+      "upstream_sha256": "ab355aa1910cab982d43563c82bff5ddc5d37869f5d737fa60f5eb04d081b0ce",
+      "candidate_sha256": "00fb4799ed4f2a8fc163da1e11ccef82f5ca99cf850c6a5175d27f44f7bbf4fe",
+      "review": "Add capture interface without removing prior exports."
+    },
+    {
+      "path": "gamefile.h",
+      "status": "identical",
+      "upstream_sha256": "6587e85eec8107c5d747a137ebaf817b13c63e46f2318d11424bdc051b487656",
+      "candidate_sha256": "6587e85eec8107c5d747a137ebaf817b13c63e46f2318d11424bdc051b487656",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "ginput.c",
+      "status": "identical",
+      "upstream_sha256": "8ba05cc0766585020a4c71339d2f09e833bfc73d1051396ae1cf570e931a35c8",
+      "candidate_sha256": "8ba05cc0766585020a4c71339d2f09e833bfc73d1051396ae1cf570e931a35c8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "ginput.h",
+      "status": "identical",
+      "upstream_sha256": "43d6d396245b27ec696f3b05633f1ab031559d8623f01967c7eed4892e5503a2",
+      "candidate_sha256": "43d6d396245b27ec696f3b05633f1ab031559d8623f01967c7eed4892e5503a2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "guicore.c",
+      "status": "modified",
+      "upstream_sha256": "b3adcfad112e023d006deff66d1bae60d2d4c0716740a3bc0ec41658b8f9e22e",
+      "candidate_sha256": "706e357f310b676c36176b200801c89dee5d19afb0b95217dee1c2ad1f62fb11",
+      "review": "Tight game-content crop for filtered captures; legacy BMP path retained."
+    },
+    {
+      "path": "guicore.h",
+      "status": "identical",
+      "upstream_sha256": "657d89c731830f97dee8ccfff37ac32dcfc83e6f774b001de71f76de61785de9",
+      "candidate_sha256": "657d89c731830f97dee8ccfff37ac32dcfc83e6f774b001de71f76de61785de9",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "icon.ico",
+      "status": "identical",
+      "upstream_sha256": "3a765968953d6d43f9d2efe59dc379eb33100c6fc6bf932080acbb37f4b05e56",
+      "candidate_sha256": "3a765968953d6d43f9d2efe59dc379eb33100c6fc6bf932080acbb37f4b05e56",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "icon.png",
+      "status": "identical",
+      "upstream_sha256": "d644811c98cf0c765ac019284b9f8502a8b9044af81729fbb12e427eef0bbc4e",
+      "candidate_sha256": "d644811c98cf0c765ac019284b9f8502a8b9044af81729fbb12e427eef0bbc4e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "icon.rc",
+      "status": "identical",
+      "upstream_sha256": "a528a29ae9345d7aebf7a122a53a6f321f8f5f5ffcc008b3616c02f4880802a4",
+      "candidate_sha256": "a528a29ae9345d7aebf7a122a53a6f321f8f5f5ffcc008b3616c02f4880802a4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "logical_checkpoint.inc",
+      "status": "identical",
+      "upstream_sha256": "a9a215e63b7e9ccbf82d9e5252b88837e76be68fbcf1a8e9780c22ff8b62641f",
+      "candidate_sha256": "a9a215e63b7e9ccbf82d9e5252b88837e76be68fbcf1a8e9780c22ff8b62641f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "logical_test.c",
+      "status": "identical",
+      "upstream_sha256": "4b4cf83b83f4738e9343e0bad63992790cea6f31a84b15c1d21870559a8b222f",
+      "candidate_sha256": "4b4cf83b83f4738e9343e0bad63992790cea6f31a84b15c1d21870559a8b222f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "logical_test.h",
+      "status": "identical",
+      "upstream_sha256": "1a4038177b3448103170526852815e5491d4e6cd38b4cdb6206c480b73bfe517",
+      "candidate_sha256": "1a4038177b3448103170526852815e5491d4e6cd38b4cdb6206c480b73bfe517",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "main.c",
+      "status": "modified",
+      "upstream_sha256": "d82b4d63c698460bb43204400a160855deb1be19c7da434101d323c9c95cdaef",
+      "candidate_sha256": "c6236740cc3a169eba8ea6828d60522a638bf8bf94bd80de7c6580e89a9a55af",
+      "review": "PNG/settings and writable paths; restore extensionless/non-PNG BMP filename compatibility."
+    },
+    {
+      "path": "mainui.h",
+      "status": "modified",
+      "upstream_sha256": "0d7e4e06628248ac594296c4474512c02ffa86b3bd5a70a69c0ef4a965f2bdd0",
+      "candidate_sha256": "7538e7f582971412a013f3c4d90df8aad3d01d0bd1b64499b2cb2ae6f84b534c",
+      "review": "Add screenshot and omit-message controls; all prior public functions retained."
+    },
+    {
+      "path": "microui/build.sh",
+      "status": "identical",
+      "upstream_sha256": "82fdc5d80e09eb858af0c9be8d1065a57a64dc3ca0c80cb75c2ec7dc51535983",
+      "candidate_sha256": "82fdc5d80e09eb858af0c9be8d1065a57a64dc3ca0c80cb75c2ec7dc51535983",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/microui.c",
+      "status": "identical",
+      "upstream_sha256": "9a9081b70a4ee55b8710db5e21ab3d2204c9612ef4010a74e922d5a37aaa8d20",
+      "candidate_sha256": "9a9081b70a4ee55b8710db5e21ab3d2204c9612ef4010a74e922d5a37aaa8d20",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/microui.h",
+      "status": "identical",
+      "upstream_sha256": "99412a0946bf586fdf7d58defa84662aa504ada0bb13e12a4ae3e23e0285a193",
+      "candidate_sha256": "99412a0946bf586fdf7d58defa84662aa504ada0bb13e12a4ae3e23e0285a193",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_controller_mapping.h",
+      "status": "identical",
+      "upstream_sha256": "b1f1d5ec675b3fce5e6e1357f388e96af51ccc0fc1856f287056ea3ab5651616",
+      "candidate_sha256": "b1f1d5ec675b3fce5e6e1357f388e96af51ccc0fc1856f287056ea3ab5651616",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_data.h",
+      "status": "identical",
+      "upstream_sha256": "a0358fc0a7b21ba3e65dcbe4a2585b7c7a3efbc546a06fabc8ed08b7c3900e4e",
+      "candidate_sha256": "a0358fc0a7b21ba3e65dcbe4a2585b7c7a3efbc546a06fabc8ed08b7c3900e4e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_filedialog.c",
+      "status": "identical",
+      "upstream_sha256": "ffc7122aef8a58a078fa1144d1d8f0c54ff343bc1a443f5741ffbe2e14f0430a",
+      "candidate_sha256": "ffc7122aef8a58a078fa1144d1d8f0c54ff343bc1a443f5741ffbe2e14f0430a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_filedialog.h",
+      "status": "identical",
+      "upstream_sha256": "e994a8eef416b45a0e6e5d8335740d3d75e9223be9f88827eff7450fcd608608",
+      "candidate_sha256": "e994a8eef416b45a0e6e5d8335740d3d75e9223be9f88827eff7450fcd608608",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_integration.c",
+      "status": "modified",
+      "upstream_sha256": "fd59ce2f54b7099b7425544c590ca71b140e290270e142b60090d2fc813b9638",
+      "candidate_sha256": "4c3df07023c7734e9c709b139714905e9cda1152a49ec2f35a583f4ecce354b1",
+      "review": "Screenshot dropdowns and recording checkbox; all existing windows retained."
+    },
+    {
+      "path": "microui/mui_integration.h",
+      "status": "identical",
+      "upstream_sha256": "b44c75b590921ff9f268ce40008159d0d8445fae2ba54b02da0880330edf495a",
+      "candidate_sha256": "b44c75b590921ff9f268ce40008159d0d8445fae2ba54b02da0880330edf495a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "microui/mui_shortcuts.h",
+      "status": "identical",
+      "upstream_sha256": "51125568a2543b41f44f6cadf115b261d8ed353425fc89c7e749f7ccdd0947a7",
+      "candidate_sha256": "51125568a2543b41f44f6cadf115b261d8ed353425fc89c7e749f7ccdd0947a7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "midi.c",
+      "status": "identical",
+      "upstream_sha256": "26174e30a2fe087898e644e2f8470ba33446f336d36f495209723b159ccb2dc6",
+      "candidate_sha256": "26174e30a2fe087898e644e2f8470ba33446f336d36f495209723b159ccb2dc6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "midi.h",
+      "status": "identical",
+      "upstream_sha256": "74b6659faec9f73b216b2bbeb341683929f72eb78db8c031bb966d8c376f577e",
+      "candidate_sha256": "74b6659faec9f73b216b2bbeb341683929f72eb78db8c031bb966d8c376f577e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "mkdocs.yml",
+      "status": "identical",
+      "upstream_sha256": "c2b7fdfb5f74ba987068acb9ed7942493be3b4564d459b2d0140e1a7bafd43ca",
+      "candidate_sha256": "c2b7fdfb5f74ba987068acb9ed7942493be3b4564d459b2d0140e1a7bafd43ca",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "netplay.c",
+      "status": "identical",
+      "upstream_sha256": "147f753cdd5d6647fd3feba16344a488f6ef6bc36823aea015f0a3a75289c9bc",
+      "candidate_sha256": "147f753cdd5d6647fd3feba16344a488f6ef6bc36823aea015f0a3a75289c9bc",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "netplay.h",
+      "status": "identical",
+      "upstream_sha256": "32a4e90b43ffce5ad1a75ce51c31326b989d0c35393e208981a2b2508de54bde",
+      "candidate_sha256": "32a4e90b43ffce5ad1a75ce51c31326b989d0c35393e208981a2b2508de54bde",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "netplay_host.h",
+      "status": "identical",
+      "upstream_sha256": "c47abdd0505beb1ab46eccabb0d2749dcb4a7a5f3a4a56ab5e233b6fdc3f4d73",
+      "candidate_sha256": "c47abdd0505beb1ab46eccabb0d2749dcb4a7a5f3a4a56ab5e233b6fdc3f4d73",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/config.default.cfg",
+      "status": "modified",
+      "upstream_sha256": "7ceb649a983ad709709b277904250c929db476a7ad69fac2e3d1c8eaa131c8c8",
+      "candidate_sha256": "db8114e6b93d6411b24ae7d9b524b97f8f05d77097c96574188e5e3a3c253820",
+      "review": "Explicit distribution API-off default, reversible through existing settings."
+    },
+    {
+      "path": "packaging/cuzebox.desktop",
+      "status": "identical",
+      "upstream_sha256": "9ebc1f90c2f65dc5908b6977607ef83553cb2a5e865d08deeb14ca59ce893266",
+      "candidate_sha256": "9ebc1f90c2f65dc5908b6977607ef83553cb2a5e865d08deeb14ca59ce893266",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/portmaster/CUzeBox.sh",
+      "status": "identical",
+      "upstream_sha256": "2719c21736395e01436047106a4877bf255aa6785b55543bd706e4e861d295ec",
+      "candidate_sha256": "2719c21736395e01436047106a4877bf255aa6785b55543bd706e4e861d295ec",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/portmaster/README-portmaster.md",
+      "status": "identical",
+      "upstream_sha256": "77541388709ba41a347881a1ab2ac7c225d5ec64a5bc25f3cfd426c36f40287b",
+      "candidate_sha256": "77541388709ba41a347881a1ab2ac7c225d5ec64a5bc25f3cfd426c36f40287b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/portmaster/port.json",
+      "status": "identical",
+      "upstream_sha256": "0a954e117b63bcb17dfd7514f0a25dc94d9cea0b73b70ae69934456c109d412e",
+      "candidate_sha256": "0a954e117b63bcb17dfd7514f0a25dc94d9cea0b73b70ae69934456c109d412e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/release/RELEASE-NOTES.md",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "3eadbf6d1c4f06634ce42f54d1b8649faa691a962c8c3a397e831e9d117030ad",
+      "review": "Native release packaging; verified input hashes; draft-only publication; Mac execution remains unverified."
+    },
+    {
+      "path": "packaging/release/build-ffmpeg.sh",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "da89d43f3bf09559bb8e1829a130038e29d72a46697829764c84243b7e6a5a6f",
+      "review": "Native release packaging; verified input hashes; draft-only publication; Mac execution remains unverified."
+    },
+    {
+      "path": "packaging/release/build-windows-ffmpeg.sh",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "5e136e8361820e53ca419409f6160b782ed138a6b3491b0f8951065858bf693e",
+      "review": "Native release packaging; verified input hashes; draft-only publication; Mac execution remains unverified."
+    },
+    {
+      "path": "packaging/release/tools.lock.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "dd17bab1402c92cc256ec2bc893eebdab2c99c21ad693929ac15335f6c920db9",
+      "review": "Native release packaging; verified input hashes; draft-only publication; Mac execution remains unverified."
+    },
+    {
+      "path": "packaging/rocknix/config.cfg",
+      "status": "identical",
+      "upstream_sha256": "516b942053aaea600a6ac0069cdfca97c3f234a6faf32a442fd0cbf4041a0526",
+      "candidate_sha256": "516b942053aaea600a6ac0069cdfca97c3f234a6faf32a442fd0cbf4041a0526",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/rocknix/package.mk.in",
+      "status": "identical",
+      "upstream_sha256": "f5075a814714914c358863c41f195e7f5dea6470fb5c73b5204be33f080613b4",
+      "candidate_sha256": "f5075a814714914c358863c41f195e7f5dea6470fb5c73b5204be33f080613b4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/rocknix/start_cuzebox.sh",
+      "status": "identical",
+      "upstream_sha256": "f3e0b02b7a5c2984f97079d307c08194797871908cf145db834ccb8ec43ad93d",
+      "candidate_sha256": "f3e0b02b7a5c2984f97079d307c08194797871908cf145db834ccb8ec43ad93d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/web/pre.js",
+      "status": "identical",
+      "upstream_sha256": "382a6df6096ed93d118d97239e0985d9cf2fcdd7aa31483c95bc71d6a246a055",
+      "candidate_sha256": "382a6df6096ed93d118d97239e0985d9cf2fcdd7aa31483c95bc71d6a246a055",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "packaging/web/shell.html",
+      "status": "identical",
+      "upstream_sha256": "2bc337974ac51a5be7aa30cfd65d6ba7cdcbc9de42e9d7c59e4f738d4cbbed12",
+      "candidate_sha256": "2bc337974ac51a5be7aa30cfd65d6ba7cdcbc9de42e9d7c59e4f738d4cbbed12",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/README.md",
+      "status": "identical",
+      "upstream_sha256": "b41764bb8c7bbdbfde45ee6df2b9d48f61f122710b62cd44e42a0f1b476d90ad",
+      "candidate_sha256": "b41764bb8c7bbdbfde45ee6df2b9d48f61f122710b62cd44e42a0f1b476d90ad",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/build-rg40xxh.sh",
+      "status": "identical",
+      "upstream_sha256": "1fe7709c611377facf4f326986bf2a879b1833700aeada39db721b96fd0f728a",
+      "candidate_sha256": "1fe7709c611377facf4f326986bf2a879b1833700aeada39db721b96fd0f728a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/common.sh",
+      "status": "identical",
+      "upstream_sha256": "425a20013d7bb25c634d30154eba942ada908a56ec060401ac4a13237dd594b5",
+      "candidate_sha256": "425a20013d7bb25c634d30154eba942ada908a56ec060401ac4a13237dd594b5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/doctor-rg40xxh.sh",
+      "status": "identical",
+      "upstream_sha256": "44c1be581ddcab7e24ba0909641b95e4705321de287c3266ed7ab0867c375a80",
+      "candidate_sha256": "44c1be581ddcab7e24ba0909641b95e4705321de287c3266ed7ab0867c375a80",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/install-wsl-jammy-prereqs.sh",
+      "status": "identical",
+      "upstream_sha256": "dc7582f614546c029bc5230b4afaa1eea4062173d65efdee409e4f72bb73f449",
+      "candidate_sha256": "dc7582f614546c029bc5230b4afaa1eea4062173d65efdee409e4f72bb73f449",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/package-rg40xxh.sh",
+      "status": "identical",
+      "upstream_sha256": "f5a9421bd19acb355130362b3530d413e6528f8f5289cae817e0bd1bdee4fef0",
+      "candidate_sha256": "f5a9421bd19acb355130362b3530d413e6528f8f5289cae817e0bd1bdee4fef0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "portmaster/status-wsl-jammy.sh",
+      "status": "identical",
+      "upstream_sha256": "1569aa3b340e178bd8b155c7d85f7d96eaae7bffda664d3b3a440955547d406e",
+      "candidate_sha256": "1569aa3b340e178bd8b155c7d85f7d96eaae7bffda664d3b3a440955547d406e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "readme.md",
+      "status": "modified",
+      "upstream_sha256": "267df611d15e3d10b59a433d7754cb80197bf1441c1ba56f3830a0f0020ea35b",
+      "candidate_sha256": "ddd0c75e0982403c2ff94a51a100808f6cabe4c1c9c4f0be515b5ac2372876fd",
+      "review": "Documentation or retained validation evidence; no runtime behavior."
+    },
+    {
+      "path": "release-test.sh",
+      "status": "identical",
+      "upstream_sha256": "cfaa410cd1ebf25c8a898d9ecc9e3bae6ded4c7b2dc259c24c74d04f16997ee5",
+      "candidate_sha256": "cfaa410cd1ebf25c8a898d9ecc9e3bae6ded4c7b2dc259c24c74d04f16997ee5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "remote_roms.c",
+      "status": "identical",
+      "upstream_sha256": "798c1bc5f2cabc4328594d74e36f84a2524e16e981ecd453fa62047412acb578",
+      "candidate_sha256": "798c1bc5f2cabc4328594d74e36f84a2524e16e981ecd453fa62047412acb578",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "remote_roms.h",
+      "status": "identical",
+      "upstream_sha256": "260ef8c9c26b02970374be7f7aa2e014359207135b121615377138442562e991",
+      "candidate_sha256": "260ef8c9c26b02970374be7f7aa2e014359207135b121615377138442562e991",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "renderpath.h",
+      "status": "identical",
+      "upstream_sha256": "c9b2cb6ca7cc9869654e3f3045c553507800df52c06b46f30b65b07d0e409922",
+      "candidate_sha256": "c9b2cb6ca7cc9869654e3f3045c553507800df52c06b46f30b65b07d0e409922",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "rollback.c",
+      "status": "identical",
+      "upstream_sha256": "0d7804cf469c4414804206c794e7170d51d174b638e75026b03dddd367b971af",
+      "candidate_sha256": "0d7804cf469c4414804206c794e7170d51d174b638e75026b03dddd367b971af",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "rollback.h",
+      "status": "identical",
+      "upstream_sha256": "b842df1c9f36eade0c42cfdb7be99fe9a0799fcb07fc3652020cdc834e891d4d",
+      "candidate_sha256": "b842df1c9f36eade0c42cfdb7be99fe9a0799fcb07fc3652020cdc834e891d4d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "romdump.c",
+      "status": "identical",
+      "upstream_sha256": "3429963bc577ea498fe2c83762750e85d1fc5aa53965503c2f6c6866aa65e6ce",
+      "candidate_sha256": "3429963bc577ea498fe2c83762750e85d1fc5aa53965503c2f6c6866aa65e6ce",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "romdump.h",
+      "status": "identical",
+      "upstream_sha256": "37425b0805d360abe6d5a96614ba66f763c0f5eca5d1baccf56dc0955df3b0bb",
+      "candidate_sha256": "37425b0805d360abe6d5a96614ba66f763c0f5eca5d1baccf56dc0955df3b0bb",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "runtime_paths.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "c8a699957b1f763016be4ee8099941ed32bd9fa18606ae6da05940f74d9f4981",
+      "review": "Legacy CWD behavior plus portable/user-data modes; preserve edited config/themes and ROM SD roots."
+    },
+    {
+      "path": "savestate.c",
+      "status": "modified",
+      "upstream_sha256": "2769a7d43d8fc8aa0e3b720edcce6da4ed6b353a28af96b396b035759a9e7469",
+      "candidate_sha256": "2833cbab9d183a757de5d75b0bbde41daba1217027fd9f413cf547413f963048",
+      "review": "Direct SavePath writes, read-only slot queries, legacy nested-read fallback; reset stale capture cache."
+    },
+    {
+      "path": "savestate.h",
+      "status": "identical",
+      "upstream_sha256": "1da65ed7f25c69028a4094908e6a2ea2d3e696070ce8d02474abfef04e9b34b2",
+      "candidate_sha256": "1da65ed7f25c69028a4094908e6a2ea2d3e696070ce8d02474abfef04e9b34b2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "screenshot_options.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "7deb5b0fe03b26ab69c671706fdccec38a574b4138bff7e5b9aa5a7c013fd732",
+      "review": "Shared preset/axis/sampling choices; axes independently editable."
+    },
+    {
+      "path": "screenshot_png.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "cb30cc4bda63a15fffd1ea3f3f4cfa6ea26f71577420d8085abd180311037fee",
+      "review": "Bounded dependency-free lossless PNG encoder; independent CRC/DEFLATE/RGB verification."
+    },
+    {
+      "path": "shortcuts.c",
+      "status": "identical",
+      "upstream_sha256": "41afd5f1fcd0e53d784a2c5eda241166803015d0c1a3a0d95732a88fccb47500",
+      "candidate_sha256": "41afd5f1fcd0e53d784a2c5eda241166803015d0c1a3a0d95732a88fccb47500",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "shortcuts.h",
+      "status": "identical",
+      "upstream_sha256": "0998af05b6737743bec193eb19c3d103c98d0f6368af5299b4537492f86ea112",
+      "candidate_sha256": "0998af05b6737743bec193eb19c3d103c98d0f6368af5299b4537492f86ea112",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/eeprom_default_regression.c",
+      "status": "identical",
+      "upstream_sha256": "df2aa1dbd328a7ea7ec1ac7eea92ba97f399ae94061032bdc876e22eca2307fc",
+      "candidate_sha256": "df2aa1dbd328a7ea7ec1ac7eea92ba97f399ae94061032bdc876e22eca2307fc",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/hardware_regression.c",
+      "status": "identical",
+      "upstream_sha256": "a9085a7d742eca98b98316cb5018ee0fbb5e86e35fc3fcb10b54677fe802e8f7",
+      "candidate_sha256": "a9085a7d742eca98b98316cb5018ee0fbb5e86e35fc3fcb10b54677fe802e8f7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/interrupt_regression.c",
+      "status": "modified",
+      "upstream_sha256": "28d9f4098783ebe3b23526aa2f521474057f5380f77aefaff80188d12ccecf0d",
+      "candidate_sha256": "e426033cb63675d3e2f6c0a4afc31230ce9b8fed3503340b70b8ef998cd3a43c",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/bootloader/resident_bootloader_regression.c",
+      "status": "modified",
+      "upstream_sha256": "73ee631a816aa14aa60baa6c02e7745ec812b2fa9322100494401792d259933e",
+      "candidate_sha256": "7f71b2856949c258e3820342ff1fce0896a02c4071c1e19ac0d7d09c052872bc",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/bootloader/rom_loading_regression.c",
+      "status": "identical",
+      "upstream_sha256": "b4788769f94c194c1b20271a1da909fe615d1407dfd0aea5ea12526cb09a0bff",
+      "candidate_sha256": "b4788769f94c194c1b20271a1da909fe615d1407dfd0aea5ea12526cb09a0bff",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/run.sh",
+      "status": "identical",
+      "upstream_sha256": "38626b74517970a3d3766dd023c9b6228ca58eeb83cf87abd14a02632124798e",
+      "candidate_sha256": "38626b74517970a3d3766dd023c9b6228ca58eeb83cf87abd14a02632124798e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/source_step_regression.c",
+      "status": "identical",
+      "upstream_sha256": "e743b2190036e356e679209c92e968b43751f2c8a62b11aa972c248b5fcd49fd",
+      "candidate_sha256": "e743b2190036e356e679209c92e968b43751f2c8a62b11aa972c248b5fcd49fd",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/timer1_cpu_benchmark.c",
+      "status": "identical",
+      "upstream_sha256": "dd9e0dd9261c71d73199eaa8dbb0343ce921a0b1c1f39720a5e0d7d92b935bb3",
+      "candidate_sha256": "dd9e0dd9261c71d73199eaa8dbb0343ce921a0b1c1f39720a5e0d7d92b935bb3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/timer1_regression.c",
+      "status": "identical",
+      "upstream_sha256": "159796c22c13fff03962228522c4f7d3f580a3cb32b8f77e98d6f38a6c734c6f",
+      "candidate_sha256": "159796c22c13fff03962228522c4f7d3f580a3cb32b8f77e98d6f38a6c734c6f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/bootloader/whisper_regression.c",
+      "status": "modified",
+      "upstream_sha256": "b7aeddeb415fd0a107490f29500d91a884ba4cb442e7d1b095a945df7851fcf1",
+      "candidate_sha256": "55bd43cb95832125820024f5d5d77fd4b1b7fd4b7ab997fddd3b82e240deb10d",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/development_regression.c",
+      "status": "identical",
+      "upstream_sha256": "e4f237cfa588ab9a68b2cf79967467a5e1f2e64a98557a02a8fb8f22ec145207",
+      "candidate_sha256": "e4f237cfa588ab9a68b2cf79967467a5e1f2e64a98557a02a8fb8f22ec145207",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/at23_regression.c",
+      "status": "modified",
+      "upstream_sha256": "4fc56d9f16117d4507fb82b80da29424b59659744355ad3e461be1c6ce49cde9",
+      "candidate_sha256": "e906a7792b1ff616e1456a05acc3a35e979c00a7d2a3c03e5f1fbaf3bcdab26e",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/esp_at/hardware_profile_805b233a.json",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "d5eef2d91f6b0415dc91a7dbfdec79b225ac63985ee2458c314ae7d4fe75c3e6",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/esp_at/mqtt_regression.c",
+      "status": "identical",
+      "upstream_sha256": "6e336a285ea6c95ede45d74f6baab08e149af4f5cfcb759ea5459895c3ff8782",
+      "candidate_sha256": "6e336a285ea6c95ede45d74f6baab08e149af4f5cfcb759ea5459895c3ff8782",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/network_regression.c",
+      "status": "identical",
+      "upstream_sha256": "66b7f907fddce9b3693583ef89e29536b3af474e1ccf06ec95083821f3a88a8f",
+      "candidate_sha256": "66b7f907fddce9b3693583ef89e29536b3af474e1ccf06ec95083821f3a88a8f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/rom_at_regression.c",
+      "status": "identical",
+      "upstream_sha256": "fde36d344377747b5862e9fcc8dbea842ea8a7836efcd20b7c9c208b9d530e54",
+      "candidate_sha256": "fde36d344377747b5862e9fcc8dbea842ea8a7836efcd20b7c9c208b9d530e54",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/rom_loader_avr.c",
+      "status": "identical",
+      "upstream_sha256": "a7f90e1835cb7a5377c32552c8dbe9ba400ff806bd59cd561e54d7f18a14d004",
+      "candidate_sha256": "a7f90e1835cb7a5377c32552c8dbe9ba400ff806bd59cd561e54d7f18a14d004",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/rom_loader_regression.c",
+      "status": "identical",
+      "upstream_sha256": "a2c6023f57e2d079755018c3d47ff76d6b3c8e3cbbca10a7e25af6ac7aebc23c",
+      "candidate_sha256": "a2c6023f57e2d079755018c3d47ff76d6b3c8e3cbbca10a7e25af6ac7aebc23c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/rom_pki_regression.c",
+      "status": "identical",
+      "upstream_sha256": "311d7d4691caaa29b48ca00c2c89447726e8ca35ecaf43dbdfe704dd2cfa9b6c",
+      "candidate_sha256": "311d7d4691caaa29b48ca00c2c89447726e8ca35ecaf43dbdfe704dd2cfa9b6c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/run.sh",
+      "status": "identical",
+      "upstream_sha256": "778ae7a4a1fa98bc7f88f2bf2387762ad045de8016435c5bdd7f0700c503cdcb",
+      "candidate_sha256": "778ae7a4a1fa98bc7f88f2bf2387762ad045de8016435c5bdd7f0700c503cdcb",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/esp_at/savestate_legacy_regression.c",
+      "status": "modified",
+      "upstream_sha256": "efe64bb8cda8ccf196b0ff96f2345c9a3fa448d1e09e5f7e8aa8922d9a8def3c",
+      "candidate_sha256": "da8f872ba16b0265638c2e779888f2f8801c8f6dda863886ffb64e2a8535d866",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/esp_at/softap_pair_regression.c",
+      "status": "identical",
+      "upstream_sha256": "970092d624bb824033155b5b48573a482bbda287b0222227f272468cae28588e",
+      "candidate_sha256": "970092d624bb824033155b5b48573a482bbda287b0222227f272468cae28588e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/README.md",
+      "status": "identical",
+      "upstream_sha256": "8e33b49ad3197dc07d79324785b5059adf25d143f7f3e340d93d32f6ec1cc3cb",
+      "candidate_sha256": "8e33b49ad3197dc07d79324785b5059adf25d143f7f3e340d93d32f6ec1cc3cb",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/cheats_regression.c",
+      "status": "identical",
+      "upstream_sha256": "15d3308c4137170935ac018f2966da039e3a395a0a8137052a55747d5cc937a4",
+      "candidate_sha256": "15d3308c4137170935ac018f2966da039e3a395a0a8137052a55747d5cc937a4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/controller_mapping_regression.c",
+      "status": "identical",
+      "upstream_sha256": "5427e830b202b9e37686bb15e665476a58520c95a54d4a6305e4c286066c36c7",
+      "candidate_sha256": "5427e830b202b9e37686bb15e665476a58520c95a54d4a6305e4c286066c36c7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/cycle_screenshot_regression.c",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "3b13b62b0a9cb67d54a1dc5d5ba486542735fc08c01455a4df24b5d9c023b1e3",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/gui/filedialog_regression.c",
+      "status": "identical",
+      "upstream_sha256": "cddb263fe11a67ad69e22676027fbdd809c97c152fc9411b6937b0c1fc0adfd5",
+      "candidate_sha256": "cddb263fe11a67ad69e22676027fbdd809c97c152fc9411b6937b0c1fc0adfd5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/headless_regression.c",
+      "status": "identical",
+      "upstream_sha256": "222b1ed0f2b30577460bcf980d5c700a85adb4c3b132ad4cec8f849e19541fd0",
+      "candidate_sha256": "222b1ed0f2b30577460bcf980d5c700a85adb4c3b132ad4cec8f849e19541fd0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/input_playback_regression.c",
+      "status": "modified",
+      "upstream_sha256": "6be5896291f62eeded3ea5c7eb83d62e76a4642bd3d053106f47d74d855399af",
+      "candidate_sha256": "76a566f4fb95a4a380b084b1ca4fcb8c51d558e6927c4fa6851e52a426d9f6b4",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/gui/interlace_regression.c",
+      "status": "identical",
+      "upstream_sha256": "24adade694922f5a6a91d9ce7675bd621bc97a671a7b216a858cc564e2ce7d07",
+      "candidate_sha256": "24adade694922f5a6a91d9ce7675bd621bc97a671a7b216a858cc564e2ce7d07",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/pointer_regression.c",
+      "status": "identical",
+      "upstream_sha256": "d569533659b348fb3435d1a81296ae50d490785409ab6d9e17f0b4b97be3007f",
+      "candidate_sha256": "d569533659b348fb3435d1a81296ae50d490785409ab6d9e17f0b4b97be3007f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/screenshot_regression.c",
+      "status": "identical",
+      "upstream_sha256": "c8a8f487a529712c6bc4a1cb94a3e84d03036be3e7d4d4b8296565eec329cfc6",
+      "candidate_sha256": "c8a8f487a529712c6bc4a1cb94a3e84d03036be3e7d4d4b8296565eec329cfc6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/screenshot_tool_regression.c",
+      "status": "modified",
+      "upstream_sha256": "d4c635fa68f0cd89b339e32cd840a6837a25cebdc5fe024dc7a38bab847f654e",
+      "candidate_sha256": "8c3729d35fabf64b0490960b43d199f2e008f101b9047a13dc737aaf1467f82f",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/gui/shortcuts_regression.c",
+      "status": "identical",
+      "upstream_sha256": "c51fcf806e04eead678602ae7aa5349a12a51559f0aac3e2879421a29e6984c2",
+      "candidate_sha256": "c51fcf806e04eead678602ae7aa5349a12a51559f0aac3e2879421a29e6984c2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/uzenet_identity_regression.c",
+      "status": "identical",
+      "upstream_sha256": "bfc1f9f3d3581fc5d96e208d98ae62408fd73c481a25cc8bdbe1230f1dd72afa",
+      "candidate_sha256": "bfc1f9f3d3581fc5d96e208d98ae62408fd73c481a25cc8bdbe1230f1dd72afa",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/video_messages_regression.c",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "443629627e801168beb4c62e9413d67e68333cc31374beeeba91b0a6cf10a96e",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/gui/video_settings_regression.c",
+      "status": "identical",
+      "upstream_sha256": "4881ec9b4d4858aa6ef10faf958698c683d75dd717805d1e58b2306aa0e2f1ad",
+      "candidate_sha256": "4881ec9b4d4858aa6ef10faf958698c683d75dd717805d1e58b2306aa0e2f1ad",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/gui/web_source_step_regression.js",
+      "status": "identical",
+      "upstream_sha256": "0c4a254f4b8d257677f969b517eaebfe00ce1a79396ae60ad388854b1de57200",
+      "candidate_sha256": "0c4a254f4b8d257677f969b517eaebfe00ce1a79396ae60ad388854b1de57200",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/input_movie/movie_regression.c",
+      "status": "identical",
+      "upstream_sha256": "099fcda4bdb8495bb4fb8af1a291bbd5d6220936ff138579f52e131816517e3a",
+      "candidate_sha256": "099fcda4bdb8495bb4fb8af1a291bbd5d6220936ff138579f52e131816517e3a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/input_movie/rom_roundtrip.c",
+      "status": "identical",
+      "upstream_sha256": "f3e9d66b7fc620f8afebdca18ed246361cae4b2d0a6e388804946e0539f82111",
+      "candidate_sha256": "f3e9d66b7fc620f8afebdca18ed246361cae4b2d0a6e388804946e0539f82111",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/input_movie/storage_regression.c",
+      "status": "modified",
+      "upstream_sha256": "800da751c3fddcb7ed4aff3ee91974b49f5cb8d72cab894171ead8213f8f7b2a",
+      "candidate_sha256": "eac8c043b82c15d6ff12d6ac8f83aebb5ebf4b6e640b1e68f1cdf8847a381487",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/logical_storage_regression.c",
+      "status": "identical",
+      "upstream_sha256": "2a629c3541d8a83d304e3a5a70ac02bb741844b2aeafd6a6d9b6e18b6e017329",
+      "candidate_sha256": "2a629c3541d8a83d304e3a5a70ac02bb741844b2aeafd6a6d9b6e18b6e017329",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/microui_memory_layout.c",
+      "status": "identical",
+      "upstream_sha256": "e0acc1b8da979e572fbeb230fb2b8a7542d666a0d912477c72303a6cda6158f7",
+      "candidate_sha256": "e0acc1b8da979e572fbeb230fb2b8a7542d666a0d912477c72303a6cda6158f7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/preferences/Makefile",
+      "status": "modified",
+      "upstream_sha256": "84338a4548eed00505ad10ef761c09a316b9b71dc8c3dc484ad42c477f1661e7",
+      "candidate_sha256": "09826cb6e89af29b4c29bafc6b215cb350ef1fcaeb0608c043f387b5f59d0221",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/preferences/README.md",
+      "status": "modified",
+      "upstream_sha256": "ce76c6cdcf0996e6bdadb92ac487746cef92844e52ac28841dee75bde1f08724",
+      "candidate_sha256": "5b20f1e8336424901b901b0beddc41a9cc341a318649052caaf99d7ae560ff82",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/preferences/lean_preferences.c",
+      "status": "identical",
+      "upstream_sha256": "849fd5c26eda6165ca5f850f82d30d04863161ff3fa419bf53e527706399a5ae",
+      "candidate_sha256": "849fd5c26eda6165ca5f850f82d30d04863161ff3fa419bf53e527706399a5ae",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/preferences/preferences_regression.c",
+      "status": "modified",
+      "upstream_sha256": "11ea7ea9b4bc861c261757f394a91622c19186680d973eb12e2be75488e5dfb1",
+      "candidate_sha256": "7c37501bfa5540bad3b9615b26cf38add42563d087126f32ae0c8b87d56fe558",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/sd_write/README.md",
+      "status": "identical",
+      "upstream_sha256": "d9188005bfd4a73762cec7d41c76a4c2e3fc1632c88f37b046901df9f3095fbb",
+      "candidate_sha256": "d9188005bfd4a73762cec7d41c76a4c2e3fc1632c88f37b046901df9f3095fbb",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/sd_write/appended_uze_regression.c",
+      "status": "identical",
+      "upstream_sha256": "099eb83d8b912c72f145a74dbd689c9fe2e3a68fa97c9b59a53e6f3bff74ca48",
+      "candidate_sha256": "099eb83d8b912c72f145a74dbd689c9fe2e3a68fa97c9b59a53e6f3bff74ca48",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/sd_write/nested_regression.c",
+      "status": "identical",
+      "upstream_sha256": "b68f7bf2d7ee0a26413399d6051cde2bc909a85edbe14a01c84e4c211d3ef7e6",
+      "candidate_sha256": "b68f7bf2d7ee0a26413399d6051cde2bc909a85edbe14a01c84e4c211d3ef7e6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/sd_write/run.sh",
+      "status": "identical",
+      "upstream_sha256": "7b374bde090fd6d44ab1e5c7d2a4da8e9cafcb21faef0f6993ac83605efaa08b",
+      "candidate_sha256": "7b374bde090fd6d44ab1e5c7d2a4da8e9cafcb21faef0f6993ac83605efaa08b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/sd_write/sd_write_regression.c",
+      "status": "identical",
+      "upstream_sha256": "fcfb28aac70d72f14fb31d2cac07f087f1952b87225bc4ce9966324cf7e70ff2",
+      "candidate_sha256": "fcfb28aac70d72f14fb31d2cac07f087f1952b87225bc4ce9966324cf7e70ff2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/README.md",
+      "status": "identical",
+      "upstream_sha256": "126f9eb980d78194334b7b47578b1bdb5d9d1cb6c338f7dbfbd4eacee352b965",
+      "candidate_sha256": "126f9eb980d78194334b7b47578b1bdb5d9d1cb6c338f7dbfbd4eacee352b965",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/catacombs_pair_headless.c",
+      "status": "identical",
+      "upstream_sha256": "abf78f001fb467e3e3ad46e0c980eca9088af109f153b87c27c980655189805f",
+      "candidate_sha256": "abf78f001fb467e3e3ad46e0c980eca9088af109f153b87c27c980655189805f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/connect_failure_test.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "06e47a009b1e7e7870a4a9e46c13c50c861e2fcf7daf196a9cd5d085eb29b0fe",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/serial_link/esp_lan_policy_test.c",
+      "status": "identical",
+      "upstream_sha256": "603f9a2f3225749eb4caf09f849e6fb859b4662a18fe78a1a711bb4a99003e9c",
+      "candidate_sha256": "603f9a2f3225749eb4caf09f849e6fb859b4662a18fe78a1a711bb4a99003e9c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/esp_uart_hotpath_test.c",
+      "status": "modified",
+      "upstream_sha256": "5d66531b718194293667e90c891d4b5c6e06cfedcf9ef5c743238410043f35ea",
+      "candidate_sha256": "57a26ff31b40ddef58664b25a7449b49f3d09503a796d02b7cb7e6f606d341c7",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/serial_link/run.sh",
+      "status": "modified",
+      "upstream_sha256": "5f0e510e345848c83eb37763c930f0330ae80a0fe3bd01c1c00d9488457669c2",
+      "candidate_sha256": "8b3acdfb13613083f31fedcc0c17452f5a1f82299de592d94f92f84108a6350f",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/serial_link/run_catacombs_pair.sh",
+      "status": "identical",
+      "upstream_sha256": "690140cd7cb50ffa1c26c2160d483a6d0f5247e4395ac5d69fadcbb1c37816e8",
+      "candidate_sha256": "690140cd7cb50ffa1c26c2160d483a6d0f5247e4395ac5d69fadcbb1c37816e8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/run_link_net_pair.sh",
+      "status": "identical",
+      "upstream_sha256": "bcfdac4124d28f3be8602c7f32c4e183eb961af69d6176983bfc221bad9790ab",
+      "candidate_sha256": "bcfdac4124d28f3be8602c7f32c4e183eb961af69d6176983bfc221bad9790ab",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/run_uart_tcp_pair.sh",
+      "status": "identical",
+      "upstream_sha256": "089039c96f49e0179d515620c40238523c7e7e3b3da5ba95c04032f1d6e508a0",
+      "candidate_sha256": "089039c96f49e0179d515620c40238523c7e7e3b3da5ba95c04032f1d6e508a0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/tcp_serial_async_test.c",
+      "status": "identical",
+      "upstream_sha256": "9b8050393f3f7c17bea45b034dc800b6c885b02338d5122254b4187475a4d2cd",
+      "candidate_sha256": "9b8050393f3f7c17bea45b034dc800b6c885b02338d5122254b4187475a4d2cd",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/tcp_serial_source_audit.py",
+      "status": "identical",
+      "upstream_sha256": "776766a683a7f689eb9254f9f23ec9b1739882f76ebe41c8836a76abeb4839e3",
+      "candidate_sha256": "776766a683a7f689eb9254f9f23ec9b1739882f76ebe41c8836a76abeb4839e3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/uart_core_model_test.c",
+      "status": "identical",
+      "upstream_sha256": "a2f3ffccfed7110cbc43f0c1f0c99414477bbb4b8512305b81d917b37fb09c60",
+      "candidate_sha256": "a2f3ffccfed7110cbc43f0c1f0c99414477bbb4b8512305b81d917b37fb09c60",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/uart_irq_mask_test.py",
+      "status": "identical",
+      "upstream_sha256": "2093e436188a2ddf555d555e5baf0075b462da2e8c354fea6790c3cf40e8efe2",
+      "candidate_sha256": "2093e436188a2ddf555d555e5baf0075b462da2e8c354fea6790c3cf40e8efe2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/uart_passthrough_poll_test.c",
+      "status": "identical",
+      "upstream_sha256": "6475a316d4ab9bee6bd7bd747b3e9ada49d02a980fd9e1373f3550fe14e995e5",
+      "candidate_sha256": "6475a316d4ab9bee6bd7bd747b3e9ada49d02a980fd9e1373f3550fe14e995e5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/uart_tcp_pair_test.c",
+      "status": "identical",
+      "upstream_sha256": "a3d6cabf2c732bb6ba7db67e3e7ee3ca1f054f48a55d216de252e4963cfdc49e",
+      "candidate_sha256": "a3d6cabf2c732bb6ba7db67e3e7ee3ca1f054f48a55d216de252e4963cfdc49e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/serial_link/uart_timing_test.c",
+      "status": "identical",
+      "upstream_sha256": "97662ad800313be61cc2135f949741204d857b52658cc16ba727d16a46d9dc76",
+      "candidate_sha256": "97662ad800313be61cc2135f949741204d857b52658cc16ba727d16a46d9dc76",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/speed_hint_regression.c",
+      "status": "identical",
+      "upstream_sha256": "a0f47011a1bd9225cccdb819b2dd31fe4fe864fc03bc8ec8360595d2dfb24e7c",
+      "candidate_sha256": "a0f47011a1bd9225cccdb819b2dd31fe4fe864fc03bc8ec8360595d2dfb24e7c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/uze_uart/header_test.c",
+      "status": "identical",
+      "upstream_sha256": "026dbf55dec05678356e1a6858a346d3a5ad2e6479e17b873d117fd366b0cf1d",
+      "candidate_sha256": "026dbf55dec05678356e1a6858a346d3a5ad2e6479e17b873d117fd366b0cf1d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/uze_uart/route_hint_test.py",
+      "status": "identical",
+      "upstream_sha256": "00156f36d022bea0ed9c874c1341166c8b411298b84309ff567d28489e78d28c",
+      "candidate_sha256": "00156f36d022bea0ed9c874c1341166c8b411298b84309ff567d28489e78d28c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/uze_uart/test_packrom.py",
+      "status": "identical",
+      "upstream_sha256": "5c644737e5a89e2b7f2baa274771c4f21f8d3fd98ee4abded22604839d40550c",
+      "candidate_sha256": "5c644737e5a89e2b7f2baa274771c4f21f8d3fd98ee4abded22604839d40550c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tests/uzenet/adapter_regression.c",
+      "status": "modified",
+      "upstream_sha256": "01434ef87cf772921334e9847105c591f3af69093f902932d39e1f867607a73c",
+      "candidate_sha256": "54e176885d45cecc4fc96795bebeeddc6ea33e646d367583ff3975047890bf0f",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tests/uzenet/avr_probe.c",
+      "status": "identical",
+      "upstream_sha256": "9002511e54d054b655daed61ee5d41fde854d0a3092b6ebdc7b1cbfcff9c47e8",
+      "candidate_sha256": "9002511e54d054b655daed61ee5d41fde854d0a3092b6ebdc7b1cbfcff9c47e8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "textgui.c",
+      "status": "identical",
+      "upstream_sha256": "055859bd78ea3182afe618add2c13747b93e94fcf924d0bbc0bff4003d7a1b6b",
+      "candidate_sha256": "055859bd78ea3182afe618add2c13747b93e94fcf924d0bbc0bff4003d7a1b6b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "textgui.h",
+      "status": "identical",
+      "upstream_sha256": "2b1d6c32af8cc2c1ec6c6f6d8e64ab15d32793a51182ad07c11364117182717f",
+      "candidate_sha256": "2b1d6c32af8cc2c1ec6c6f6d8e64ab15d32793a51182ad07c11364117182717f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/D3thAdd3r.cfg",
+      "status": "identical",
+      "upstream_sha256": "6015c7831c3a9748fc10c3ccbdf2c1558e75468eff3a9d5ffb6a46dca2b4d510",
+      "candidate_sha256": "6015c7831c3a9748fc10c3ccbdf2c1558e75468eff3a9d5ffb6a46dca2b4d510",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/bootloader.cfg",
+      "status": "identical",
+      "upstream_sha256": "a385077e651ca2491c257c0361d17cc5df600f9cf828357a79ec2d41c7e1729f",
+      "candidate_sha256": "a385077e651ca2491c257c0361d17cc5df600f9cf828357a79ec2d41c7e1729f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/chill.cfg",
+      "status": "identical",
+      "upstream_sha256": "82a29b06a6fde00f11c93e1248afa1081aeb6698e9f2cbb8306354f6824e2382",
+      "candidate_sha256": "82a29b06a6fde00f11c93e1248afa1081aeb6698e9f2cbb8306354f6824e2382",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/crt_amber.cfg",
+      "status": "identical",
+      "upstream_sha256": "ce583f646aebe6a2a1bb30cd2b7398bea5422ab43b7190c560b3d87779b8d17d",
+      "candidate_sha256": "ce583f646aebe6a2a1bb30cd2b7398bea5422ab43b7190c560b3d87779b8d17d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/custom.cfg",
+      "status": "identical",
+      "upstream_sha256": "7fb8c38a25fb4bdd64aeaaf331a8614a945ca3a1d9bfe83984fef9cb00e27cee",
+      "candidate_sha256": "7fb8c38a25fb4bdd64aeaaf331a8614a945ca3a1d9bfe83984fef9cb00e27cee",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/default.txt",
+      "status": "identical",
+      "upstream_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "candidate_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/neutral.cfg",
+      "status": "identical",
+      "upstream_sha256": "4a608f882f3805fea5b35b668ad443d87d469a8a3446524c3c995999790137cd",
+      "candidate_sha256": "4a608f882f3805fea5b35b668ad443d87d469a8a3446524c3c995999790137cd",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/rave.cfg",
+      "status": "identical",
+      "upstream_sha256": "5197d5b0090e2562ed82a93e468417e2a1ff9f8ec3c895a2e1bacd5879b8652d",
+      "candidate_sha256": "5197d5b0090e2562ed82a93e468417e2a1ff9f8ec3c895a2e1bacd5879b8652d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/snow.cfg",
+      "status": "identical",
+      "upstream_sha256": "7d362a6f2506bc564fde7068f3374807746d50539c6386e4bae088511ab34478",
+      "candidate_sha256": "7d362a6f2506bc564fde7068f3374807746d50539c6386e4bae088511ab34478",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/terminal_green.cfg",
+      "status": "identical",
+      "upstream_sha256": "22014aad39908547c120626fb00856185536407a98a88d4eac2e383028a82716",
+      "candidate_sha256": "22014aad39908547c120626fb00856185536407a98a88d4eac2e383028a82716",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "themes/uzebox_classic.cfg",
+      "status": "identical",
+      "upstream_sha256": "0e414232e98ec94d414ea165ca97a5a3cd36429cb50def215c34affbc62cd669",
+      "candidate_sha256": "0e414232e98ec94d414ea165ca97a5a3cd36429cb50def215c34affbc62cd669",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/.gitignore",
+      "status": "identical",
+      "upstream_sha256": "bea5fce7180856aa0fb8a66718a69ba0d599c87c6532847c0ef577ab3ed1bc84",
+      "candidate_sha256": "bea5fce7180856aa0fb8a66718a69ba0d599c87c6532847c0ef577ab3ed1bc84",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/PROVENANCE.md",
+      "status": "identical",
+      "upstream_sha256": "296566f06a4c8fd3ce893172e90239155e22e996ffc4910b80fa5fb8e1318108",
+      "candidate_sha256": "296566f06a4c8fd3ce893172e90239155e22e996ffc4910b80fa5fb8e1318108",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/README.txt",
+      "status": "identical",
+      "upstream_sha256": "a0af9f8576dc61f1fd7d941866cc7d97e81085f8138c6ef74d3b54c6d6e2e7e0",
+      "candidate_sha256": "a0af9f8576dc61f1fd7d941866cc7d97e81085f8138c6ef74d3b54c6d6e2e7e0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/SPI_CRC_FALLBACK_CHANGE.txt",
+      "status": "identical",
+      "upstream_sha256": "a14a1723d33c2262aa0ba1c0f55c3485e8e5ddb89e0d12c4b54861a86ea097c1",
+      "candidate_sha256": "a14a1723d33c2262aa0ba1c0f55c3485e8e5ddb89e0d12c4b54861a86ea097c1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/UART_REMOVAL_CHANGE.txt",
+      "status": "identical",
+      "upstream_sha256": "e596feae333aed97598eec525476d19881b14ec91a5210412dba8c06f32db52e",
+      "candidate_sha256": "e596feae333aed97598eec525476d19881b14ec91a5210412dba8c06f32db52e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/assets/c1bpph.c",
+      "status": "identical",
+      "upstream_sha256": "c38b26fcda5ef6d077c2154771389033af14a3402794e5d824d1c167a78e212c",
+      "candidate_sha256": "c38b26fcda5ef6d077c2154771389033af14a3402794e5d824d1c167a78e212c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/assets/charset.h",
+      "status": "identical",
+      "upstream_sha256": "dce9d4a5d05a9d596581f2958ecf469c410f87074120bb19f291fef65485b622",
+      "candidate_sha256": "dce9d4a5d05a9d596581f2958ecf469c410f87074120bb19f291fef65485b622",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/assets/charset.xcf",
+      "status": "identical",
+      "upstream_sha256": "83a9cede6e9f7458de7ceb960b288c9f07ffdc1305d7a57915d8e0fb2b701856",
+      "candidate_sha256": "83a9cede6e9f7458de7ceb960b288c9f07ffdc1305d7a57915d8e0fb2b701856",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/boot.s",
+      "status": "identical",
+      "upstream_sha256": "fb865417aba8b947c0828e933c655dd9e5f469de21378e695818b1fb5f1499d3",
+      "candidate_sha256": "fb865417aba8b947c0828e933c655dd9e5f469de21378e695818b1fb5f1499d3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/default/Bootloader5.hex",
+      "status": "identical",
+      "upstream_sha256": "be04074bee85f98c6005676a4c4b0d2eeadd442ee55e1d3f9a935b5852ae090a",
+      "candidate_sha256": "be04074bee85f98c6005676a4c4b0d2eeadd442ee55e1d3f9a935b5852ae090a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/default/Makefile",
+      "status": "identical",
+      "upstream_sha256": "706cb451606cd8d56da048f9b7843e638197713e4ed01f3b2924e652b05870f9",
+      "candidate_sha256": "706cb451606cd8d56da048f9b7843e638197713e4ed01f3b2924e652b05870f9",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/dir.s",
+      "status": "identical",
+      "upstream_sha256": "9b28a1fd4027f54cefaed3166317643a294c0e1bdd9d3d11e29ad01cd7f6a186",
+      "candidate_sha256": "9b28a1fd4027f54cefaed3166317643a294c0e1bdd9d3d11e29ad01cd7f6a186",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/game.s",
+      "status": "identical",
+      "upstream_sha256": "520d13e3765bc62a1982acd99c92dc148b7d60d6513f02398c3505b89b9cb39f",
+      "candidate_sha256": "520d13e3765bc62a1982acd99c92dc148b7d60d6513f02398c3505b89b9cb39f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/graphics.s",
+      "status": "identical",
+      "upstream_sha256": "9f1ad7abef58d2c506b909a7dcc8566108148d3a6138f9cc43adb48184eb6dc1",
+      "candidate_sha256": "9f1ad7abef58d2c506b909a7dcc8566108148d3a6138f9cc43adb48184eb6dc1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/README",
+      "status": "identical",
+      "upstream_sha256": "9457e3eb36cfeb1667f769c4c5831c1f75f03e5d2accf0fcbb7125c453e9904c",
+      "candidate_sha256": "9457e3eb36cfeb1667f769c4c5831c1f75f03e5d2accf0fcbb7125c453e9904c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/defines.h",
+      "status": "identical",
+      "upstream_sha256": "d6de7212a840715e05996a943cbb268076794332deb8fbec9f04aaab488109d3",
+      "candidate_sha256": "d6de7212a840715e05996a943cbb268076794332deb8fbec9f04aaab488109d3",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/soundMixerSaw.s",
+      "status": "identical",
+      "upstream_sha256": "fa3d427b7aa7bb54be5af7c8363804c36149579f1523dfa8f7484218ee3fb6fa",
+      "candidate_sha256": "fa3d427b7aa7bb54be5af7c8363804c36149579f1523dfa8f7484218ee3fb6fa",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/uzeboxCore.s",
+      "status": "identical",
+      "upstream_sha256": "b351a0c9209d9583c649ab4ec67de5f046611adf548a0774ba332d6a978f2ba6",
+      "candidate_sha256": "b351a0c9209d9583c649ab4ec67de5f046611adf548a0774ba332d6a978f2ba6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/uzeboxSoundEngineCore.s",
+      "status": "identical",
+      "upstream_sha256": "2c3f4c10fe06d22821b685d56ff3ffbc6ff7dbe4db63cdfc6619c8a7d9881bba",
+      "candidate_sha256": "2c3f4c10fe06d22821b685d56ff3ffbc6ff7dbe4db63cdfc6619c8a7d9881bba",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/uzeboxVideoEngineCore.s",
+      "status": "identical",
+      "upstream_sha256": "b0544e8af03f03b404a03e233e3994fbda3a0349a19225052996df97001e5b38",
+      "candidate_sha256": "b0544e8af03f03b404a03e233e3994fbda3a0349a19225052996df97001e5b38",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/videoMode0/videoMode0.c",
+      "status": "identical",
+      "upstream_sha256": "da4af0c1e74e9ef2aec6b3ce6c986c20691d812874cb6d688ce1b9360be8dc89",
+      "candidate_sha256": "da4af0c1e74e9ef2aec6b3ce6c986c20691d812874cb6d688ce1b9360be8dc89",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/videoMode0/videoMode0.def.h",
+      "status": "identical",
+      "upstream_sha256": "32ca658ddeb678fb7514408bb293e41f9a5f8b017b67924d91e8c345bac90b3f",
+      "candidate_sha256": "32ca658ddeb678fb7514408bb293e41f9a5f8b017b67924d91e8c345bac90b3f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/videoMode0/videoMode0.h",
+      "status": "identical",
+      "upstream_sha256": "ec9e2d7cdeadb4d56a7d56dbd42b3bfa6cd82c3a8ba734cb8f48336b7d139a77",
+      "candidate_sha256": "ec9e2d7cdeadb4d56a7d56dbd42b3bfa6cd82c3a8ba734cb8f48336b7d139a77",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/kernel/videoMode0/videoMode0.s",
+      "status": "identical",
+      "upstream_sha256": "703956754459df54e401dc1811a07ec9fa9196426ce1e7a528b708f36f770110",
+      "candidate_sha256": "703956754459df54e401dc1811a07ec9fa9196426ce1e7a528b708f36f770110",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/prog.s",
+      "status": "identical",
+      "upstream_sha256": "2f5f0e2460a1270b7806884c7939e5434822a0fe66dc4b2a2ff4b9293e9c0b9e",
+      "candidate_sha256": "2f5f0e2460a1270b7806884c7939e5434822a0fe66dc4b2a2ff4b9293e9c0b9e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/proguze.s",
+      "status": "identical",
+      "upstream_sha256": "c8f286346a3008e901ca1a65bc867a49ada53227ab64ff8deb9b67643f10ebe2",
+      "candidate_sha256": "c8f286346a3008e901ca1a65bc867a49ada53227ab64ff8deb9b67643f10ebe2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/res.s",
+      "status": "identical",
+      "upstream_sha256": "43d398abe2c937441b4d8cd696ec984cf10edfd95039234ed779f874f273f8b2",
+      "candidate_sha256": "43d398abe2c937441b4d8cd696ec984cf10edfd95039234ed779f874f273f8b2",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/sdlib.s",
+      "status": "identical",
+      "upstream_sha256": "f16f8f1ecdeb90566d76f3c8bc75e21cdfc83d0996fb321da268fe52507f6802",
+      "candidate_sha256": "f16f8f1ecdeb90566d76f3c8bc75e21cdfc83d0996fb321da268fe52507f6802",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/bootloader5/tileset.s",
+      "status": "identical",
+      "upstream_sha256": "f5756b9b4061ca1b71156dd453170f31538d8bc31de21be4f31470d19dea1616",
+      "candidate_sha256": "f5756b9b4061ca1b71156dd453170f31538d8bc31de21be4f31470d19dea1616",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/LICENSE",
+      "status": "identical",
+      "upstream_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "candidate_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/README.md",
+      "status": "modified",
+      "upstream_sha256": "ec750c7d0d72a408d359d77b51ea4e5b6c893a640f32cfbc1445fbe60e8db4b6",
+      "candidate_sha256": "5062416ac439dffe9c0c96fcecfbb4075f1406e4ecd7ddaf6090289c1b504961",
+      "review": "Portable firmware provenance/license documentation; canonical LF manifest verified."
+    },
+    {
+      "path": "third_party/uzenet/include/un_client.h",
+      "status": "modified",
+      "upstream_sha256": "e81f776f4709cd272add83cb08c32c9c5db0badc908dd8676c471476b4cb996a",
+      "candidate_sha256": "e940d91580ea0fb80085ef9fefe73b8d6e3b6f9beb2c5446ed71262fdd1b7801",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_diagnostics.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "60beb502ba12b2dbc5c628d91b1ebe6bfe3eccbd1f41ca8460986ee04b93c259",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_endpoint.h",
+      "status": "modified",
+      "upstream_sha256": "3eb602916885a39a34586c209be4d5137ea299b954b42699018d998274d2fa50",
+      "candidate_sha256": "3b6998c06a50cfc70be18e17ff3663a39627e07e5d6b19a701675bcdcf6160e3",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_flow.h",
+      "status": "identical",
+      "upstream_sha256": "e4cfcfbe1fe7e1708da05764e9340c15c5814015170c33eae03c6f4b3b1730c7",
+      "candidate_sha256": "e4cfcfbe1fe7e1708da05764e9340c15c5814015170c33eae03c6f4b3b1730c7",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_game.h",
+      "status": "identical",
+      "upstream_sha256": "cfafce675b9f3b84d98f17b56cbd239d6d4b0501b35a20483829f0d72bef233d",
+      "candidate_sha256": "cfafce675b9f3b84d98f17b56cbd239d6d4b0501b35a20483829f0d72bef233d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_oob.h",
+      "status": "modified",
+      "upstream_sha256": "8c6abe4fc18f235dbab86be9ea127522510c260c24c72f609e78328af59cbf61",
+      "candidate_sha256": "2f5eeaa98224c17770ff7ef084e1c288cf90c4b91812669b9b5c4f370a0e2456",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_pace.h",
+      "status": "identical",
+      "upstream_sha256": "ed561c34916c5f959454a41bed14c8571869bdeb21f0167ffab1c40560ff45c1",
+      "candidate_sha256": "ed561c34916c5f959454a41bed14c8571869bdeb21f0167ffab1c40560ff45c1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_recovery.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "068c02da7b9194abdcedd7ace03223752f17d2de1bf3d499cb44c0fed392f4f5",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_relay.h",
+      "status": "identical",
+      "upstream_sha256": "3105742c19a654c0429aca292118644d739f6951b97fd83ed799db451d0090e8",
+      "candidate_sha256": "3105742c19a654c0429aca292118644d739f6951b97fd83ed799db451d0090e8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_round.h",
+      "status": "identical",
+      "upstream_sha256": "83f0e2fe554b7bd8b14fa4d640daff6b71a6e017c16ac023b358dbf0d779fd66",
+      "candidate_sha256": "83f0e2fe554b7bd8b14fa4d640daff6b71a6e017c16ac023b358dbf0d779fd66",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_scores.h",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "8059e4041e2fe6803c4345044e46589de3bd45d48a00438fcdf2c749640f814d",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_services.h",
+      "status": "identical",
+      "upstream_sha256": "54d8c51728c9548400dfa795d9c44e8a5005d7375c4b23ed60539cc5bb46e422",
+      "candidate_sha256": "54d8c51728c9548400dfa795d9c44e8a5005d7375c4b23ed60539cc5bb46e422",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/include/un_session.h",
+      "status": "modified",
+      "upstream_sha256": "99864ff3a78d264625d7f22a811cd1ac3f79ce295df16fbe505958b5b959a05d",
+      "candidate_sha256": "7262128a45423db64c5220097adfb47092a977893b808665f7b3390ecf62bbd3",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_snapshot.h",
+      "status": "modified",
+      "upstream_sha256": "02349cab41584a12c3138b6cc151da97c2ed0e69e45fe78b9a092f6ae3fb6c92",
+      "candidate_sha256": "194c8b70abb1cf0146eabc330ab285e82ff49cef840f61b52d01fcc8ff508735",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/include/un_wire.h",
+      "status": "modified",
+      "upstream_sha256": "d8f591e8a293b5a6f2eb52a63a47e08e671492db5f119ba45753595904e2c9e9",
+      "candidate_sha256": "8b95891842d264ac44ab8fb07ae6d901ec08c1347d5cd99afdaeb20a53e5ac0e",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/snapshot.json",
+      "status": "modified",
+      "upstream_sha256": "858457e77f6445fbc5bb926bb4db7ac944b4eb6a9c456ece03233ed7e3cc882b",
+      "candidate_sha256": "85c8bba90cedbda7a5550d33d13169693e29f5928444db3514f7fb5bbfde97e8",
+      "review": "Portable firmware provenance/license documentation; canonical LF manifest verified."
+    },
+    {
+      "path": "third_party/uzenet/src/un_client.c",
+      "status": "modified",
+      "upstream_sha256": "e1b9c9bd0d424f55d789ab6a28de2081dae4d82cd6d43f4f3752d2c3ee6e9819",
+      "candidate_sha256": "80ce7abe6f6eff991646bd13cb64576c012b20b8d9ff3812a55f76872c23110e",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_direct.c",
+      "status": "modified",
+      "upstream_sha256": "5c8e6b89d535cd70eea734079a9f7d4453e8b57888d4a3cab911a33dc922a25c",
+      "candidate_sha256": "c182b1a05dcfb9c99d0b5ec27eff6bdc63af4c385b4458e4dc4352182ca1aee6",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_endpoint.c",
+      "status": "modified",
+      "upstream_sha256": "0e6e3a929c0e92a13811f02f868e4d2ecc6f9bf911ff36405e6678ee86adaa73",
+      "candidate_sha256": "708e0117b9d64d755a498998f9968c3633b657152fe027cb28dbfd83ab8cb01b",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_game.c",
+      "status": "identical",
+      "upstream_sha256": "029665d799a2f93ab52e0270ebeeb256bcdae5613cf7198fe09bf8128227c2ba",
+      "candidate_sha256": "029665d799a2f93ab52e0270ebeeb256bcdae5613cf7198fe09bf8128227c2ba",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/src/un_oob.c",
+      "status": "modified",
+      "upstream_sha256": "98fd6690d47a70a956556236322741c04e58148906bd44015233d7855f4f5d68",
+      "candidate_sha256": "c35e01eccb83a3cbaa05a67a2f89888b8dc4ff8bc6923f3aa35546f2bfb7afc4",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_pace.c",
+      "status": "identical",
+      "upstream_sha256": "3e4b2162eeeb8a765ef7e914cff09b842d5f32f1cc07b13471755903f3efc323",
+      "candidate_sha256": "3e4b2162eeeb8a765ef7e914cff09b842d5f32f1cc07b13471755903f3efc323",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/src/un_relay.c",
+      "status": "identical",
+      "upstream_sha256": "a22d9997d5ca4891fb86be9f800b83ee708cb2cde5ad656cc3ef6cb4be455c51",
+      "candidate_sha256": "a22d9997d5ca4891fb86be9f800b83ee708cb2cde5ad656cc3ef6cb4be455c51",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/src/un_round.c",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "66418994575cee6df471c6de906532868801d034949d5e525a169c3e27e6f85e",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_scores.c",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "6ab26292053101ba4332f8a9ea8958b37a91f716641ddc849d2e4597106258a0",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_services.c",
+      "status": "identical",
+      "upstream_sha256": "ae9375fb4a009e5f6f63d42c9ccb37b351fb0efa58a357d739403f3bc996a983",
+      "candidate_sha256": "ae9375fb4a009e5f6f63d42c9ccb37b351fb0efa58a357d739403f3bc996a983",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "third_party/uzenet/src/un_session.c",
+      "status": "modified",
+      "upstream_sha256": "5b30ac3eb7cdce72cbcf6659f3a08a05af0749a9469447898e34fbb3b35e6efa",
+      "candidate_sha256": "adf38587e5235b722c46a11d0d4d4e3267b3bb1d94021524aa3b6508a99c4de9",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "third_party/uzenet/src/un_wire.c",
+      "status": "modified",
+      "upstream_sha256": "c775f9f70bb814c42b03f7687ebbd84e83d3364e6cab1ccfc39b79c43c45ec9e",
+      "candidate_sha256": "f0d49c00e9167a00d17d3644b6505d5f0faaff23f9e1b724379446051ba47840",
+      "review": "Pinned portable firmware; LF-normalized hashes match current firmware sources; adapter and 20 core contract tests pass."
+    },
+    {
+      "path": "tools/analyze_tcp_serial_logs.py",
+      "status": "identical",
+      "upstream_sha256": "99f28ce013c3249a934dea5c9934eee5c3d4f8b157423f7976c6c0e8f9d88755",
+      "candidate_sha256": "99f28ce013c3249a934dea5c9934eee5c3d4f8b157423f7976c6c0e8f9d88755",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/api_test_runner.py",
+      "status": "identical",
+      "upstream_sha256": "bea74afd3a491050716f481084c60cfcff14b525b3bf02590d03dc497b2cc583",
+      "candidate_sha256": "bea74afd3a491050716f481084c60cfcff14b525b3bf02590d03dc497b2cc583",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/benchmark_timer1.py",
+      "status": "identical",
+      "upstream_sha256": "b305dda62736cb9758ab48edc610e245d8e1bd87dde240eeb1a8dc7a583c9c6f",
+      "candidate_sha256": "b305dda62736cb9758ab48edc610e245d8e1bd87dde240eeb1a8dc7a583c9c6f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/bootloader_hex_to_c.py",
+      "status": "identical",
+      "upstream_sha256": "584a165c4920f871a1e82d3f1eedcc4beba4b65716273e566aeae65abeff3393",
+      "candidate_sha256": "584a165c4920f871a1e82d3f1eedcc4beba4b65716273e566aeae65abeff3393",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/build_rgb30.ps1",
+      "status": "identical",
+      "upstream_sha256": "58a5b0bc4bc5d8f418cfa46bca51eabb0d5e46d473c6881b22b679a99064af1c",
+      "candidate_sha256": "58a5b0bc4bc5d8f418cfa46bca51eabb0d5e46d473c6881b22b679a99064af1c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/build_rgb30.sh",
+      "status": "identical",
+      "upstream_sha256": "226935088e0f8dac336fea5ded2edd52d8fffaf0c73c0c74e80cb1ef8ef3e9b1",
+      "candidate_sha256": "226935088e0f8dac336fea5ded2edd52d8fffaf0c73c0c74e80cb1ef8ef3e9b1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/collect_release_artifacts.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "0f0bb88712fe8e7863dd9c47930bcb594fd5d020d6eb158021c0e371b267ca82",
+      "review": "Build/API/release helper reviewed; isolated execution and preservation checks pass."
+    },
+    {
+      "path": "tools/compare_logical_traces.py",
+      "status": "identical",
+      "upstream_sha256": "043ad64f6c858e3b4c4559c302ed38e8adf21be92d7e17779d4bfc2387177f78",
+      "candidate_sha256": "043ad64f6c858e3b4c4559c302ed38e8adf21be92d7e17779d4bfc2387177f78",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/cuzebox_api.py",
+      "status": "identical",
+      "upstream_sha256": "ed884becd3266f2434b863ebfff9a9e4fa3b6c883b3da14d7bfcc734facb487a",
+      "candidate_sha256": "ed884becd3266f2434b863ebfff9a9e4fa3b6c883b3da14d7bfcc734facb487a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/cuzebox_web_debugger.py",
+      "status": "modified",
+      "upstream_sha256": "7e2c9d88369c6fe3fc9bf3fa223550da13dd2be0441324d0a2684bfa6fe0e5b9",
+      "candidate_sha256": "326406d955745454608d3b65ca5f77e6da4aff0c57d336ec55531c13ad80f63e",
+      "review": "Build/API/release helper reviewed; isolated execution and preservation checks pass."
+    },
+    {
+      "path": "tools/minimize_game_test.py",
+      "status": "identical",
+      "upstream_sha256": "c5d1f25a3354cb50a7572d61247509f1f0a6af9c3d4ae40f15437d6eff1c557d",
+      "candidate_sha256": "c5d1f25a3354cb50a7572d61247509f1f0a6af9c3d4ae40f15437d6eff1c557d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/packrom/README.md",
+      "status": "identical",
+      "upstream_sha256": "1e78737affd5f8d97e0e1ab901022be299cb35e18c40b95d984d3f3c8d78d118",
+      "candidate_sha256": "1e78737affd5f8d97e0e1ab901022be299cb35e18c40b95d984d3f3c8d78d118",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/packrom/packrom.cpp",
+      "status": "identical",
+      "upstream_sha256": "16dc59bb244f01f716ca2095ddeb4b0bef5a5ab63855c446aa18b76fb0cfef7c",
+      "candidate_sha256": "16dc59bb244f01f716ca2095ddeb4b0bef5a5ab63855c446aa18b76fb0cfef7c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/release_package.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "3fc17035d0b8a81cb1e3189a309fe6627491e55a337db92cc779f2c037d376de",
+      "review": "Build/API/release helper reviewed; isolated execution and preservation checks pass."
+    },
+    {
+      "path": "tools/run_game_test.py",
+      "status": "identical",
+      "upstream_sha256": "b90cb855accb6396112b881af8b5bf0bbfce63ef8e3448d1cb4043164627eb0c",
+      "candidate_sha256": "b90cb855accb6396112b881af8b5bf0bbfce63ef8e3448d1cb4043164627eb0c",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/run_uzenet_local.ps1",
+      "status": "identical",
+      "upstream_sha256": "c8e0deed74f5090d4a3823d42cc5bf6f47059d01b39ba00456ad710f01ddb624",
+      "candidate_sha256": "c8e0deed74f5090d4a3823d42cc5bf6f47059d01b39ba00456ad710f01ddb624",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/sd_stress_runner.py",
+      "status": "identical",
+      "upstream_sha256": "f1d21c54d8aba388275d5e358afd64f67ce0113f5e8aeb0640275b1bb6e4b71e",
+      "candidate_sha256": "f1d21c54d8aba388275d5e358afd64f67ce0113f5e8aeb0640275b1bb6e4b71e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/source_audit.py",
+      "status": "modified",
+      "upstream_sha256": "76b2ba3c0ae11ee5af04a9a3466e16a1276a7cda92c95a0d521ca0368f199b80",
+      "candidate_sha256": "d4cc5d0c3ca7201399d41b3aabb4e4b647ceb3e921bb2fb4dbe0b146d22a4b6d",
+      "review": "Build/API/release helper reviewed; isolated execution and preservation checks pass."
+    },
+    {
+      "path": "tools/spi_probe.c",
+      "status": "identical",
+      "upstream_sha256": "8a02f60bff4d4900bf61b83b7953ea99779c92e0d64cb14d9c0c47b267f7e5ff",
+      "candidate_sha256": "8a02f60bff4d4900bf61b83b7953ea99779c92e0d64cb14d9c0c47b267f7e5ff",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_api_multiclient.py",
+      "status": "modified",
+      "upstream_sha256": "10ae085476a2bc46815ea06e90875d612dec8d256426747e1e188b6b5e654c39",
+      "candidate_sha256": "b8e1bca3d65f0cc0b63011107086fc1e40449e812ad706ccffe61cb83d16746a",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_audio_analysis.py",
+      "status": "identical",
+      "upstream_sha256": "665ea2b507627e21931eadc4946c4dc7a6b16954a38b64e0bf5fdb280f861597",
+      "candidate_sha256": "665ea2b507627e21931eadc4946c4dc7a6b16954a38b64e0bf5fdb280f861597",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_audio_debug.py",
+      "status": "identical",
+      "upstream_sha256": "7841dabe4a8eca5b77855f1d9e428a3152ad2a21f07f4c5c7b702c292190c804",
+      "candidate_sha256": "7841dabe4a8eca5b77855f1d9e428a3152ad2a21f07f4c5c7b702c292190c804",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_audio_scope.py",
+      "status": "identical",
+      "upstream_sha256": "868a02c7fb64f897ff5024bbfb2b2d617bbd0ef5e8e3bad4eeb28c1771812c7b",
+      "candidate_sha256": "868a02c7fb64f897ff5024bbfb2b2d617bbd0ef5e8e3bad4eeb28c1771812c7b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_build_dependencies.py",
+      "status": "identical",
+      "upstream_sha256": "aa963c5ba3d27f026fd7cfec9a9f4248f063caed17371f7d54c0bc782764683b",
+      "candidate_sha256": "aa963c5ba3d27f026fd7cfec9a9f4248f063caed17371f7d54c0bc782764683b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_build_platform.py",
+      "status": "modified",
+      "upstream_sha256": "704de4a4ed4f80af6ef1bc0cd70050557fb231c2340f5fd3d6968559ef5d9b49",
+      "candidate_sha256": "1ea8b6b8e4d52dd4229064316de997b3d4154ebcae9b7ff7b572205b76268a69",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_config_path.py",
+      "status": "identical",
+      "upstream_sha256": "550f584bdab610b571d91f850f980210d1fe3dca7ab19a2ed5104c3149376a62",
+      "candidate_sha256": "550f584bdab610b571d91f850f980210d1fe3dca7ab19a2ed5104c3149376a62",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_debug_dwarf.py",
+      "status": "identical",
+      "upstream_sha256": "d4da1185868bc32c2384b974462efdcf51fe6cc00482b7841352c1c298497244",
+      "candidate_sha256": "d4da1185868bc32c2384b974462efdcf51fe6cc00482b7841352c1c298497244",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_debug_elf_bounds.py",
+      "status": "identical",
+      "upstream_sha256": "3b846e3dee41fc15d5e03836f538902517163c5d870848d7279e6eded9b74717",
+      "candidate_sha256": "3b846e3dee41fc15d5e03836f538902517163c5d870848d7279e6eded9b74717",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_debug_memory_gate.py",
+      "status": "identical",
+      "upstream_sha256": "6f05cd2c4e31713caabd0b9948ebd5ae48c798f17c37571ea5ab1e175177a8d8",
+      "candidate_sha256": "6f05cd2c4e31713caabd0b9948ebd5ae48c798f17c37571ea5ab1e175177a8d8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_debug_source.py",
+      "status": "identical",
+      "upstream_sha256": "16c609b38188bbdd3180ba64de888e62fe55b32ef75f9f23ddb839ef568a5899",
+      "candidate_sha256": "16c609b38188bbdd3180ba64de888e62fe55b32ef75f9f23ddb839ef568a5899",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_debug_timing.py",
+      "status": "identical",
+      "upstream_sha256": "84bf06a1313c493ff80d5dd399f12e142a185a27d064bd7d0b313c3cd6d9076f",
+      "candidate_sha256": "84bf06a1313c493ff80d5dd399f12e142a185a27d064bd7d0b313c3cd6d9076f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_diagnostics.py",
+      "status": "identical",
+      "upstream_sha256": "60019cfbea917e6e6f9d90a3bc2fcb156914728a86c3bb51754a5742b8d37ba4",
+      "candidate_sha256": "60019cfbea917e6e6f9d90a3bc2fcb156914728a86c3bb51754a5742b8d37ba4",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_embedded_web_server.py",
+      "status": "modified",
+      "upstream_sha256": "89ac28debf3edcf35273cf783fabe7dee263dfbe5bb61c924d937444a7cfc022",
+      "candidate_sha256": "5956cd0a6ed02ee705170ca8d0f1dfb60ac0be2f180f6a13f9bd5184a00395ea",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_esp_pki.sh",
+      "status": "identical",
+      "upstream_sha256": "9661bfce4d15ba8cf62888576cee00a2cfd896a110f0194376aff798e7e3e489",
+      "candidate_sha256": "9661bfce4d15ba8cf62888576cee00a2cfd896a110f0194376aff798e7e3e489",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_esp_rom.sh",
+      "status": "identical",
+      "upstream_sha256": "0cd5d65776fb4dde2d476a69a9bc407257282d242993f5bf59d441084239bdb5",
+      "candidate_sha256": "0cd5d65776fb4dde2d476a69a9bc407257282d242993f5bf59d441084239bdb5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_esp_rom_avr.py",
+      "status": "identical",
+      "upstream_sha256": "8deb43dfc7bae113b596f9840090db1b7817b324af62d9791db537efd2251b62",
+      "candidate_sha256": "8deb43dfc7bae113b596f9840090db1b7817b324af62d9791db537efd2251b62",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_game_test_runner.py",
+      "status": "identical",
+      "upstream_sha256": "7992cdc71b841c78a67cae678527e91b8fb5a8183364cf82d15d6ac15308e64a",
+      "candidate_sha256": "7992cdc71b841c78a67cae678527e91b8fb5a8183364cf82d15d6ac15308e64a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_handheld_shutdown.py",
+      "status": "identical",
+      "upstream_sha256": "87aadcf38b5eb000a3ba402b9bc38878f7bc669faaa4e494c0bb846d38c8bd7a",
+      "candidate_sha256": "87aadcf38b5eb000a3ba402b9bc38878f7bc669faaa4e494c0bb846d38c8bd7a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_headless_api.py",
+      "status": "modified",
+      "upstream_sha256": "5e4ca2d85e6295c233089f3bab14fbaf711c693b6f49529023e3452038e0f074",
+      "candidate_sha256": "0bf79efeb596963073173aea69a747e74758e19bbf19eb9ddfbb3fd42c37a2a9",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_hex_hint_helper.py",
+      "status": "identical",
+      "upstream_sha256": "e232935b2ef5b02b141c1e19d4e2dae420381cecd6b0457367339d555d1e5f1a",
+      "candidate_sha256": "e232935b2ef5b02b141c1e19d4e2dae420381cecd6b0457367339d555d1e5f1a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_input_movie_api.py",
+      "status": "identical",
+      "upstream_sha256": "714518fdcda5aa3722e7996036ea005e33b97250a218025c4d44a340bea557bc",
+      "candidate_sha256": "714518fdcda5aa3722e7996036ea005e33b97250a218025c4d44a340bea557bc",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_logical_api.py",
+      "status": "identical",
+      "upstream_sha256": "fbaa0ae5ec38ac506b213dedd6c090965cc10daff79b0a591245d6be4c6282db",
+      "candidate_sha256": "fbaa0ae5ec38ac506b213dedd6c090965cc10daff79b0a591245d6be4c6282db",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_packrom_sd_hint.py",
+      "status": "identical",
+      "upstream_sha256": "4fbac8fc1b450ccebd9f4974573ffe59212c0c8d03cdf450623566153c575e48",
+      "candidate_sha256": "4fbac8fc1b450ccebd9f4974573ffe59212c0c8d03cdf450623566153c575e48",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_portmaster_package.py",
+      "status": "identical",
+      "upstream_sha256": "49298854d0b9537ff2c4e2ed02e29c50e7e2775e36ac9e3181e05041cf36e167",
+      "candidate_sha256": "49298854d0b9537ff2c4e2ed02e29c50e7e2775e36ac9e3181e05041cf36e167",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_release_package.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "7981e7a8753a5c66a825ab1906e2e4969b5ffb6e5fc8dd65e1b2bd3d2a0a441f",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_release_tools.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "68f42fe75b9c3cfad4db30393417ad185791d391bde61e4f7241195d54576eb3",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_rocknix_launcher.py",
+      "status": "identical",
+      "upstream_sha256": "f9dbbf56103bada2f9bf774ba55ab5284323b3fa570fbf955ffdaba45a1bbf3b",
+      "candidate_sha256": "f9dbbf56103bada2f9bf774ba55ab5284323b3fa570fbf955ffdaba45a1bbf3b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_runtime_paths.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "4072d89b6e59bbe5b4acb4c7cf62314384fcbfecf4278c5d1a14b65d784411e2",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_screenshot_api.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "85b7f45a2056d4b31417a9b6c23e710902d4bc0f418bc6b02756dd477587b041",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_screenshot_png.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "e476b663291e4bb1fccbb9dfbf9fa2645beaae6c1520b15aa1083594bf4fb582",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_screenshot_web_controls.js",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "258c5a447bd61562b2b46492f0a9ef75b41c0164e1bbd88761243814e8ad6e87",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_sd_fault.py",
+      "status": "identical",
+      "upstream_sha256": "5faddbde54661accd69d5dd88f1fb1d3f07fce186e9e7d61b4e9080a09497121",
+      "candidate_sha256": "5faddbde54661accd69d5dd88f1fb1d3f07fce186e9e7d61b4e9080a09497121",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_fs_history.py",
+      "status": "identical",
+      "upstream_sha256": "659b46c2ad7138222c9dab10094c1294212f2f1645d3d0aca41c0792d79e32ce",
+      "candidate_sha256": "659b46c2ad7138222c9dab10094c1294212f2f1645d3d0aca41c0792d79e32ce",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_payload.py",
+      "status": "identical",
+      "upstream_sha256": "e217b5d5e558b50df96cd651dd8e9b2e20c579ccb65156cc7b02ae3ae71c9a28",
+      "candidate_sha256": "e217b5d5e558b50df96cd651dd8e9b2e20c579ccb65156cc7b02ae3ae71c9a28",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_reinit.py",
+      "status": "identical",
+      "upstream_sha256": "4ddad99324efea16b081fdec8893007d59f53fb1a0dd82845e7d32f622d9462f",
+      "candidate_sha256": "4ddad99324efea16b081fdec8893007d59f53fb1a0dd82845e7d32f622d9462f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_replay.py",
+      "status": "identical",
+      "upstream_sha256": "baa367eddf31cdb69b0e4b3d45bde03f197475b024754b82a1eba0492b916116",
+      "candidate_sha256": "baa367eddf31cdb69b0e4b3d45bde03f197475b024754b82a1eba0492b916116",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_stress_runner.py",
+      "status": "identical",
+      "upstream_sha256": "81f24f607b956368531254270d8d403f46348bf3822c563b85c353e7002301ab",
+      "candidate_sha256": "81f24f607b956368531254270d8d403f46348bf3822c563b85c353e7002301ab",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_timing.py",
+      "status": "identical",
+      "upstream_sha256": "75739ac960ad6910c3901f0c802e1206901db1d374bf688fdc4eb437ba6e6a76",
+      "candidate_sha256": "75739ac960ad6910c3901f0c802e1206901db1d374bf688fdc4eb437ba6e6a76",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_timing_analysis.py",
+      "status": "identical",
+      "upstream_sha256": "322d6d0111d93ffd16c9e0d7cf03682e13bfa29a8e74ebbe686669bb8864ca8b",
+      "candidate_sha256": "322d6d0111d93ffd16c9e0d7cf03682e13bfa29a8e74ebbe686669bb8864ca8b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_sd_trace.py",
+      "status": "identical",
+      "upstream_sha256": "8cde4e4a58746adbfaa2937af8baa0582ecced50c7658e59c822635ead10e4e6",
+      "candidate_sha256": "8cde4e4a58746adbfaa2937af8baa0582ecced50c7658e59c822635ead10e4e6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_source_step_api.py",
+      "status": "identical",
+      "upstream_sha256": "9d63558e8fccee66ec3ffdc861ff85c2258fd9ac3fc1384b1734b2d4f04f2e78",
+      "candidate_sha256": "9d63558e8fccee66ec3ffdc861ff85c2258fd9ac3fc1384b1734b2d4f04f2e78",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_speed_helper.py",
+      "status": "identical",
+      "upstream_sha256": "c4bd70bd04c138e92892288056eee63b9c21775c31432fc8e838178a13935c7d",
+      "candidate_sha256": "c4bd70bd04c138e92892288056eee63b9c21775c31432fc8e838178a13935c7d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_spi_registers.py",
+      "status": "identical",
+      "upstream_sha256": "eca995135c5e467ff04027fbe94c73012adcabd1037972f9499a444528fc9da1",
+      "candidate_sha256": "eca995135c5e467ff04027fbe94c73012adcabd1037972f9499a444528fc9da1",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_tv_sync.py",
+      "status": "identical",
+      "upstream_sha256": "afcbe37b583e62832bc84584ed89397f7f6bb697dd416401a907303f19128509",
+      "candidate_sha256": "afcbe37b583e62832bc84584ed89397f7f6bb697dd416401a907303f19128509",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_uart_logic_capture.py",
+      "status": "identical",
+      "upstream_sha256": "269d42e6f9a7da1b747223b74108b01ce3bb5561a157dbb61e4dc1f1083a0706",
+      "candidate_sha256": "269d42e6f9a7da1b747223b74108b01ce3bb5561a157dbb61e4dc1f1083a0706",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_uzenet.py",
+      "status": "modified",
+      "upstream_sha256": "b9cc89c6913ae914629fc13ca862035a46f4ace7dc8220d8a043abaa792f97a0",
+      "candidate_sha256": "98a6d9e2f910bb034bebc777128baed7963008f038229a59e999f2096d1033e7",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_uzenet_avr.py",
+      "status": "identical",
+      "upstream_sha256": "7c00630389512970b47f01ac51fe5a817fc46cf09cde54b2d90a236e5084f142",
+      "candidate_sha256": "7c00630389512970b47f01ac51fe5a817fc46cf09cde54b2d90a236e5084f142",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_uzenet_room.py",
+      "status": "identical",
+      "upstream_sha256": "15df7ae0fb0763722d5863ffd6297938dbc8180f335230bd897b216e3f795b50",
+      "candidate_sha256": "15df7ae0fb0763722d5863ffd6297938dbc8180f335230bd897b216e3f795b50",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_video_messages.py",
+      "status": "added",
+      "upstream_sha256": null,
+      "candidate_sha256": "43ebc3f5f9b11621d4105b6be6cbc518f228653e2ec89f94753f31995d1e3b8c",
+      "review": "Regression fixture/tool reviewed; retains prior coverage and adds checks for the changed behavior."
+    },
+    {
+      "path": "tools/test_web_build.js",
+      "status": "identical",
+      "upstream_sha256": "e4adf4e69c6a3400bf91c2c07c3901966957d8d56fe32909ff4db35d47909fab",
+      "candidate_sha256": "e4adf4e69c6a3400bf91c2c07c3901966957d8d56fe32909ff4db35d47909fab",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_web_controls.js",
+      "status": "identical",
+      "upstream_sha256": "d912cadc12280ecd2a7814dbd90919bbe1687489150c3d9d81e588214fc32a57",
+      "candidate_sha256": "d912cadc12280ecd2a7814dbd90919bbe1687489150c3d9d81e588214fc32a57",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_web_debugger_bridge.py",
+      "status": "identical",
+      "upstream_sha256": "5154749abeb3f99df500355dfe68a1ca5d0c91758b556455a39ed5e3e6172e17",
+      "candidate_sha256": "5154749abeb3f99df500355dfe68a1ca5d0c91758b556455a39ed5e3e6172e17",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_web_pointer.js",
+      "status": "identical",
+      "upstream_sha256": "522cbae40acad714d5cd4963601e15bda8033b8de0595c5d4f1704aafab14b35",
+      "candidate_sha256": "522cbae40acad714d5cd4963601e15bda8033b8de0595c5d4f1704aafab14b35",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/test_web_speed.js",
+      "status": "identical",
+      "upstream_sha256": "76d986eb6cdc3e43e5d0a8f594da9775e2cd6fbeccbfb03da2b13a36c690267a",
+      "candidate_sha256": "76d986eb6cdc3e43e5d0a8f594da9775e2cd6fbeccbfb03da2b13a36c690267a",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/uzenet_local.py",
+      "status": "modified",
+      "upstream_sha256": "144e62e70279f35655f1c2a6a820060741b98f0de34abc46e1954d05281e3b3d",
+      "candidate_sha256": "d7846ff1aac213aa8979a4bede604526429d5d844d70907eed1788b58df8770c",
+      "review": "Build/API/release helper reviewed; isolated execution and preservation checks pass."
+    },
+    {
+      "path": "tools/uzenet_relay_mock.py",
+      "status": "identical",
+      "upstream_sha256": "39c8cf158a22ae25682dad40e60d76d2b6a30d5f6b95db219d6e9d79c0405aa6",
+      "candidate_sha256": "39c8cf158a22ae25682dad40e60d76d2b6a30d5f6b95db219d6e9d79c0405aa6",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/validate.py",
+      "status": "identical",
+      "upstream_sha256": "2e7c8b17759f9bb68f7363ca269e853ca213f7865fe14ab8e4a9fa0a9968b4d5",
+      "candidate_sha256": "2e7c8b17759f9bb68f7363ca269e853ca213f7865fe14ab8e4a9fa0a9968b4d5",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_assets_to_c.py",
+      "status": "identical",
+      "upstream_sha256": "85139732ffb3a7abbe8364b0a36f61d1fedaa2e6806b37090c0e9b1e72e253dd",
+      "candidate_sha256": "85139732ffb3a7abbe8364b0a36f61d1fedaa2e6806b37090c0e9b1e72e253dd",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/audio.html",
+      "status": "identical",
+      "upstream_sha256": "fd45fd4db86b2ffe1c7e583c12683650a5bec5ae1fbd79b4334bd67e1b451df0",
+      "candidate_sha256": "fd45fd4db86b2ffe1c7e583c12683650a5bec5ae1fbd79b4334bd67e1b451df0",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/common.css",
+      "status": "identical",
+      "upstream_sha256": "ef18796efc0bc434eaa15342dec787d857d42434d5bb4865882d671db40af386",
+      "candidate_sha256": "ef18796efc0bc434eaa15342dec787d857d42434d5bb4865882d671db40af386",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/common.js",
+      "status": "identical",
+      "upstream_sha256": "a9d9783ce25f24b8a6531f2c308a9dcb529c0b01127c990b8d85e89befc0ff70",
+      "candidate_sha256": "a9d9783ce25f24b8a6531f2c308a9dcb529c0b01127c990b8d85e89befc0ff70",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/controls.html",
+      "status": "modified",
+      "upstream_sha256": "cac7cab28a595a4588254765be19686835d7f4dc07f5b2c4a32d1d0d1eb1b9a1",
+      "candidate_sha256": "074bc6deae78208d07b206a533b4cf847d3108e0e16e40abb9942715e13862c8",
+      "review": "Existing web controls retained; PNG scaling/presets and clean recording added."
+    },
+    {
+      "path": "tools/web_debugger/debugger.html",
+      "status": "identical",
+      "upstream_sha256": "b66a0712b97ab74d62b10def26e3cfe1aa5f4a07deb59bfc275667a5c223f270",
+      "candidate_sha256": "b66a0712b97ab74d62b10def26e3cfe1aa5f4a07deb59bfc275667a5c223f270",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/index.html",
+      "status": "identical",
+      "upstream_sha256": "b60428664dc3b2c790162161460e4650ac1aa52da1d30da146f8e9dc1fd54e4e",
+      "candidate_sha256": "b60428664dc3b2c790162161460e4650ac1aa52da1d30da146f8e9dc1fd54e4e",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/network.html",
+      "status": "identical",
+      "upstream_sha256": "62e85baf7196f5fc71ce4e71b7b6765eefeb6bc9606eba9cb62ceaa48827794d",
+      "candidate_sha256": "62e85baf7196f5fc71ce4e71b7b6765eefeb6bc9606eba9cb62ceaa48827794d",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/sd.html",
+      "status": "identical",
+      "upstream_sha256": "640f4946d08413070bfde84130108feca0749a617505f83c72c7e29f8135e3b8",
+      "candidate_sha256": "640f4946d08413070bfde84130108feca0749a617505f83c72c7e29f8135e3b8",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tools/web_debugger/serial.html",
+      "status": "identical",
+      "upstream_sha256": "d3867099cbda8a8ce1a95d494567951b4b0332270da34a1ac061a37ce4f33e78",
+      "candidate_sha256": "d3867099cbda8a8ce1a95d494567951b4b0332270da34a1ac061a37ce4f33e78",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "tv_sync.h",
+      "status": "identical",
+      "upstream_sha256": "4017d09c9446399fbf09b5b7150c9405998d6d1501229ea6444f212d6f7cf8ab",
+      "candidate_sha256": "4017d09c9446399fbf09b5b7150c9405998d6d1501229ea6444f212d6f7cf8ab",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "types.h",
+      "status": "identical",
+      "upstream_sha256": "2c719d4795977fd792e74ec999133492d799e7673e3d552f97284b10bc5f9a4b",
+      "candidate_sha256": "2c719d4795977fd792e74ec999133492d799e7673e3d552f97284b10bc5f9a4b",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "uzenet_relay_protocol.h",
+      "status": "identical",
+      "upstream_sha256": "462b1d323ee0be57044b0723d31d1e2cd57ffd4c0978713b66dd23de821b9134",
+      "candidate_sha256": "462b1d323ee0be57044b0723d31d1e2cd57ffd4c0978713b66dd23de821b9134",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "video_interlace.h",
+      "status": "identical",
+      "upstream_sha256": "d068d4f4ffc7e747ac6ae2a1b62d4cb29e59f8acf7e1714ea4e78b9d0a440c36",
+      "candidate_sha256": "d068d4f4ffc7e747ac6ae2a1b62d4cb29e59f8acf7e1714ea4e78b9d0a440c36",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "web_assets.h",
+      "status": "modified",
+      "upstream_sha256": "8c24c1bd100484fbe639a57eac23cdd70cabbf2bde53de57550689550b1ec42d",
+      "candidate_sha256": "71437d463e090ba51dc840f7411e550a4d77845a5ec32597383a56af548d4117",
+      "review": "Generated embedded assets verified against source HTML with --check."
+    },
+    {
+      "path": "web_server.c",
+      "status": "modified",
+      "upstream_sha256": "c99218aa46b5437c2ef7ed3db1cd809815ed4aa8be586c7b5705c4d3b508a763",
+      "candidate_sha256": "ab64e1815fb835753f86a13b14ec315dedf9e366572d909958b61467c357ce4c",
+      "review": "PNG default and capture metadata headers; explicit BMP downloads retained."
+    },
+    {
+      "path": "web_server.h",
+      "status": "identical",
+      "upstream_sha256": "59d0d0c5a9b2565f991046b7af875e5e85e46238403fb20cc6d4fef278c9003f",
+      "candidate_sha256": "59d0d0c5a9b2565f991046b7af875e5e85e46238403fb20cc6d4fef278c9003f",
+      "review": "Byte-identical to latest GitHub main; no proposed change."
+    },
+    {
+      "path": "documentation/prepush-review-2026-11-01.md",
+      "status": "added-review-artifact",
+      "upstream_sha256": null,
+      "candidate_sha256": null,
+      "review": "This review report/inventory is manually reviewed; self-referential hashes are deliberately omitted."
+    },
+    {
+      "path": "documentation/prepush-review-20261101-inventory.json",
+      "status": "added-review-artifact",
+      "upstream_sha256": null,
+      "candidate_sha256": null,
+      "review": "This review report/inventory is manually reviewed; self-referential hashes are deliberately omitted."
+    }
+  ]
+}

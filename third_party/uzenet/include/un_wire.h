@@ -8,6 +8,21 @@
 #define UN_DELIM 0x7e
 #define UN_ESCAPE 0x7d
 #define UN_PROTOCOL_VERSION 4
+#define UN_CANCEL 5
+#define UN_CANCEL_REPLY 0x85
+#define UN_DIAGNOSTIC 6
+#define UN_DIAGNOSTIC_REPLY 0x86
+#define UN_FAULT_CONFIG 7 /* test firmware only */
+#define UN_FAULT_REPLY 0x87
+#define UN_ECHO 8
+#define UN_ECHO_REPLY 0x88
+/* Opt-in full-duplex compact snapshots. Independent of request/reply tags. */
+#define UN_SNAPSHOT_WRITE 0x31
+#define UN_SNAPSHOT_FRAME 0xb2
+#define UN_INPUT_WRITE 0x32
+#define UN_TIMED_WRITE 0x33
+#define UN_INPUT_FRAME 0xb3
+#define UN_TIMED_FRAME 0xb4
 #define UN_FRAME_RUN 0x80
 #define UN_FRAME_OOB 0x40
 #define UN_FRAME_ACTUAL_MASK 0x0f

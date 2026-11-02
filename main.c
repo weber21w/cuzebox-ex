@@ -70,12 +70,15 @@
 #include "audio.h"
 #include "ginput.h"
 #include "frame.h"
+#include "screenshot_png.h"
+#include "screenshot_options.h"
 #include "netplay.h"
 #include "netplay_host.h"
 #include "eepdump.h"
 #include "romdump.h"
 #include "textgui.h"
 #include "configcfg.h"
+#include "runtime_paths.h"
 #include "mainui.h"
 #include "renderpath.h"
 #include "cheats.h"
@@ -825,6 +828,7 @@ static void main_avr_reset(void)
 {
  cu_avr_set_hex_hint_hook(main_hex_hint);
  cu_avr_reset();
+ frame_capture_reset();
  /* A CPU reset clears bus state; the configured controllers stay connected. */
  main_cfg_apply_virtual_runtime();
 }
@@ -894,6 +898,7 @@ static void main_cfg_capture_runtime(void)
 	strncpy(main_cfg.video_dump_file, avconv_get_filename(), APPCFG_PATH_MAX - 1U);
 	main_cfg.video_dump_file[APPCFG_PATH_MAX - 1U] = 0;
 	main_cfg.video_dump_autoinc = avconv_get_autoinc();
+	main_cfg.video_dump_omit_messages = avconv_get_omit_messages();
 #endif
 #ifdef ENABLE_MICROUI
 	if (!main_headless){ main_cfg_capture_gui_runtime(); }
@@ -1103,6 +1108,7 @@ static void main_cfg_apply_runtime(void)
 #ifdef ENABLE_VCAP
 	avconv_set_filename(main_cfg.video_dump_file);
 	avconv_set_autoinc(main_cfg.video_dump_autoinc);
+	avconv_set_omit_messages(main_cfg.video_dump_omit_messages);
 #endif
 #ifdef ENABLE_MICROUI
 	main_copy_str(main_gui_theme_name, sizeof(main_gui_theme_name), main_cfg.gui_theme_name);
@@ -2400,6 +2406,20 @@ boole mainui_get_video_dump_reset_first(void)
 #endif
 }
 
+boole mainui_get_video_dump_omit_messages(void)
+{
+ return main_cfg.video_dump_omit_messages;
+}
+
+void mainui_set_video_dump_omit_messages(boole enable)
+{
+ main_cfg.video_dump_omit_messages=enable?TRUE:FALSE;
+#ifdef ENABLE_VCAP
+ avconv_set_omit_messages(main_cfg.video_dump_omit_messages);
+#endif
+ main_cfg_mark_dirty();
+}
+
 static void main_video_dump_set_active(boole active, boole reset_first)
 {
 #ifdef ENABLE_VCAP
@@ -2627,7 +2647,7 @@ static boole main_screenshot_build_path(char* out, auint out_size)
 	if (j == 0U){ strcpy(stem, "cuzebox"); }
 	else{ stem[j] = 0; }
 	for (i = 0U; i < 10000U; i++){
-		snprintf(candidate, sizeof(candidate), "%s/%s_shot_%04u.bmp", base, stem, (unsigned)i);
+		snprintf(candidate, sizeof(candidate), "%s/%s_shot_%04u.png", base, stem, (unsigned)i);
 		fp = fopen(candidate, "rb");
 		if (fp == NULL){
 			strncpy(out, candidate, out_size - 1U);
@@ -2639,12 +2659,12 @@ static boole main_screenshot_build_path(char* out, auint out_size)
 	return FALSE;
 }
 
-static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels, auint pitch, auint texw, auint texh)
+static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels, auint pitch, auint texw, auint texh,boole gui)
 {
 #ifdef TARGET_EMSCRIPTEN
     /* MEMFS retains each saved file until tab closure. No file-writing tools
      * in the gameplay web build, including shortcut-driven screenshots. */
-    (void)path; (void)pixels; (void)pitch; (void)texw; (void)texh;
+    (void)path; (void)pixels; (void)pitch; (void)texw; (void)texh;(void)gui;
     return FALSE;
 #else
 	guicore_pixfmt_t pixfmt;
@@ -2670,6 +2690,16 @@ static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels,
 		}
 	}
 	guicore_getpixfmt(&pixfmt);
+	if (!SDL_strcasecmp(strrchr(path,'.') ? strrchr(path,'.') : "", ".png")){
+		uint8* png=NULL;auint bytes=0U;FILE* f;boole ok;
+		if(!screenshot_png_encode(pixels,pitch,texw,texh,pixfmt.rsh,pixfmt.gsh,pixfmt.bsh,&png,&bytes))return FALSE;
+		{char meta[1400];mainui_screenshot_metadata(meta,sizeof(meta),texw,texh,FALSE,gui);
+		 if(!screenshot_png_annotate(&png,&bytes,meta)){free(png);return FALSE;}}
+		f=fopen(path,"wb");if(!f){free(png);return FALSE;}
+		ok=fwrite(png,1U,bytes,f)==bytes;
+		if(fclose(f)!=0)ok=FALSE;
+		free(png);return ok;
+	}
 	rmask = 0xFFUL << pixfmt.rsh;
 	gmask = 0xFFUL << pixfmt.gsh;
 	bmask = 0xFFUL << pixfmt.bsh;
@@ -2684,18 +2714,91 @@ static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels,
 #endif
 }
 
+static boole main_capture_game_screenshot(uint32** pixels,auint* w,auint* h)
+{
+ return main_cfg.screenshot_bypass_filters ? frame_capture_cycle_pixels_ex(pixels,w,h,
+     main_cfg.screenshot_x_width,main_cfg.screenshot_y_scale,main_cfg.screenshot_sampling) :
+     guicore_capture_game_pixels(pixels,w,h);
+}
+
 static boole main_save_screenshot_to_path(char const* path)
 {
  uint32* pixels;
  auint w, h;
  boole ok;
- if (!guicore_capture_pixels(&pixels, &w, &h)){ return FALSE; }
- ok = main_save_screenshot_pixels(path, pixels, w, w, h);
+ /* Explicit non-PNG paths retain the historical BMP export for old tools,
+  * including extensionless filenames. Automatic screenshots use PNG. */
+ char const* ext=path?strrchr(path,'.'):NULL;
+ boole bmp=!ext||SDL_strcasecmp(ext,".png");
+ if(!path||!*path)return FALSE;
+ if (!(bmp ? guicore_capture_pixels(&pixels,&w,&h) : main_capture_game_screenshot(&pixels,&w,&h)))return FALSE;
+ ok = main_save_screenshot_pixels(path, pixels, w, w, h,FALSE);
  free(pixels);
  return ok;
 }
 
 boole mainui_get_screenshot_include_gui(void){ return main_cfg.screenshot_include_gui; }
+boole mainui_get_screenshot_bypass_filters(void){ return main_cfg.screenshot_bypass_filters; }
+auint mainui_get_screenshot_x_width(void){return main_cfg.screenshot_x_width;}
+auint mainui_get_screenshot_y_scale(void){return main_cfg.screenshot_y_scale;}
+auint mainui_get_screenshot_sampling(void){return main_cfg.screenshot_sampling;}
+boole mainui_set_screenshot_scale(auint w,auint y,auint sampling)
+{
+ if(w<1U||w>2880U||y<1U||y>10U||sampling>2U)return FALSE;
+ main_cfg.screenshot_x_width=w;main_cfg.screenshot_y_scale=y;main_cfg.screenshot_sampling=sampling;
+ main_cfg_mark_dirty();return TRUE;
+}
+
+void mainui_screenshot_metadata(char* json,auint cap,auint width,auint height,boole legacy,boole gui)
+{
+ auint first,rows,fields,pw,ph;boole valid,interlaced;
+ boole cycle=!legacy&&!gui&&main_cfg.screenshot_bypass_filters;
+ frame_capture_geometry(&first,&rows,&valid,&interlaced);fields=interlaced?2U:1U;
+ pw=cycle?main_cfg.screenshot_x_width:width;ph=cycle?rows*main_cfg.screenshot_y_scale:height;
+ snprintf(json,cap,"{\"schema\":\"cuex-shot-1\",\"path\":\"%s\",\"filters_bypassed\":%u,\"scale_applied\":%u,\"source_valid\":%u,\"source_cycle_begin\":%u,\"source_width_cycles\":%u,\"source_row_first\":%u,\"source_rows\":%u,\"source_fields\":%u,\"requested_x_width\":%u,\"requested_y_scale\":%u,\"sampling\":\"%s\",\"x_scale_num\":%u,\"x_scale_den\":%u,\"y_scale_num\":%u,\"y_scale_den\":%u,\"pre_rotation_width\":%u,\"pre_rotation_height\":%u,\"width\":%u,\"height\":%u,\"jamma_flags\":%u,\"cycle_exact_x\":%u}",
+ legacy?"legacy_bmp":gui?"gui":cycle?"cycle":"display",cycle,cycle,cycle&&valid,
+ cycle?299U:0U,cycle?1440U:0U,cycle?first:0U,cycle?rows:0U,cycle?fields:0U,
+ main_cfg.screenshot_x_width,main_cfg.screenshot_y_scale,shot_sampling_name(main_cfg.screenshot_sampling),
+ cycle?pw:0U,cycle?1440U:0U,cycle?main_cfg.screenshot_y_scale:0U,cycle?fields:0U,
+ pw,ph,width,height,(unsigned)guicore_get_jamma(),cycle&&pw==1440U);
+}
+
+boole mainui_screenshot_settings(char const* args,char* json,auint cap)
+{
+ char op[24]="STATUS",key[32]="",value[32]="",extra[2];int n;
+ auint w=main_cfg.screenshot_x_width,y=main_cfg.screenshot_y_scale,s=main_cfg.screenshot_sampling,i,pos;
+ n=sscanf(args?args:"","%23s %31s %31s %1s",op,key,value,extra);
+ if(!SDL_strcasecmp(op,"PRESET")&&n==2){
+  for(i=0U;i<SHOT_PRESET_COUNT;i++)if(!SDL_strcasecmp(key,shot_preset_name(i)))break;
+  if(i==SHOT_PRESET_COUNT)return FALSE;
+  mainui_set_screenshot_scale(shot_preset_width(i),shot_preset_y(i),s);
+ }else if(!SDL_strcasecmp(op,"SET")&&n==3){
+  char* end;unsigned long v=strtoul(value,&end,10);
+  if(!SDL_strcasecmp(key,"SAMPLING")){
+   for(s=0U;s<3U;s++)if(!SDL_strcasecmp(value,shot_sampling_name(s)))break;
+   if(s==3U)return FALSE;
+  }else{
+   if(!value[0]||*end||value[0]=='-'||v>2880UL)return FALSE;
+   if(!SDL_strcasecmp(key,"X_WIDTH"))w=(auint)v;
+   else if(!SDL_strcasecmp(key,"Y_SCALE"))y=(auint)v;
+   else if(!SDL_strcasecmp(key,"BYPASS_FILTERS")&&v<=1UL)mainui_set_screenshot_bypass_filters(v!=0);
+   else if(!SDL_strcasecmp(key,"INCLUDE_GUI")&&v<=1UL)mainui_set_screenshot_include_gui(v!=0);
+   else return FALSE;
+  }
+  if(!mainui_set_screenshot_scale(w,y,s))return FALSE;
+ }else if(SDL_strcasecmp(op,"STATUS")||n>1)return FALSE;
+ w=main_cfg.screenshot_x_width;y=main_cfg.screenshot_y_scale;s=main_cfg.screenshot_sampling;
+ pos=(auint)snprintf(json,cap,"{\"ok\":1,\"x_width\":%u,\"y_scale\":%u,\"sampling\":\"%s\",\"bypass_filters\":%u,\"include_gui\":%u,\"preset\":\"%s\",\"x_min\":1,\"x_max\":2880,\"y_min\":1,\"y_max\":10,\"x_choices\":[",w,y,shot_sampling_name(s),main_cfg.screenshot_bypass_filters,main_cfg.screenshot_include_gui,shot_preset_name(shot_preset_index(w,y)));
+ for(i=0U;i<SHOT_WIDTH_COUNT&&pos<cap;i++)pos+=(auint)snprintf(json+pos,cap-pos,"%s%u",i?",":"",shot_width(i));
+ if(pos<cap)pos+=(auint)snprintf(json+pos,cap-pos,"],\"sampling_choices\":[\"NEAREST\",\"AREA\",\"LINEAR\"],\"presets\":[");
+ for(i=0U;i<SHOT_PRESET_COUNT&&pos<cap;i++)pos+=(auint)snprintf(json+pos,cap-pos,"%s{\"name\":\"%s\",\"x_width\":%u,\"y_scale\":%u}",i?",":"",shot_preset_name(i),shot_preset_width(i),shot_preset_y(i));
+ if(pos<cap)pos+=(auint)snprintf(json+pos,cap-pos,"]}");
+ return pos<cap;
+}
+void mainui_set_screenshot_bypass_filters(boole enable)
+{
+ main_cfg.screenshot_bypass_filters=enable;main_cfg_mark_dirty();
+}
 void mainui_set_screenshot_include_gui(boole enable)
 {
  main_cfg.screenshot_include_gui = enable;
@@ -2709,12 +2812,12 @@ boole mainui_save_screenshot_gui(uint32 const* pixels, auint pitch, auint width,
  boole ok;
  if (!main_screenshot_build_path(path, sizeof(path))){ return FALSE; }
  if (!main_cfg.screenshot_include_gui){
-  if (!guicore_capture_game_pixels(&game, &width, &height)){ return FALSE; }
+  if (!main_capture_game_screenshot(&game, &width, &height)){ return FALSE; }
   pixels = game;
   pitch = width;
  }
  if (!pixels || pitch < width || width == 0U || height == 0U){ free(game); return FALSE; }
- ok = main_save_screenshot_pixels(path, pixels, pitch, width, height);
+ ok = main_save_screenshot_pixels(path, pixels, pitch, width, height,main_cfg.screenshot_include_gui);
  free(game);
  if (ok && out_path != NULL && out_size){ main_copy_str(out_path, out_size, path); }
  return ok; /* GUI reports the result; do not queue a second OSD notification. */
@@ -2747,6 +2850,21 @@ boole mainui_save_screenshot_file(char const* path)
 	}
 	main_system_message("SCREENSHOT SAVED: %s", main_path_basename(path));
 	return TRUE;
+}
+
+boole mainui_capture_screenshot_png(uint8** out_data,auint* out_size,auint* out_width,auint* out_height)
+{
+ uint32* pixels=NULL;auint w,h;boole ok;guicore_pixfmt_t fmt;
+ if(!out_data||!out_size)return FALSE;
+ *out_data=NULL;*out_size=0U;
+ if(!main_capture_game_screenshot(&pixels,&w,&h))return FALSE;
+ guicore_getpixfmt(&fmt);
+ ok=screenshot_png_encode(pixels,w,w,h,fmt.rsh,fmt.gsh,fmt.bsh,out_data,out_size);
+ if(ok){char meta[1400];mainui_screenshot_metadata(meta,sizeof(meta),w,h,FALSE,FALSE);
+  if(!screenshot_png_annotate(out_data,out_size,meta)){free(*out_data);*out_data=NULL;*out_size=0U;ok=FALSE;}}
+ free(pixels);
+ if(ok){if(out_width)*out_width=w;if(out_height)*out_height=h;}
+ return ok;
 }
 
 static void main_bmp_put16(uint8* p, auint v)
@@ -7571,6 +7689,10 @@ int main (int argc, char** argv)
  boole             startup_builtin_bootloader = FALSE;
  boole             startup_has_path = FALSE;
  boole             startup_paused = FALSE;
+ int               startup_path_mode = RP_AUTO;
+ char const*       startup_data_dir = NULL;
+ char const*       startup_resource_dir = NULL;
+ boole             startup_print_paths = FALSE;
  int               arg;
 
  /* Parse before config, devices, or server initialization. These overrides
@@ -7580,6 +7702,17 @@ int main (int argc, char** argv)
   if (!strcmp(value, "--headless")){ main_headless = TRUE; }
   else if (!strcmp(value, "--paused")){ startup_paused = TRUE; }
   else if (!strcmp(value, "--unthrottled")){ main_unthrottled = TRUE; }
+  else if (!strcmp(value,"--user-data")||!strcmp(value,"--portable")){
+   int wanted=!strcmp(value,"--user-data")?RP_USER:RP_PORTABLE;
+   if(startup_path_mode!=RP_AUTO&&startup_path_mode!=wanted){fprintf(stderr,"Choose --user-data or --portable\n");return 1;}
+   startup_path_mode=wanted;
+  }
+  else if(!strcmp(value,"--data-dir")||!strcmp(value,"--resource-dir")){
+   boole data=!strcmp(value,"--data-dir");
+   if(++arg>=argc||!argv[arg][0]){fprintf(stderr,"%s requires a directory\n",value);return 1;}
+   if(data)startup_data_dir=argv[arg];else startup_resource_dir=argv[arg];
+  }
+  else if(!strcmp(value,"--print-paths")){startup_print_paths=TRUE;}
   else if (!strcmp(value, "--config")){
    if (++arg >= argc || !argv[arg][0] || strlen(argv[arg]) >= APPCFG_PATH_MAX){
     fprintf(stderr, "--config requires a path shorter than %u bytes\n", (unsigned)APPCFG_PATH_MAX); return 1;
@@ -7603,16 +7736,30 @@ int main (int argc, char** argv)
           "  --headless      No window, GUI, controllers, or speakers; enable TCP API\n"
           "  --paused        Start paused for API-controlled tests\n"
           "  --config PATH   Load/save this config instead of ./config.cfg\n"
+          "  --user-data     Use the platform's writable CUEX user-data directory\n"
+          "  --portable      Keep writable files beside the executable\n"
+          "  --data-dir DIR  Override the user-data directory (implies --user-data)\n"
+          "  --resource-dir DIR  Override the packaged resource directory\n"
+          "  --print-paths   Initialize and print resolved paths, then exit\n"
           "  --api-port PORT Override the TCP API port for this process\n"
           "  --unthrottled   Run headless emulation without the default 60 Hz limit\n");
    return 0;
   }else if (value[0] == '-' || startup_has_path){
    fprintf(stderr, "Unknown argument or extra ROM: %s\n", value); return 1;
   }else{
+   if(strlen(value)>=sizeof(startup_game)){fprintf(stderr,"ROM path is too long\n");return 1;}
    main_copy_str(startup_game, sizeof(startup_game), value);
    startup_has_path = TRUE;
   }
  }
+ if(startup_data_dir&&startup_path_mode==RP_PORTABLE){fprintf(stderr,"--data-dir conflicts with --portable\n");return 1;}
+ if(!runtime_paths_prepare(startup_path_mode,startup_data_dir,startup_resource_dir,
+     main_cfg_explicit?main_cfgfile:NULL,startup_has_path?startup_game:NULL,sizeof(startup_game))){
+  fprintf(stderr,"Unable to initialize CUEX paths (directory inaccessible or path too long): %s\n",strerror(errno));return 1;
+ }
+ main_cfgfile=runtime_paths.config;
+ cu_esp_set_config_path(main_cfgfile);cu_uzenet_set_config_path(main_cfgfile);
+ if(startup_print_paths){runtime_paths_print();return 0;}
  if (main_unthrottled && !main_headless){ fprintf(stderr, "--unthrottled requires --headless\n"); return 1; }
 #ifndef ENABLE_API_SERVER
  if (main_headless || main_cli_api_port){ fprintf(stderr, "This build has no API server support\n"); return 1; }
@@ -7663,7 +7810,7 @@ int main (int argc, char** argv)
  remote_roms_set_host(main_cfg.remote_roms_host[0] ? main_cfg.remote_roms_host : "uzenet.us");
 
  if (!startup_has_path){
-  strncpy(startup_game, "Bootloader.hex", sizeof(startup_game) - 1U);
+  strncpy(startup_game, runtime_paths.mode!=RP_LEGACY?"roms/Bootloader.hex":"Bootloader.hex", sizeof(startup_game) - 1U);
   startup_game[sizeof(startup_game) - 1U] = 0;
   startup_builtin_bootloader = TRUE;
  }

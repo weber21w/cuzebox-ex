@@ -1,7 +1,10 @@
-# Optional AVR hardware models
+# AVR hardware models
 
 Two independent build flags select additional ATmega644 behavior. Both default
-to `0`, preserving the release timer and GPIO paths. These are compile options,
+to `1` in native builds, matching the hardware-tested ESP8266 client build.
+This is the new native standard; the different strict replay behavior identifier
+is intentional. The Emscripten target retains `0` for its separate browser
+UART/GPIO overlay unless its builder explicitly selects a combination. These are compile options,
 not `.uze` hints or runtime settings.
 
 | Flag | Behavior when enabled |
@@ -17,7 +20,7 @@ make FLAG_AVR_TIMER1_CLOCK=1 FLAG_AVR_GPIO=1 \
 ```
 
 Add the normal platform and feature options for the desired build, such as
-`TSYS=linux FLAG_OPENSSL=1`. Leaving either flag out selects its default of `0`.
+`TSYS=linux FLAG_OPENSSL=1`. Leaving either flag out selects its default of `1`.
 Existing SEI/RETI interrupt delays, PINx write-one toggling, and Timer1
 normal/CTC compare corrections remain enabled independently of these options.
 
@@ -47,8 +50,8 @@ core's timer, I/O or rendering paths.
 
 Enabled builds append a 24-byte `CZH1` hardware trailer to save states, carrying
 the compiled feature mask, divider phase and external GPIO inputs. The CPU
-structure and version-1 save-state header remain unchanged. Default builds
-keep the original state layout and replay behavior identifier.
+structure and version-1 save-state header remain unchanged. Builds with both
+flags disabled keep the original state layout and replay behavior identifier.
 
 Each enabled combination has a distinct replay behavior identifier. Strict
 movie/checkpoint validation requires the same hardware features. Restoring an

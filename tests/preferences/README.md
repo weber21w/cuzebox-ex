@@ -56,6 +56,22 @@ to two-word instructions. `storage-test` checks CRC equivalence, reusable movie
 buffers, malformed chunks and snapshot bounds before CPU mutation. Pass
 `--benchmark` to its executable for three 32 MiB CRC comparison trials.
 
+`storage-test` also exercises save-state paths: one default directory level,
+absolute custom roots with spaces and a trailing separator, read-only slot
+queries, legacy nested-slot loading, corrected-path priority, and rejection
+of a corrupt current save without falling back to stale data.
+
+The interrupt regression also checks PINx toggle semantics and that `OUT PINC`
+affects the pixel on its own cycle, matching `OUT PORTC`, in both decoders.
+
+`video-messages-test` requires FFmpeg and records three-frame clips with and
+without emulator notices, while checking that messages remain on screen.
+`python3 tools/test_video_messages.py <OBD>` independently decodes both clips
+and verifies recorded pixels, frame counts and the mono 48 kHz audio stream.
+The screenshot tool regression also clicks the Dump Video OMIT MESSAGES box;
+the preference regression checks its saved value. Existing input-playback
+coverage checks replay-to-video frame count and finalization.
+
 `cheats-test` clicks the real MicroUI Save button, reloads its edited value,
 round-trips 16/32-bit values and comparisons, and checks legacy byte defaults.
 On Linux it also verifies that a failed write leaves the dirty flag set.

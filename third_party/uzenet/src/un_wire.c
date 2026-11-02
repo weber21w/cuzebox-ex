@@ -1,4 +1,10 @@
 #include "un_wire.h"
+#include "un_diagnostics.h"
+#ifdef UN_WIRE_DIAGNOSTICS
+#define RX_FAULT(reason) un_diag_rx_fault(reason)
+#else
+#define RX_FAULT(reason) ((void)0)
+#endif
 enum { RX_ACTIVE=1, RX_ESCAPED=2, RX_BAD=4 };
 uint8_t un_crc8(uint8_t crc, uint8_t byte) {
     uint8_t i;
@@ -34,12 +40,16 @@ uint8_t un_encoded_size(uint8_t type,const uint8_t *p,uint8_t n) {
 uint8_t un_receive(UnRx *rx,uint8_t byte) {
     uint8_t count=rx->count, i, crc=0;
     if(byte==UN_DELIM) {
-        uint8_t valid=(rx->flags==RX_ACTIVE && count>=2);
+        uint8_t prior=rx->flags;
+        uint8_t valid=(prior==RX_ACTIVE && count>=2);
+        (void)prior;
         rx->flags=RX_ACTIVE; rx->count=0;
         if(valid) {
             for(i=0;i<count;i++) crc=un_crc8(crc,rx->data[i]);
             if(!crc) return count-1;
+            RX_FAULT(UN_RX_CRC);
         }
+        if(!valid && (count || (prior & (RX_BAD|RX_ESCAPED)))) RX_FAULT(UN_RX_MALFORMED);
         return 0;
     }
     if(!(rx->flags&RX_ACTIVE) || (rx->flags&RX_BAD)) return 0;

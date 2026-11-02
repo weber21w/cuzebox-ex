@@ -721,6 +721,11 @@ auint cu_esp_update_timer_counts(auint cycle){
 	for(uint8 i = 0; i < (uint8)CU_ARRLEN(esp_state.delay_pos); i++){
 		if(!esp_state.delay_len[i])
 			continue;
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+		/* Relative response chunks wait for their actual first UART frame,
+		 * which may be late when host socket completion is delayed. */
+		if(esp_state.delay_pos[i]&CU_ESP_CAPTURE_RELATIVE)continue;
+#endif
 		if(esp_state.delay_len[i] <= tdelta)
 			esp_state.delay_len[i] = 0;
 		else
@@ -2311,7 +2316,8 @@ void cu_esp_at_sysmsg(sint8 *cmd_buf){
 	const char *q=strchr((char*)cmd_buf,'?'),*e=strchr((char*)cmd_buf,'=');
 	if(q&&(!e||q<e)){
 		cu_esp_timed_stall(ESP_AT_OK_DELAY);
-		cu_esp_txp("+SYSMSG:");cu_esp_txi((sint32)esp_state.sysmsg_flags);cu_esp_txp("\r\n");cu_esp_txp_ok();return;
+		cu_esp_txp("+SYSMSG:");cu_esp_txi((sint32)esp_state.sysmsg_flags);cu_esp_txp("\r\n");
+		if(cu_esp_at23_enabled())cu_esp_txp("OK\r\n");else cu_esp_txp_ok();return;
 	}
 	if(e){
 		const sint8 *p=(const sint8*)e+1;int v=0;
@@ -2898,7 +2904,7 @@ void cu_esp_at_ciprecvmode(sint8 *cmd_buf){
 void cu_esp_at_ciprecvlen(sint8 *cmd_buf){
 	const char*q=strchr((char*)cmd_buf,'?'),*e=strchr((char*)cmd_buf,'=');
 	if(q&&(!e||q<e)){
-		if(esp_state.state&ESP_MUX){cu_esp_txp("+CIPRECVLEN:");for(uint8 i=0;i<ESP_MAX_LINKS;i++){if(i)cu_esp_txp(",");uint16 n=cu_esp_cipbuf_avail(&esp_state,i);if(n)cu_esp_txi(n);}cu_esp_txp("\r\n");cu_esp_txp_ok();return;}
+		if(esp_state.state&ESP_MUX){cu_esp_txp("+CIPRECVLEN:");for(uint8 i=0;i<ESP_MAX_LINKS;i++){if(i)cu_esp_txp(",");uint16 n=cu_esp_cipbuf_avail(&esp_state,i);if(n||cu_esp_at23_enabled())cu_esp_txi(n);}cu_esp_txp("\r\n");cu_esp_txp_ok();return;}
 		cu_esp_txp("+CIPRECVLEN:");cu_esp_txi(cu_esp_cipbuf_avail(&esp_state,0));cu_esp_txp("\r\n");cu_esp_txp_ok();return;
 	}
 	if(e&&(esp_state.state&ESP_MUX)){const sint8*p=(const sint8*)e+1;auint id;if(!cu_esp_parse_u32_8(p,&id,&p)||id>=ESP_MAX_LINKS||!cu_esp_expect_crlf(p)){cu_esp_txp_error();return;}cu_esp_txp("+CIPRECVLEN:");cu_esp_txi(id);cu_esp_txp(",");cu_esp_txi(cu_esp_cipbuf_avail(&esp_state,(uint8)id));cu_esp_txp("\r\n");cu_esp_txp_ok();return;}cu_esp_txp_error();
@@ -3103,6 +3109,12 @@ void cu_esp_at_restore(sint8 *cmd_buf){
 /* CIPDINFO                                                                   */
 /* ------------------------------------------------------------------------- */
 void cu_esp_at_cipdinfo(sint8 *cmd_buf){
+	/* RTOS query uses textual booleans and one CRLF before OK, unlike
+	 * the ordinary numeric setting queries. Verified on physical 805b233a. */
+	if(cu_esp_at23_enabled() && !strcmp((const char*)cmd_buf,"AT+CIPDINFO?\r\n")){
+		cu_esp_txp((esp_state.state&ESP_CIPDINFO)?"+CIPDINFO:true\r\nOK\r\n":"+CIPDINFO:false\r\nOK\r\n");
+		return;
+	}
 	const sint8 *e = (const sint8*)strchr((const char*)cmd_buf, '=');
 	int v = 0;
 
@@ -3185,6 +3197,11 @@ void cu_esp_at_ping(sint8 *cmd_buf){
 		cu_esp_txp_error();
 		return;
 	}
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+	/* Physical RTOS single-ping sessions report completion after their
+	 * one-second interval, independently of the RTT number in +PING. */
+	if(cu_esp_at23_enabled())cu_esp_timed_stall(ESP_UZEBOX_CORE_FREQUENCY);
+#endif
 }
 
 /* ------------------------------------------------------------------------- */
@@ -3193,6 +3210,10 @@ void cu_esp_at_ping(sint8 *cmd_buf){
 void cu_esp_at_cwautoconn(sint8 *cmd_buf){
 	const sint8 *e = (const sint8*)strchr((const char*)cmd_buf, '=');
 	int v = 0;
+	if(cu_esp_at23_enabled() && !strcmp((const char*)cmd_buf,"AT+CWAUTOCONN?\r\n")){
+		cu_esp_txp("+CWAUTOCONN:");cu_esp_txi((esp_state.state&ESP_AUTOCONNECT)?1:0);
+		cu_esp_txp("\r\nOK\r\n");return;
+	}
 
 	if(!e){
 		cu_esp_txp_error();
@@ -3385,7 +3406,12 @@ void cu_esp_at_ciobaud(sint8 *cmd_buf){
 /* ------------------------------------------------------------------------- */
 static void cu_esp_uart_emit(boole defaults){
 	cu_esp_txp(defaults ? "+UART_DEF:" : "+UART_CUR:");
-	cu_esp_txi((sint32)(defaults && esp_state.uart_baud_rate_default ? esp_state.uart_baud_rate_default : esp_state.baud_rate));
+	auint baud=defaults && esp_state.uart_baud_rate_default ? esp_state.uart_baud_rate_default : esp_state.baud_rate;
+	/* ESP8266 RTOS UART_CUR reads the hardware divider, rather than echoing
+	 * the requested rate. Captured at 115200: +UART_CUR:115273,8,1,0,0. */
+	if(!defaults && cu_esp_at23_enabled() && baud && baud<=80000000u)
+		baud=80000000u/(80000000u/baud);
+	cu_esp_txi((sint32)baud);
 	cu_esp_txp(",8,1,0,0\r\n");
 	cu_esp_txp_ok();
 }
@@ -3659,8 +3685,8 @@ void cu_esp_txi(sint32 i){
 	cu_esp_txl(p, (auint)(&buf[sizeof(buf)] - p));
 }
 
-void cu_esp_txp_error(void){ cu_esp_txp("ERROR\r\n"); }
-void cu_esp_txp_ok(void){ cu_esp_txp("OK\r\n"); }
+void cu_esp_txp_error(void){ cu_esp_txp(cu_esp_at23_enabled()?"\r\nERROR\r\n":"ERROR\r\n"); }
+void cu_esp_txp_ok(void){ cu_esp_txp(cu_esp_at23_enabled()?"\r\nOK\r\n":"OK\r\n"); }
 static void cu_esp_txp_busy_p(void){ cu_esp_txp("busy p...\r\n"); }
 
 #include "cu_esp_at23.inc"
@@ -4014,6 +4040,9 @@ static void cu_esp_at_dispatch_call(uint8 id, sint8 *cmd_buf)
 	}
 }
 
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+#include "cu_esp_at_capture.inc"
+#endif
 void cu_esp_process_at(sint8 *cmd_buf)
 {
     if(cu_esp_rom_blocked())return;
@@ -4024,6 +4053,19 @@ void cu_esp_process_at(sint8 *cmd_buf)
 
 	CU_ESP_AT_LOG("PROCESS AT [%s]\n", cmd);
 	if(cu_esp_at_is_busy()){ cu_esp_txp_busy_p(); return; }
+#ifdef CU_ESP_AT_CAPTURE_PROFILE
+	if(cu_esp_at23_enabled()){
+		auint capture_base=esp_state.read_buf_pos_in;
+		auint delay=cu_esp_at_capture_delay(cmd,0u);
+		if(delay)cu_esp_timed_stall(delay);
+		if(esp_state.state&ESP_ECHO){
+			cu_esp_txp(cmd);
+			delay=cu_esp_at_capture_delay(cmd,1u);
+			if(delay)cu_esp_timed_stall(delay);
+		}
+		cu_esp_at_capture_pause(cmd,capture_base);
+	}
+#endif
 
 	if(cmd[0] != 'A' || cmd[1] != 'T'){ cu_esp_txp_error(); return; }
 	if(cmd[2] != '+'){

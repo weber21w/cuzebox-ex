@@ -61,7 +61,10 @@ void un_discard_ready_beacons(UnSession *s){
     (void)un_defer(s,bytes,used);
 }
 uint8_t un_session_byte(UnSession *s,uint8_t byte) {
-    uint8_t n=un_receive(&s->rx,byte),reply[UN_PAYLOAD_MAX],type;
+    return un_session_dispatch(s,un_receive(&s->rx,byte));
+}
+uint8_t un_session_dispatch(UnSession *s,uint8_t n) {
+    uint8_t reply[UN_PAYLOAD_MAX],type;
     if(!n || !s->active) return 0;
     type=s->rx.data[0];
     if(type==UN_CAPS && n==1) {

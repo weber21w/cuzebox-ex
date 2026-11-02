@@ -128,6 +128,15 @@ int main(void)
  es.at_firmware_profile=CU_ESP_AT_FW_UZENET;
  step(150);assert(!cu_uzenet_enabled() && !un_session.active);
  es.reset_pin=1;
+ /* A valid entry pulse must survive a stock beacon still in the FIFO. */
+ cpu.iors[CU_IO_DDRA]=0;step(120);
+ cu_esp_txl("!M\0\0",4);
+ cpu.iors[CU_IO_DDRA]=0x80;cpu.iors[CU_IO_PORTA]=0;step(30);
+ cpu.iors[CU_IO_DDRA]=0;step(10);
+ assert(un_entry_pending && !un_session.active && output_n==4);
+ step(90);assert(un_entry_pending && !un_session.active);
+ drain();output_n=0;step(5);assert(un_session.active && un_ack_low);
+ cu_uzenet_reset();drain();output_n=0;
  entry();
  /* UART completions may be delivered after the periodic firmware tick. */
  uint32_t before=un_ms;

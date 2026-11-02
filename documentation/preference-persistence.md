@@ -18,7 +18,7 @@ save immediately. Crashes or forced termination can lose edits not yet saved.
 | Emulator keyboard and controller shortcuts | `config.cfg` (`Shortcut0..22`); edited through TOOLS → SHORTCUTS |
 | SD timing/access, SPI RAM, ESP policy and bootloader preferences | `config.cfg` |
 | ROM/state/screenshot/controller database paths and recent ROM list/freeze | `config.cfg` |
-| Video capture filename, automatic numbering and reset-first option | `config.cfg` |
+| Video capture filename, automatic numbering, reset-first and OMIT MESSAGES | `config.cfg` (`VideoDumpOmitMessages`, default 1) |
 | Input recording Compact / Full Debug mode | `config.cfg` (`InputMovieCompact`, default 1) |
 | Netplay timing, relay/interface, player mask/count, ROM transfer options, name and pad labels | `config.cfg` |
 | ESP/serial/TCP/MIDI preferences | ESP section of `config.cfg` |
@@ -28,6 +28,17 @@ save immediately. Crashes or forced termination can lose edits not yet saved.
 Running capture, connection/lobby state, emulator pause state, trace activity,
 open GUI pages and pending file-dialog text are session state. Apply/submit a
 text field before saving where the GUI provides an Apply action.
+
+Tools > Dump Video **OMIT MESSAGES** defaults on, including for old configs
+without `VideoDumpOmitMessages`. It records the game buffer before emulator
+text and notices are drawn. Screen messages keep their normal visibility and
+lifetime; the global System Messages setting is independent. Unchecking this
+option records the existing on-screen notices. It can be changed while
+recording and takes effect on the next rendered recording frame. Replay-to-video
+uses the same preference. Video dimensions, sampling, frame rate and audio
+remain unchanged; screenshot scaling and bypass preferences do not apply.
+The web Controls page exposes the same setting. API clients use
+`EMU_SET video_dump_omit_messages 0|1` and read it through `EMU_STATUS`.
 
 The Devices **FAST FLASH** checkbox defaults on and persists as `FastFlash`.
 Its temporary acceleration state is not saved and does not change the saved
@@ -45,6 +56,17 @@ import path. The existing commented format remains appropriate for this change;
 changing syntax alone would not fix missing fields or incorrect capture logic.
 
 See `tests/preferences/README.md` for automated coverage and limitations.
+
+`SavePath` is the save-state directory itself (default `savestates`). Slots are
+written to `SavePath/<sanitized ROM name>/slot_N.czs`; the configured path is
+used directly for relative and absolute paths. For example, the default is
+`savestates/Game/slot_0.czs`, without a second `savestates` component.
+Slot checks and failed loads create no directories; directories are created
+only when saving. Loading and slot indicators also check the old
+`SavePath/savestates/<ROM>/slot_N.czs` location when the corrected file is
+missing. Existing old saves are preserved without moving or rewriting them.
+A corrected-path save takes priority; unreadable or invalid corrected-path
+files report failure rather than silently restoring an older nested save.
 
 The resident bootloader's GAME/MENU choice belongs to the emulated EEPROM,
 not `config.cfg`: byte `0x16` is `1` for GAME and `0` for MENU. Fresh EEPROM

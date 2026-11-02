@@ -347,6 +347,9 @@ typedef struct{
 #define CU_EVT_PING_DONE	2
 #define CU_EVT_DNS_DONE	3
 #define CU_EVT_UDP_SEND_RESOLVE_DONE	4
+#define CU_ESP_CAPTURE_RELATIVE 0x80000000u
+#define CU_ESP_CAPTURE_POS_MASK 0x00000fffu
+#define CU_ESP_CAPTURE_BASE_SHIFT 12u
 
 typedef struct{
 	uint8	kind;

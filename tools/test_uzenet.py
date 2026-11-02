@@ -13,8 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     vendor = ROOT / "third_party/uzenet"
     snapshot = json.loads((vendor / "snapshot.json").read_text())
+    included = {p.relative_to(vendor).as_posix()
+                for folder in ("src", "include") for p in (vendor / folder).iterdir()
+                if p.suffix in (".c", ".h")}
+    assert included == set(snapshot["files"]), "unpinned or missing portable firmware source"
     for name, digest in snapshot["files"].items():
-        assert hashlib.sha256((vendor / name).read_bytes()).hexdigest() == digest, name
+        data = (vendor / name).read_bytes()
+        if snapshot.get("hash_format") == "sha256-lf":
+            data = data.replace(b"\r\n", b"\n")
+        assert hashlib.sha256(data).hexdigest() == digest, name
     cc = shutil.which("cc") or shutil.which("gcc")
     if not cc:
         raise SystemExit("A native C compiler is required")

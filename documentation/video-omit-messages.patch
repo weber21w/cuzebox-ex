@@ -1,0 +1,502 @@
+diff --git a/api_server.c b/api_server.c
+--- a/api_server.c
++++ b/api_server.c
+@@ -4715,14 +4715,14 @@
+       "\"input_kbuzem\":%u,\"player2_alloc\":%u,\"mouse\":%u,\"mouse_scale\":%u,"
+       "\"audio_freqscale\":%u,\"audio_s16\":%u,\"audio_rate\":%u,\"audio_latency\":%u,\"audio_resampler\":%u,\"audio_dcblock\":%u,\"audio_lowpass\":%u,\"audio_lowpass_quality\":%u,\"audio_monitor\":%u,\"audio_monitor_width\":%u,\"audio_reverb\":%u,\"audio_volume\":%u,"
+       "\"spiram_pages\":%u,\"sd_allow_new_files\":%u,\"resident_bootloader\":%u,\"fast_flash\":%u,\"recent_frozen\":%u,\"config_dirty\":%u,"
+-      "\"video_dump_active\":%u,\"video_dump_autoinc\":%u,\"video_dump_reset_first\":%u,\"video_dump_file\":\"",
++      "\"video_dump_active\":%u,\"video_dump_autoinc\":%u,\"video_dump_reset_first\":%u,\"video_dump_omit_messages\":%u,\"video_dump_file\":\"",
+       (unsigned)mainui_get_display_gameonly(),(unsigned)mainui_get_display_fullscreen(),(unsigned)mainui_get_system_messages(),(unsigned)mainui_get_log_verbosity(),
+       (unsigned)mainui_get_gui_gamepad_enable(),(unsigned)mainui_get_gui_gamepad_speed_pct(),(unsigned)mainui_get_gui_pause_while_open(),(unsigned)mainui_get_gui_virtual_keyboard(),
+       (unsigned)mainui_get_area_weighted(),(unsigned)mainui_get_area_weighted_mode(),(unsigned)mainui_get_frame_rate_limiter(),(unsigned)mainui_get_frame_merge(),(unsigned)mainui_get_interlace_mode(),(unsigned)mainui_get_interlace_presentation(),(unsigned)cu_avr_interlace_field(NULL),(unsigned)mainui_get_tv_sync_pll(),(unsigned)mainui_get_tv_sync_recovery(),(unsigned)mainui_get_tv_sync_strength(),(unsigned)mainui_get_render_path(),(unsigned)mainui_get_filter_pre_mode(),(unsigned)mainui_get_filter_scale_mode(),(unsigned)mainui_get_filter_crt_mode(),
+       (unsigned)mainui_get_input_kbuzem(),(unsigned)mainui_get_input_player2alloc(),(unsigned)mainui_get_mouse_enable(),(unsigned)mainui_get_mouse_scale(),
+       (unsigned)mainui_get_audio_freqscale(),(unsigned)mainui_get_audio_s16(),(unsigned)mainui_get_audio_output_rate(),(unsigned)mainui_get_audio_latency(),(unsigned)mainui_get_audio_resampler(),(unsigned)mainui_get_audio_dcblock(),(unsigned)mainui_get_audio_lowpass(),(unsigned)mainui_get_audio_lowpass_quality(),(unsigned)mainui_get_audio_monitor_mode(),(unsigned)mainui_get_audio_monitor_width(),(unsigned)mainui_get_audio_reverb(),(unsigned)mainui_get_audio_master_volume(),
+       (unsigned)mainui_get_spiram_pages_mode(),(unsigned)mainui_get_sd_allow_new_files(),(unsigned)mainui_get_resident_bootloader_enable(),(unsigned)mainui_get_fast_flash(),(unsigned)mainui_get_recent_roms_frozen(),(unsigned)mainui_get_config_dirty(),
+-      (unsigned)mainui_get_video_dump_active(),(unsigned)mainui_get_video_dump_autoinc(),(unsigned)mainui_get_video_dump_reset_first());
++      (unsigned)mainui_get_video_dump_active(),(unsigned)mainui_get_video_dump_autoinc(),(unsigned)mainui_get_video_dump_reset_first(),(unsigned)mainui_get_video_dump_omit_messages());
+     api_json_escape_append(buf,sizeof(buf),&pos,mainui_get_video_dump_file());
+     pos += (auint)snprintf(buf+pos,sizeof(buf)-pos,"\",\"video_dump_status\":\""); api_json_escape_append(buf,sizeof(buf),&pos,mainui_get_video_dump_status());
+     pos += (auint)snprintf(buf+pos,sizeof(buf)-pos,"\",\"input_capture_active\":%u,\"input_capture_file\":\"",(unsigned)mainui_get_input_capture_active()); api_json_escape_append(buf,sizeof(buf),&pos,mainui_get_input_capture_file());
+@@ -4749,7 +4749,7 @@
+     KNUM("spiram_pages",mainui_set_spiram_pages_mode) KBOOL("sd_allow_new_files",mainui_set_sd_allow_new_files) KBOOL("resident_bootloader",mainui_set_resident_bootloader_enable) KBOOL("fast_flash",mainui_set_fast_flash)
+     KSTR("rom_dir",mainui_set_rom_path) KSTR("save_path",mainui_set_save_path) KSTR("screenshot_path",mainui_set_screenshot_path) KSTR("controllerdb_path",mainui_set_controllerdb_path) KSTR("resident_bootloader_file",mainui_set_resident_bootloader_file) KSTR("remote_roms_host",mainui_set_remote_roms_host)
+     KSTR("theme_file",mainui_set_gui_theme_file) KSTR("video_dump_file",mainui_set_video_dump_file)
+-    KBOOL("video_dump_active",mainui_set_video_dump_active) KBOOL("video_dump_autoinc",mainui_set_video_dump_autoinc) KBOOL("video_dump_reset_first",mainui_set_video_dump_reset_first) KBOOL("input_capture_active",mainui_set_input_capture_active)
++    KBOOL("video_dump_active",mainui_set_video_dump_active) KBOOL("video_dump_autoinc",mainui_set_video_dump_autoinc) KBOOL("video_dump_reset_first",mainui_set_video_dump_reset_first) KBOOL("video_dump_omit_messages",mainui_set_video_dump_omit_messages) KBOOL("input_capture_active",mainui_set_input_capture_active)
+     KBOOL("recent_frozen",mainui_set_recent_roms_frozen)
+ #undef KNUM
+ #undef KBOOL
+diff --git a/avconv.c b/avconv.c
+--- a/avconv.c
++++ b/avconv.c
+@@ -69,6 +69,11 @@
+ static auint avconv_afrac = 0U;
+ static boole avconv_sigpipe_ignored = FALSE;
+ static boole avconv_autoinc = TRUE;
++static boole avconv_omit_messages = TRUE;
++static boole avconv_clean_valid = FALSE;
++static boole avconv_frame_staged = FALSE;
++static boole avconv_frame_omit = TRUE;
++static uint32 avconv_clean_pixels[640U * 228U];
+ static char  avconv_name[AVCONV_NAME_CAP] = "video/CAPTURE001.MP4";
+ static char  avconv_active_name[AVCONV_NAME_CAP] = "";
+ static char  avconv_status[AVCONV_NAME_CAP] = "READY";
+@@ -290,6 +295,27 @@
+ 	(void)avconv_mkdirs_for_file(avconv_active_name);
+ }
+ 
++boole avconv_get_omit_messages(void){ return avconv_omit_messages; }
++
++void avconv_set_omit_messages(boole enable)
++{
++ /* A GUI/API change after rendering applies to the next frame. Keep the
++  * pending frame's choice so toggling cannot discard its video/audio. */
++ avconv_omit_messages=enable;
++}
++
++void avconv_stage_clean_frame(void)
++{
++ auint y,pitch;
++ uint32 const* pixels;
++ avconv_frame_staged=TRUE;avconv_frame_omit=avconv_omit_messages;
++ avconv_clean_valid=FALSE;
++ if(!avconv_frame_omit)return;
++ pitch=guicore_getpitch();pixels=guicore_getpixbuf()+20U*pitch;
++ for(y=0U;y<228U;y++)memcpy(avconv_clean_pixels+y*640U,pixels+y*pitch,640U*sizeof(uint32));
++ avconv_clean_valid=TRUE;
++}
++
+ void avconv_push(uint8 const* samples, auint len)
+ {
+ 	uint32* pixbuf;
+@@ -301,6 +327,10 @@
+ 	char    tstr[1024];
+ 	char    pixs[5] = {'0', '0', '0', '0', 0};
+ 	guicore_pixfmt_t pixfmt;
++	boole omit=avconv_frame_staged?avconv_frame_omit:avconv_omit_messages;
++	/* Wait for a rendered clean frame, including after a live option change.
++	 * Never fall back to a buffer which may already contain messages. */
++	if(omit&&!avconv_clean_valid)return;
+ 
+ 	if (!avconv_sigpipe_ignored){
+ 		#ifdef SIGPIPE
+@@ -388,7 +418,7 @@
+ 		}
+ 	}
+ 
+-	pixbuf = guicore_getpixbuf() + (640U * 20U);
++	pixbuf = omit ? avconv_clean_pixels : guicore_getpixbuf() + (640U * 20U);
+ 	if (fwrite(pixbuf, (640U * 228U) * sizeof(uint32), 1U, avconv_pipe_v) != 1U){
+ 		AVCONV_PCLOSE(avconv_pipe_v);
+ 		AVCONV_PCLOSE(avconv_pipe_a);
+@@ -398,6 +428,8 @@
+ 		avconv_set_status("VIDEO DUMP VIDEO PIPE WRITE FAILED");
+ 		return;
+ 	}
++	avconv_clean_valid=FALSE;
++	avconv_frame_staged=FALSE;
+ 	if (fwrite(&(samp48k[0]), areq, 1U, avconv_pipe_a) != 1U){
+ 		AVCONV_PCLOSE(avconv_pipe_v);
+ 		AVCONV_PCLOSE(avconv_pipe_a);
+@@ -416,6 +448,8 @@
+ 
+ void avconv_finalize(void)
+ {
++	avconv_clean_valid=FALSE;
++	avconv_frame_staged=FALSE;
+ 	int  rc;
+ 	int  c0 = 0;
+ 	int  c1 = 0;
+diff --git a/avconv.h b/avconv.h
+--- a/avconv.h
++++ b/avconv.h
+@@ -70,8 +70,15 @@
+ ** yet, it is initialized. It fetches the image data by reading the game
+ ** region of the 640 x 270 backbuffer from guicore, and the audio data of
+ ** the frame as directly passed to it.
++** With OMIT MESSAGES enabled (default), consumes the clean frame staged by
++** frame_run() before text composition; waits if no clean frame is available.
+ */
+ void avconv_push(uint8 const* samples, auint len);
++/* Preserve the 640x228 recording region before emulator text is composited.
++ * Called once per rendered recording frame; no copy when omission is off. */
++void avconv_stage_clean_frame(void);
++boole avconv_get_omit_messages(void);
++void avconv_set_omit_messages(boole enable);
+ 
+ 
+ /*
+diff --git a/configcfg.c b/configcfg.c
+--- a/configcfg.c
++++ b/configcfg.c
+@@ -209,6 +209,7 @@
+ 	appcfg_copy_str(cfg->video_dump_file, APPCFG_PATH_MAX, "video/CAPTURE001.MP4");
+ 	cfg->video_dump_autoinc = TRUE;
+ 	cfg->video_dump_reset_first = FALSE;
++	cfg->video_dump_omit_messages = TRUE;
+ 	appcfg_copy_str(cfg->gui_theme_name, sizeof(cfg->gui_theme_name), "BOOTLOADER");
+ 	appcfg_copy_str(cfg->gui_theme_file, sizeof(cfg->gui_theme_file), "themes/bootloader.cfg");
+ 	appcfg_set_color(cfg->gui_colors[0], 255U, 232U, 196U, 255U);
+@@ -410,7 +411,8 @@
+ 	fprintf(f, "RemoteRomsHost=%s\n", cfg->remote_roms_host);
+ 	fprintf(f, "VideoDumpFile=%s\n", cfg->video_dump_file);
+ 	fprintf(f, "VideoDumpAutoInc=%u\n", (unsigned)(cfg->video_dump_autoinc ? 1U : 0U));
+-	fprintf(f, "VideoDumpResetFirst=%u\n\n", (unsigned)(cfg->video_dump_reset_first ? 1U : 0U));
++	fprintf(f, "VideoDumpResetFirst=%u\n", (unsigned)(cfg->video_dump_reset_first ? 1U : 0U));
++	fprintf(f, "VideoDumpOmitMessages=%u\n\n", (unsigned)(cfg->video_dump_omit_messages ? 1U : 0U));
+ 
+ 	fprintf(f, "# Bootloader / flash persistence\n");
+ 	fprintf(f, "# ResidentBootloader: retain Bootloader 5 for UZE loads (default on); HEX replaces flash.\n");
+@@ -696,6 +698,8 @@
+ 			cfg->video_dump_autoinc = appcfg_parse_bool(val, cfg->video_dump_autoinc);
+ 		}else if (strcmp(key, "VideoDumpResetFirst") == 0){
+ 			cfg->video_dump_reset_first = appcfg_parse_bool(val, cfg->video_dump_reset_first);
++		}else if (strcmp(key, "VideoDumpOmitMessages") == 0){
++			cfg->video_dump_omit_messages = appcfg_parse_bool(val, cfg->video_dump_omit_messages);
+ 		}else if (strcmp(key, "GuiTitleHeight") == 0){
+ 			/* Ignored: title height is compile-time fixed. */
+ 		}else if (strcmp(key, "RomPath") == 0){
+diff --git a/configcfg.h b/configcfg.h
+--- a/configcfg.h
++++ b/configcfg.h
+@@ -116,6 +116,7 @@
+ 	char  video_dump_file[APPCFG_PATH_MAX];
+ 	boole video_dump_autoinc;
+ 	boole video_dump_reset_first;
++	boole video_dump_omit_messages;
+ 	uint8 gui_colors[APPCFG_GUI_COLOR_COUNT][4];
+ 	char gui_theme_name[32];
+ 	char gui_theme_file[APPCFG_PATH_MAX];
+diff --git a/frame.c b/frame.c
+--- a/frame.c
++++ b/frame.c
+@@ -34,6 +34,10 @@
+ #include "renderpath.h"
+ #include "cu_esp.h"
+ #include "cu_ufile.h"
++#ifdef ENABLE_VCAP
++#include "avconv.h"
++#include "mainui.h"
++#endif
+ 
+ 
+ 
+@@ -960,6 +964,9 @@
+ 
+  /* Add text GUI elements */
+ 
++#ifdef ENABLE_VCAP
++ if(!drop&&mainui_get_video_dump_active()){ avconv_stage_clean_frame(); }
++#endif
+  if (!guicore_is_headless()){ textgui_draw(drop || gonly, drop); }
+  if(!field_complete) guicore_reset_fields();
+  if(field_complete && !drop){
+diff --git a/main.c b/main.c
+--- a/main.c
++++ b/main.c
+@@ -897,6 +897,7 @@
+ 	strncpy(main_cfg.video_dump_file, avconv_get_filename(), APPCFG_PATH_MAX - 1U);
+ 	main_cfg.video_dump_file[APPCFG_PATH_MAX - 1U] = 0;
+ 	main_cfg.video_dump_autoinc = avconv_get_autoinc();
++	main_cfg.video_dump_omit_messages = avconv_get_omit_messages();
+ #endif
+ #ifdef ENABLE_MICROUI
+ 	if (!main_headless){ main_cfg_capture_gui_runtime(); }
+@@ -1106,6 +1107,7 @@
+ #ifdef ENABLE_VCAP
+ 	avconv_set_filename(main_cfg.video_dump_file);
+ 	avconv_set_autoinc(main_cfg.video_dump_autoinc);
++	avconv_set_omit_messages(main_cfg.video_dump_omit_messages);
+ #endif
+ #ifdef ENABLE_MICROUI
+ 	main_copy_str(main_gui_theme_name, sizeof(main_gui_theme_name), main_cfg.gui_theme_name);
+@@ -2401,6 +2403,20 @@
+ #else
+ 	return FALSE;
+ #endif
++}
++
++boole mainui_get_video_dump_omit_messages(void)
++{
++ return main_cfg.video_dump_omit_messages;
++}
++
++void mainui_set_video_dump_omit_messages(boole enable)
++{
++ main_cfg.video_dump_omit_messages=enable?TRUE:FALSE;
++#ifdef ENABLE_VCAP
++ avconv_set_omit_messages(main_cfg.video_dump_omit_messages);
++#endif
++ main_cfg_mark_dirty();
+ }
+ 
+ static void main_video_dump_set_active(boole active, boole reset_first)
+diff --git a/mainui.h b/mainui.h
+--- a/mainui.h
++++ b/mainui.h
+@@ -188,10 +188,12 @@
+ char const* mainui_get_video_dump_status(void);
+ boole mainui_get_video_dump_autoinc(void);
+ boole mainui_get_video_dump_reset_first(void);
++boole mainui_get_video_dump_omit_messages(void);
+ void mainui_set_video_dump_active(boole active);
+ void mainui_set_video_dump_file(char const* name);
+ void mainui_set_video_dump_autoinc(boole enable);
+ void mainui_set_video_dump_reset_first(boole enable);
++void mainui_set_video_dump_omit_messages(boole enable);
+ boole mainui_get_input_capture_active(void);
+ boole mainui_input_movie_restore(unsigned slot, boole seek, uint64_t frame);
+ void mainui_set_input_capture_active(boole active);
+diff --git a/microui/mui_integration.c b/microui/mui_integration.c
+--- a/microui/mui_integration.c
++++ b/microui/mui_integration.c
+@@ -208,7 +208,7 @@
+ 	MUI_WINDOW_DESC("RECENT ROMS",    show_quick,           0,     MUI_BAR_HEIGHT + 2,  520, 342, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_MENU),
+ 	MUI_WINDOW_DESC("PICK STATE",     show_statepick,       256,   MUI_BAR_HEIGHT + 6,  244, 132, MU_OPT_NORESIZE,                 MUI_WCLASS_CHILD),
+ 	MUI_WINDOW_DESC("SCREENSHOT",     show_tool_screenshot, 108,   MUI_BAR_HEIGHT + 18, 424, 330, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+-	MUI_WINDOW_DESC("DUMP VIDEO",     show_tool_video,      108,   MUI_BAR_HEIGHT + 18, 396, 284, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
++	MUI_WINDOW_DESC("DUMP VIDEO",     show_tool_video,      108,   MUI_BAR_HEIGHT + 18, 396, 308, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("ROM VIEW",       show_tool_romview,    52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("SRAM EDIT",      show_tool_sram,       52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("SPI RAM EDIT",   show_tool_spiram,     52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
+@@ -8032,6 +8032,11 @@
+ 				mainui_set_video_dump_reset_first(reset_first ? TRUE : FALSE);
+ 			}
+ 		}
++		mu_layout_row(ctx,1,(int[]){-1},22);
++		{
++			int omit=mainui_get_video_dump_omit_messages()?1:0;
++			if(mu_checkbox(ctx,"OMIT MESSAGES",&omit))mainui_set_video_dump_omit_messages(omit?TRUE:FALSE);
++		}
+ 		mu_layout_row(ctx, 1, (int[]){ -1 }, 20);
+ 		mu_label(ctx, mainui_get_video_dump_status());
+ 		if (mainui_get_video_dump_active_file()[0] != 0){
+diff --git a/tests/gui/screenshot_tool_regression.c b/tests/gui/screenshot_tool_regression.c
+--- a/tests/gui/screenshot_tool_regression.c
++++ b/tests/gui/screenshot_tool_regression.c
+@@ -46,6 +46,11 @@
+  CHECK(mui_state.ctx != NULL, "allocate GUI");
+  mu_init(mui_state.ctx); mui_state.ctx->text_width = width; mui_state.ctx->text_height = height;
+  mui_filedialog_init(&mui_rom_dialog); mui_filedialog_init(&mui_dir_dialog); mui_filedialog_init(&mui_cfg_file_dialog);
++ mui_window_open(mui_state.ctx,MUI_WIN_DUMP_VIDEO);mui_refresh_visibility();
++ CHECK(mainui_get_video_dump_omit_messages(),"omit video messages default");
++ CHECK(click("OMIT MESSAGES")==0&&!mainui_get_video_dump_omit_messages(),"video omit checkbox enables message recording");
++ CHECK(click("OMIT MESSAGES")==0&&mainui_get_video_dump_omit_messages(),"video omit checkbox returns to clean recording");
++ mui_window_close(mui_state.ctx,MUI_WIN_DUMP_VIDEO);
+  mui_window_open(mui_state.ctx, MUI_WIN_SCREENSHOT); mui_refresh_visibility();
+  CHECK(!mainui_get_screenshot_include_gui(), "game-only default");
+  CHECK(mainui_get_screenshot_bypass_filters(),"bypass filters defaults on");
+diff --git a/tests/gui/video_messages_regression.c b/tests/gui/video_messages_regression.c
+new file mode 100644
+--- /dev/null
++++ b/tests/gui/video_messages_regression.c
+@@ -0,0 +1,68 @@
++#define SDL_MAIN_HANDLED
++#undef main
++#define main video_messages_emulator_main
++#include "../../main.c"
++#undef main
++#include "../../avconv.c"
++#define CHECK(c,msg) do{if(!(c)){fprintf(stderr,"FAIL: %s (line %d)\n",msg,__LINE__);return 1;}}while(0)
++
++static uint32 screen[640U*228U];
++static int record_case(boole omit,char const* name)
++{
++ uint8 audio[262];auint frame,x,y;FILE* file;guicore_pixfmt_t fmt;
++ uint32 const* pixels;
++ mainui_set_video_dump_omit_messages(omit);avconv_set_filename(name);avconv_set_autoinc(FALSE);
++ mainui_set_video_dump_active(TRUE);
++ memset(audio,128,sizeof(audio));guicore_getpixfmt(&fmt);
++ for(frame=0U;frame<3U;frame++){
++  textgui_log_add("EMULATION RESUMED");
++  frame_run(FALSE,FALSE);
++  pixels=guicore_getpixbuf()+640U*20U;
++  memcpy(screen,pixels,sizeof(screen));
++  if(omit){
++   CHECK(avconv_clean_valid,"frame pipeline stages clean pixels");
++   CHECK(memcmp(screen,avconv_clean_pixels,sizeof(screen))!=0,"messages remain visible on screen while omitted from recording");
++  }
++  if(!frame){
++   char path[64];snprintf(path,sizeof(path),"%s.rgb",name);
++   file=fopen(path,"wb");CHECK(file,"RGB recording reference");
++   pixels=omit?avconv_clean_pixels:screen;
++   for(y=0U;y<228U;y++)for(x=10U;x<630U;x++){
++    uint32 c=pixels[y*640U+x];uint8 rgb[3]={c>>fmt.rsh,c>>fmt.gsh,c>>fmt.bsh};
++    CHECK(fwrite(rgb,1U,3U,file)==3U,"write expected recording pixels");
++   }
++   CHECK(fclose(file)==0,"close reference");
++  }
++  /* GUI events can change the option between render and encode. The pending
++   * frame must retain its original policy and its audio/video frame count. */
++  if(!frame)mainui_set_video_dump_omit_messages(!omit);
++  avconv_push(audio,262U);
++  if(!frame)mainui_set_video_dump_omit_messages(omit);
++  CHECK(avconv_is_initialized()&&avconv_ok,"FFmpeg recording initialized");
++  CHECK(avconv_afrac==((frame+1U)*8008U)%10000U,"every frame advances audio timing equally in both modes");
++  CHECK(!memcmp(screen,guicore_getpixbuf()+640U*20U,sizeof(screen)),"encoder leaves visible messages unchanged");
++ }
++ mainui_set_video_dump_active(FALSE);
++ CHECK(!avconv_is_initialized()&&!avconv_clean_valid,"finalization clears clean frame cache");
++ file=fopen(name,"rb");CHECK(file&&fgetc(file)!=EOF,"encoded video exists");fclose(file);
++ return 0;
++}
++
++int main(void)
++{
++ appcfg_defaults(&main_cfg);main_headless=TRUE;
++ CHECK(mainui_get_video_dump_omit_messages()&&avconv_get_omit_messages(),"OMIT MESSAGES defaults on");
++ SDL_setenv("SDL_VIDEODRIVER","dummy",1);SDL_SetHint(SDL_HINT_RENDER_DRIVER,"software");
++ CHECK(guicore_init(GUICORE_NOVSYNC|GUICORE_GAMEONLY,"Video messages"),"dummy visible-surface renderer");
++ CHECK(!guicore_is_headless(),"on-screen message drawing exercised");
++ cu_avr_reset();cu_avr_get_state()->crom[0]=0xFFU;cu_avr_get_state()->crom[1]=0xCFU;
++ cu_avr_crom_update(0U,2U);
++ textgui_reset();textgui_log_set_enabled(TRUE);
++ if(record_case(TRUE,"omit.MP4")||record_case(FALSE,"messages.MP4"))return 1;
++ mainui_set_video_dump_omit_messages(TRUE);
++ CHECK(!avconv_clean_valid&&!avconv_frame_staged,"finalization leaves no stale pending frame");
++ {uint8 audio[262]={0};avconv_push(audio,262U);CHECK(!avconv_is_initialized(),"no unstaged frame leaks messages into a fresh recording");}
++ guicore_quit();
++ puts("Video messages: PASS (default omission, visible on-screen notices, opt-in messages, encoded video/audio and cache lifecycle)");
++ return 0;
++}
+diff --git a/tests/preferences/Makefile b/tests/preferences/Makefile
+--- a/tests/preferences/Makefile
++++ b/tests/preferences/Makefile
+@@ -45,6 +45,14 @@
+ 	$(CC) -o $@ $< $(filter-out $(OBD)/guicore.o $(OBD)/audio.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+ 
+ .PHONY: screenshot-test cycle-screenshot-test
++.PHONY: video-messages-test
++video-messages-test: $(OBD)/video_messages_regression.exe
++	mkdir -p $(OBD)/video-messages-run
++	cd $(OBD)/video-messages-run && ../video_messages_regression.exe
++
++$(OBD)/video_messages_regression.exe: tests/gui/video_messages_regression.c main.c avconv.c frame.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
++	$(CC) -o $@ $< $(filter-out $(OBD)/avconv.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
++
+ cycle-screenshot-test: $(OBD)/cycle_screenshot_regression.exe
+ 	mkdir -p $(OBD)/cycle-screenshot-run
+ 	cd $(OBD)/cycle-screenshot-run && ../cycle_screenshot_regression.exe
+diff --git a/tests/preferences/preferences_regression.c b/tests/preferences/preferences_regression.c
+--- a/tests/preferences/preferences_regression.c
++++ b/tests/preferences/preferences_regression.c
+@@ -76,6 +76,7 @@
+ 	expected.netplay_relay_port = 43815U;
+ 	expected.video_dump_autoinc = !expected.video_dump_autoinc;
+ 	expected.video_dump_reset_first = !expected.video_dump_reset_first;
++	expected.video_dump_omit_messages = FALSE;
+ 	expected.resident_bootloader_enable = !expected.resident_bootloader_enable;
+ 	expected.fast_flash = !expected.fast_flash;
+ 	expected.recent_roms_frozen = !expected.recent_roms_frozen;
+@@ -194,6 +195,7 @@
+ 	CHECK(strcmp(expected.video_dump_file, loaded.video_dump_file) == 0, "video_dump_file round trip");
+ 	CHECK(memcmp(&expected.video_dump_autoinc, &loaded.video_dump_autoinc, sizeof(expected.video_dump_autoinc)) == 0, "video_dump_autoinc round trip");
+ 	CHECK(memcmp(&expected.video_dump_reset_first, &loaded.video_dump_reset_first, sizeof(expected.video_dump_reset_first)) == 0, "video_dump_reset_first round trip");
++	CHECK(!loaded.video_dump_omit_messages,"video_dump_omit_messages round trip");
+ 	CHECK(memcmp(&expected.gui_colors, &loaded.gui_colors, sizeof(expected.gui_colors)) == 0, "gui_colors round trip");
+ 	CHECK(strcmp(expected.gui_theme_name, loaded.gui_theme_name) == 0, "gui_theme_name round trip");
+ 	CHECK(strcmp(expected.gui_theme_file, loaded.gui_theme_file) == 0, "gui_theme_file round trip");
+@@ -367,6 +369,7 @@
+  CHECK(appcfg_load_or_create(&saved, "legacy.cfg"), "old config loads with defaults");
+  CHECK(saved.audio_master_volume == 72U && saved.netplay_max_players == 2U, "legacy settings and new defaults");
+  CHECK(saved.fast_flash, "older configs default FAST FLASH on");
++ CHECK(saved.video_dump_omit_messages,"older configs default video OMIT MESSAGES on");
+  CHECK(!saved.tv_sync_pll, "older configs default TV sync PLL off");
+  CHECK(saved.tv_sync_recovery == 100U, "legacy PLL recovery default");
+  CHECK(saved.tv_sync_strength == 100U, "legacy PLL strength default");
+diff --git a/tools/test_api_multiclient.py b/tools/test_api_multiclient.py
+--- a/tools/test_api_multiclient.py
++++ b/tools/test_api_multiclient.py
+@@ -207,8 +207,8 @@
+ BGET(mainui_get_display_gameonly) BGET(mainui_get_display_fullscreen) BGET(mainui_get_system_messages) BGET(mainui_get_gui_gamepad_enable) UGET(mainui_get_gui_gamepad_speed_pct) BGET(mainui_get_gui_pause_while_open) BGET(mainui_get_gui_virtual_keyboard)
+ BGET(mainui_get_frame_rate_limiter) BGET(mainui_get_frame_merge) BGET(mainui_get_input_kbuzem) BGET(mainui_get_input_player2alloc) BGET(mainui_get_audio_freqscale) BGET(mainui_get_audio_s16) UGET(mainui_get_audio_output_rate) UGET(mainui_get_audio_latency) UGET(mainui_get_audio_resampler) BGET(mainui_get_audio_dcblock) UGET(mainui_get_audio_lowpass) UGET(mainui_get_audio_lowpass_quality) UGET(mainui_get_audio_monitor_mode) UGET(mainui_get_audio_monitor_width) UGET(mainui_get_audio_reverb) UGET(mainui_get_audio_master_volume) BGET(mainui_get_mouse_enable) UGET(mainui_get_mouse_scale) UGET(mainui_get_render_path) UGET(mainui_get_filter_pre_mode) UGET(mainui_get_filter_scale_mode) UGET(mainui_get_filter_crt_mode) UGET(mainui_get_spiram_pages_mode) BGET(mainui_get_sd_allow_new_files)
+ auint mainui_get_sd_timing_preset(void){return g_sd_model.preset;} void mainui_get_sd_timing_model(cu_spisd_model_t* o){if(o)*o=g_sd_model;}
+-SGET(mainui_get_rom_path) SGET(mainui_get_screenshot_path) SGET(mainui_get_save_path) SGET(mainui_get_controllerdb_path) BGET(mainui_get_resident_bootloader_enable) SGET(mainui_get_resident_bootloader_file) SGET(mainui_get_remote_roms_host) SGET(mainui_get_gui_theme_name) SGET(mainui_get_gui_theme_file) BGET(mainui_get_recent_roms_frozen) BGET(mainui_get_config_dirty) BGET(mainui_get_video_dump_active) SGET(mainui_get_video_dump_file) SGET(mainui_get_video_dump_status) BGET(mainui_get_video_dump_autoinc) BGET(mainui_get_video_dump_reset_first) BGET(mainui_get_input_capture_active) SGET(mainui_get_input_capture_file)
+-BSET(mainui_set_display_gameonly) BSET(mainui_set_display_fullscreen) BSET(mainui_set_system_messages) BSET(mainui_set_gui_gamepad_enable) USET(mainui_set_gui_gamepad_speed_pct) BSET(mainui_set_gui_pause_while_open) BSET(mainui_set_gui_virtual_keyboard) BSET(mainui_set_frame_rate_limiter) BSET(mainui_set_frame_merge) USET(mainui_set_render_path) USET(mainui_set_filter_pre_mode) USET(mainui_set_filter_scale_mode) USET(mainui_set_filter_crt_mode) BSET(mainui_set_input_kbuzem) BSET(mainui_set_input_player2alloc) BSET(mainui_set_mouse_enable) USET(mainui_set_mouse_scale) BSET(mainui_set_audio_freqscale) BSET(mainui_set_audio_s16) USET(mainui_set_audio_output_rate) USET(mainui_set_audio_latency) USET(mainui_set_audio_resampler) BSET(mainui_set_audio_dcblock) USET(mainui_set_audio_lowpass) USET(mainui_set_audio_lowpass_quality) USET(mainui_set_audio_monitor_mode) USET(mainui_set_audio_monitor_width) USET(mainui_set_audio_reverb) USET(mainui_set_audio_master_volume) USET(mainui_set_spiram_pages_mode) BSET(mainui_set_sd_allow_new_files) void mainui_set_sd_timing_preset(auint p){cu_spisd_model_preset(p,&g_sd_model);} void mainui_set_sd_timing_custom(cu_spisd_model_t const* m){if(m){g_sd_model=*m;g_sd_model.preset=CU_SPISD_PRESET_CUSTOM;}} void mainui_reset_sd_card(void){cu_spisd_reset(0U);} BSET(mainui_set_resident_bootloader_enable) SSET(mainui_set_rom_path) SSET(mainui_set_save_path) SSET(mainui_set_screenshot_path) SSET(mainui_set_controllerdb_path) SSET(mainui_set_resident_bootloader_file) SSET(mainui_set_remote_roms_host) SSET(mainui_set_gui_theme_file) SSET(mainui_set_video_dump_file) BSET(mainui_set_video_dump_active) BSET(mainui_set_video_dump_autoinc) BSET(mainui_set_video_dump_reset_first) BSET(mainui_set_input_capture_active) BSET(mainui_set_recent_roms_frozen)
++SGET(mainui_get_rom_path) SGET(mainui_get_screenshot_path) SGET(mainui_get_save_path) SGET(mainui_get_controllerdb_path) BGET(mainui_get_resident_bootloader_enable) SGET(mainui_get_resident_bootloader_file) SGET(mainui_get_remote_roms_host) SGET(mainui_get_gui_theme_name) SGET(mainui_get_gui_theme_file) BGET(mainui_get_recent_roms_frozen) BGET(mainui_get_config_dirty) BGET(mainui_get_video_dump_active) SGET(mainui_get_video_dump_file) SGET(mainui_get_video_dump_status) BGET(mainui_get_video_dump_autoinc) BGET(mainui_get_video_dump_reset_first) BGET(mainui_get_video_dump_omit_messages) BGET(mainui_get_input_capture_active) SGET(mainui_get_input_capture_file)
++BSET(mainui_set_display_gameonly) BSET(mainui_set_display_fullscreen) BSET(mainui_set_system_messages) BSET(mainui_set_gui_gamepad_enable) USET(mainui_set_gui_gamepad_speed_pct) BSET(mainui_set_gui_pause_while_open) BSET(mainui_set_gui_virtual_keyboard) BSET(mainui_set_frame_rate_limiter) BSET(mainui_set_frame_merge) USET(mainui_set_render_path) USET(mainui_set_filter_pre_mode) USET(mainui_set_filter_scale_mode) USET(mainui_set_filter_crt_mode) BSET(mainui_set_input_kbuzem) BSET(mainui_set_input_player2alloc) BSET(mainui_set_mouse_enable) USET(mainui_set_mouse_scale) BSET(mainui_set_audio_freqscale) BSET(mainui_set_audio_s16) USET(mainui_set_audio_output_rate) USET(mainui_set_audio_latency) USET(mainui_set_audio_resampler) BSET(mainui_set_audio_dcblock) USET(mainui_set_audio_lowpass) USET(mainui_set_audio_lowpass_quality) USET(mainui_set_audio_monitor_mode) USET(mainui_set_audio_monitor_width) USET(mainui_set_audio_reverb) USET(mainui_set_audio_master_volume) USET(mainui_set_spiram_pages_mode) BSET(mainui_set_sd_allow_new_files) void mainui_set_sd_timing_preset(auint p){cu_spisd_model_preset(p,&g_sd_model);} void mainui_set_sd_timing_custom(cu_spisd_model_t const* m){if(m){g_sd_model=*m;g_sd_model.preset=CU_SPISD_PRESET_CUSTOM;}} void mainui_reset_sd_card(void){cu_spisd_reset(0U);} BSET(mainui_set_resident_bootloader_enable) SSET(mainui_set_rom_path) SSET(mainui_set_save_path) SSET(mainui_set_screenshot_path) SSET(mainui_set_controllerdb_path) SSET(mainui_set_resident_bootloader_file) SSET(mainui_set_remote_roms_host) SSET(mainui_set_gui_theme_file) SSET(mainui_set_video_dump_file) BSET(mainui_set_video_dump_active) BSET(mainui_set_video_dump_autoinc) BSET(mainui_set_video_dump_reset_first) BSET(mainui_set_video_dump_omit_messages) BSET(mainui_set_input_capture_active) BSET(mainui_set_recent_roms_frozen)
+ boole mainui_get_recent_rom_path(auint i,char*o,auint n){(void)i;if(o&&n)o[0]=0;return FALSE;} boole mainui_load_recent_rom(auint i){(void)i;return FALSE;} void mainui_clear_recent_roms(void){} void mainui_config_save_now(void){} void mainui_config_reload_now(void){} void mainui_config_defaults_now(void){}
+ static auint g_save_slot=0U; void savestate_set_slot(auint s){g_save_slot=s%10U;} auint savestate_get_slot(void){return g_save_slot;} boole savestate_save_slot(auint s){(void)s;return TRUE;} boole savestate_load_slot(auint s){(void)s;return TRUE;} boole savestate_slot_exists(auint s){(void)s;return FALSE;}
+ #undef BGET
+diff --git a/tools/test_headless_api.py b/tools/test_headless_api.py
+--- a/tools/test_headless_api.py
++++ b/tools/test_headless_api.py
+@@ -37,6 +37,9 @@
+             assert boot["stream_valid"] and boot["stream"][:3] == [0xEB, 0x3C, 0x90], boot
+             assert boot["fs"]["role"] == "BOOT", boot
+             assert command("EMU_STATUS")["tv_sync_pll"] == 0
++            assert command("EMU_STATUS")["video_dump_omit_messages"] == 1
++            command("EMU_SET video_dump_omit_messages 0")
++            assert command("EMU_STATUS")["video_dump_omit_messages"] == 0
+             assert command("EMU_STATUS")["tv_sync_recovery"] == 100
+             command("EMU_SET tv_sync_recovery 0")
+             assert command("EMU_STATUS")["tv_sync_recovery"] == 25
+@@ -49,12 +52,15 @@
+             command("EMU_SET tv_sync_recovery 400")
+             command("EMU_SET tv_sync_pll 1")
+             command("CONFIG SAVE")
++            command("EMU_SET video_dump_omit_messages 1")
+             assert "TvSyncPll=1" in (directory / "config.cfg").read_text()
+             command("EMU_SET tv_sync_pll 0")
+             command("EMU_SET tv_sync_strength 0")
+             assert command("EMU_STATUS")["tv_sync_strength"] == 0
+             command("EMU_SET tv_sync_recovery 100")
+             command("CONFIG RELOAD")
++            assert command("EMU_STATUS")["video_dump_omit_messages"] == 0
++            command("EMU_SET video_dump_omit_messages 1")
+             assert command("EMU_STATUS")["tv_sync_pll"] == 1
+             assert command("EMU_STATUS")["tv_sync_recovery"] == 400
+             assert command("EMU_STATUS")["tv_sync_strength"] == 35
+diff --git a/tools/test_video_messages.py b/tools/test_video_messages.py
+new file mode 100644
+--- /dev/null
++++ b/tools/test_video_messages.py
+@@ -0,0 +1,35 @@
++"""Independently decode the clips produced by video-messages-test.
++Usage: python3 tools/test_video_messages.py <OBD>
++Requires ffmpeg/ffprobe in PATH, as does the emulator's video recorder.
++"""
++import json
++from pathlib import Path
++import subprocess
++import sys
++
++base=Path(sys.argv[1])/'video-messages-run'
++images=[];counts=[]
++for name in ['omit.MP4','messages.MP4']:
++    path=base/name
++    probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-count_frames','-show_streams','-of','json',str(path)]))
++    video=next(s for s in probe['streams'] if s['codec_type']=='video')
++    audio=next(s for s in probe['streams'] if s['codec_type']=='audio')
++    count=int(video['nb_read_frames']);counts.append(count)
++    assert (video['width'],video['height'])==(960,720) and count in (2,3),video
++    assert int(audio['sample_rate'])==48000 and audio['channels']==1,audio
++    rgb=subprocess.check_output(['ffmpeg','-v','error','-i',str(path),'-f','rawvideo','-pix_fmt','rgb24','-'])
++    expected=subprocess.check_output(['ffmpeg','-v','error','-f','rawvideo','-s','620x228','-pix_fmt','rgb24','-i',str(path)+'.rgb','-vf','scale=940:228:flags=bilinear,scale=940:684:flags=neighbor,pad=960:720:16:18','-frames:v','1','-pix_fmt','rgb24','-f','rawvideo','-'])
++    assert len(rgb)==count*len(expected)==count*960*720*3
++    # Preserve the existing 720p scaling and CRF22 encode; allow its RGB error.
++    error=sum(abs(a-b) for a,b in zip(rgb[:len(expected)],expected))/len(expected)
++    assert error<=2,(name,'encoded pixels differ from the selected source',error)
++    images.append(rgb[:len(expected)])
++    if name=='omit.MP4':
++        assert not any(rgb),'emulator text leaked into the clean black guest fixture'
++    else:
++        assert all(any(rgb[i*len(expected):(i+1)*len(expected)]) for i in range(count)),'opt-in messages missing'
++assert images[0]!=images[1],'omit option did not change encoded output'
++# Existing -shortest muxing retains 2 or 3 of this tiny fixture's frames,
++# depending on FFmpeg. Omission must match the legacy include-messages path.
++assert counts[0]==counts[1],('omission changed frame count',counts)
++print(f'Video decode: PASS ({counts[0]} frames in both modes, clean default, opt-in messages, expected pixels, mono 48 kHz audio)')
+diff --git a/tools/web_debugger/controls.html b/tools/web_debugger/controls.html
+--- a/tools/web_debugger/controls.html
++++ b/tools/web_debugger/controls.html
+@@ -46,7 +46,7 @@
+  $('audioControls').innerHTML=audbool.map(x=>cb(...x)).join('')+num('audio_rate','Output-rate mode',0,20)+num('audio_latency','Latency mode',0,20)+num('audio_resampler','Resampler',0,20)+num('audio_lowpass','Low-pass',0,20)+num('audio_lowpass_quality','Low-pass quality',0,20)+num('audio_monitor','Monitor mode',0,20)+num('audio_monitor_width','Monitor width %',0,100)+num('audio_reverb','Reverb',0,20)+num('audio_volume','Master volume %',0,100);
+  $('inputControls').innerHTML=inputbool.map(x=>cb(...x)).join('')+num('mouse_scale','Mouse scale',1,32)+num('spiram_pages','SPI RAM pages mode',0,20);
+  $('pathControls').innerHTML=txt('rom_dir','ROM directory')+txt('save_path','Save directory')+txt('screenshot_path','Screenshot directory')+txt('controllerdb_path','Controller DB')+txt('resident_bootloader_file','Bootloader HEX')+txt('remote_roms_host','Remote ROM host');
+- $('captureControls').innerHTML=cb('video_dump_active','Video dump active')+cb('video_dump_autoinc','Auto-increment dump')+cb('video_dump_reset_first','Reset before dump')+txt('video_dump_file','Video dump file')+cb('input_capture_active','Input capture active');
++ $('captureControls').innerHTML=cb('video_dump_active','Video dump active')+cb('video_dump_autoinc','Auto-increment dump')+cb('video_dump_reset_first','Reset before dump')+cb('video_dump_omit_messages','Omit emulator messages (recording only)')+txt('video_dump_file','Video dump file')+cb('input_capture_active','Input capture active');
+  $('recent').innerHTML='<h3>Recent ROMs</h3>'+((st.recent||[]).map((p,i)=>`<button onclick="recent(${i})">${esc(p)}</button>`).join('')||'<span class=muted>none</span>')+' <button onclick="command(\'RECENT_ROMS CLEAR\').then(refresh)">Clear</button>';
+  $('slots').innerHTML=(st.save_slots||[]).map((e,i)=>`<div><strong>${i}${e?' *':''}</strong> <button onclick="slot('SLOT',${i})">Select</button> <button onclick="slot('SAVE',${i})">Save</button> <button ${e?'':'disabled'} onclick="slot('LOAD',${i})">Load</button></div>`).join('');
+ }

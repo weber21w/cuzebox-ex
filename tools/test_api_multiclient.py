@@ -116,6 +116,8 @@ boole cu_avr_watchpoint_get_last(boole c, auint* s, auint* r, auint* f, auint* a
 cu_row_t const* cu_avr_get_row(void){ auint i; for(i=0U;i<1820U;i++)g_row.pixels[i]=(uint8)(i&0xFFU); g_row.pno=40U; return &g_row; }
 auint cu_avr_get_video_cycle(void){ return 321U; }
 auint cu_avr_getcycle(void){ return 100000U; }
+boole cu_avr_interlace_field(auint* parity){if(parity)*parity=0U;return FALSE;}
+void cu_avr_watchpoint_timing(auint* cycle,auint* row,auint* beam){if(cycle)*cycle=100000U;if(row)*row=40U;if(beam)*beam=321U;}
 cu_state_cpu_t* cu_avr_get_state(void){ g_cpu_state.cycle=100000U; g_cpu_state.spi_tran=TRUE; g_cpu_state.spi_end=100016U; g_cpu_state.spi_tx=0xA5U; g_cpu_state.spi_rx=0x5AU; g_cpu_state.iors[CU_IO_SPDR]=0x3CU; g_cpu_state.iors[CU_IO_SPCR]=0x50U; g_cpu_state.iors[CU_IO_SPSR]=0x01U; return &g_cpu_state; }
 auint cu_avr_get_video_pulse(void){ return 41U; }
 auint cu_avr_get_video_beam_cycle(void){ return 321U; }
@@ -138,6 +140,11 @@ void mainui_request_quit(void){ g_quit = TRUE; }
 boole mainui_save_screenshot_auto(char* out, auint n){ if(n>0){ snprintf(out,n,"test.bmp"); } return TRUE; }
 boole mainui_save_screenshot_file(char const* p){ (void)p; return TRUE; }
 boole mainui_capture_screenshot_bmp(uint8** out, auint* n, auint* w, auint* h){ auint i; if(!out||!n)return FALSE; *n=66U; *out=(uint8*)malloc(*n); if(!*out)return FALSE; (*out)[0]='B';(*out)[1]='M';for(i=2U;i<*n;i++)(*out)[i]=(uint8)(i-2U); if(w)*w=4U;if(h)*h=4U;return TRUE; }
+boole mainui_capture_screenshot_png(uint8** out,auint* n,auint* w,auint* h){if(!mainui_capture_screenshot_bmp(out,n,w,h))return FALSE;memcpy(*out,"\211PNG\r\n\032\n",8U);return TRUE;}
+void mainui_screenshot_metadata(char* out,auint cap,auint w,auint h,boole bmp,boole gui){(void)w;(void)h;(void)bmp;(void)gui;snprintf(out,cap,"{\"schema\":\"cuex-shot-1\"}");}
+boole mainui_screenshot_settings(char const* args,char* out,auint cap){(void)args;snprintf(out,cap,"{\"ok\":1,\"x_width\":1440}");return TRUE;}
+void diagnostics_command(char* args,char* reply,unsigned capacity){(void)args;snprintf(reply,capacity,"{\"ok\":0}");}
+void logical_test_command(char* args,char* reply,size_t capacity){(void)args;snprintf(reply,capacity,"{\"ok\":0}");}
 
 boole mainui_debug_is_paused(void){ return g_paused; }
 void mainui_debug_set_paused(boole p){ g_paused=p; }
@@ -193,13 +200,15 @@ boole mainui_debug_source_resolve_line(auint f, auint l, mainui_debug_source_t* 
 #define UGET(n) auint n(void){return 0U;}
 #define BSET(n) void n(boole v){(void)v;}
 #define USET(n) void n(auint v){(void)v;}
+BGET(mainui_get_area_weighted) UGET(mainui_get_area_weighted_mode) UGET(mainui_get_interlace_mode) UGET(mainui_get_interlace_presentation) BGET(mainui_get_tv_sync_pll) UGET(mainui_get_tv_sync_recovery) UGET(mainui_get_tv_sync_strength)
+BSET(mainui_set_area_weighted) USET(mainui_set_area_weighted_mode) USET(mainui_set_interlace_mode) USET(mainui_set_interlace_presentation) BSET(mainui_set_tv_sync_pll) USET(mainui_set_tv_sync_recovery) USET(mainui_set_tv_sync_strength)
 #define SGET(n) char const* n(void){return "";}
 #define SSET(n) void n(char const* v){(void)v;}
 BGET(mainui_get_display_gameonly) BGET(mainui_get_display_fullscreen) BGET(mainui_get_system_messages) BGET(mainui_get_gui_gamepad_enable) UGET(mainui_get_gui_gamepad_speed_pct) BGET(mainui_get_gui_pause_while_open) BGET(mainui_get_gui_virtual_keyboard)
 BGET(mainui_get_frame_rate_limiter) BGET(mainui_get_frame_merge) BGET(mainui_get_input_kbuzem) BGET(mainui_get_input_player2alloc) BGET(mainui_get_audio_freqscale) BGET(mainui_get_audio_s16) UGET(mainui_get_audio_output_rate) UGET(mainui_get_audio_latency) UGET(mainui_get_audio_resampler) BGET(mainui_get_audio_dcblock) UGET(mainui_get_audio_lowpass) UGET(mainui_get_audio_lowpass_quality) UGET(mainui_get_audio_monitor_mode) UGET(mainui_get_audio_monitor_width) UGET(mainui_get_audio_reverb) UGET(mainui_get_audio_master_volume) BGET(mainui_get_mouse_enable) UGET(mainui_get_mouse_scale) UGET(mainui_get_render_path) UGET(mainui_get_filter_pre_mode) UGET(mainui_get_filter_scale_mode) UGET(mainui_get_filter_crt_mode) UGET(mainui_get_spiram_pages_mode) BGET(mainui_get_sd_allow_new_files)
 auint mainui_get_sd_timing_preset(void){return g_sd_model.preset;} void mainui_get_sd_timing_model(cu_spisd_model_t* o){if(o)*o=g_sd_model;}
-SGET(mainui_get_rom_path) SGET(mainui_get_screenshot_path) SGET(mainui_get_save_path) SGET(mainui_get_controllerdb_path) BGET(mainui_get_resident_bootloader_enable) SGET(mainui_get_resident_bootloader_file) SGET(mainui_get_remote_roms_host) SGET(mainui_get_gui_theme_name) SGET(mainui_get_gui_theme_file) BGET(mainui_get_recent_roms_frozen) BGET(mainui_get_config_dirty) BGET(mainui_get_video_dump_active) SGET(mainui_get_video_dump_file) SGET(mainui_get_video_dump_status) BGET(mainui_get_video_dump_autoinc) BGET(mainui_get_video_dump_reset_first) BGET(mainui_get_input_capture_active) SGET(mainui_get_input_capture_file)
-BSET(mainui_set_display_gameonly) BSET(mainui_set_display_fullscreen) BSET(mainui_set_system_messages) BSET(mainui_set_gui_gamepad_enable) USET(mainui_set_gui_gamepad_speed_pct) BSET(mainui_set_gui_pause_while_open) BSET(mainui_set_gui_virtual_keyboard) BSET(mainui_set_frame_rate_limiter) BSET(mainui_set_frame_merge) USET(mainui_set_render_path) USET(mainui_set_filter_pre_mode) USET(mainui_set_filter_scale_mode) USET(mainui_set_filter_crt_mode) BSET(mainui_set_input_kbuzem) BSET(mainui_set_input_player2alloc) BSET(mainui_set_mouse_enable) USET(mainui_set_mouse_scale) BSET(mainui_set_audio_freqscale) BSET(mainui_set_audio_s16) USET(mainui_set_audio_output_rate) USET(mainui_set_audio_latency) USET(mainui_set_audio_resampler) BSET(mainui_set_audio_dcblock) USET(mainui_set_audio_lowpass) USET(mainui_set_audio_lowpass_quality) USET(mainui_set_audio_monitor_mode) USET(mainui_set_audio_monitor_width) USET(mainui_set_audio_reverb) USET(mainui_set_audio_master_volume) USET(mainui_set_spiram_pages_mode) BSET(mainui_set_sd_allow_new_files) void mainui_set_sd_timing_preset(auint p){cu_spisd_model_preset(p,&g_sd_model);} void mainui_set_sd_timing_custom(cu_spisd_model_t const* m){if(m){g_sd_model=*m;g_sd_model.preset=CU_SPISD_PRESET_CUSTOM;}} void mainui_reset_sd_card(void){cu_spisd_reset(0U);} BSET(mainui_set_resident_bootloader_enable) SSET(mainui_set_rom_path) SSET(mainui_set_save_path) SSET(mainui_set_screenshot_path) SSET(mainui_set_controllerdb_path) SSET(mainui_set_resident_bootloader_file) SSET(mainui_set_remote_roms_host) SSET(mainui_set_gui_theme_file) SSET(mainui_set_video_dump_file) BSET(mainui_set_video_dump_active) BSET(mainui_set_video_dump_autoinc) BSET(mainui_set_video_dump_reset_first) BSET(mainui_set_input_capture_active) BSET(mainui_set_recent_roms_frozen)
+SGET(mainui_get_rom_path) SGET(mainui_get_screenshot_path) SGET(mainui_get_save_path) SGET(mainui_get_controllerdb_path) BGET(mainui_get_resident_bootloader_enable) SGET(mainui_get_resident_bootloader_file) SGET(mainui_get_remote_roms_host) SGET(mainui_get_gui_theme_name) SGET(mainui_get_gui_theme_file) BGET(mainui_get_recent_roms_frozen) BGET(mainui_get_config_dirty) BGET(mainui_get_video_dump_active) SGET(mainui_get_video_dump_file) SGET(mainui_get_video_dump_status) BGET(mainui_get_video_dump_autoinc) BGET(mainui_get_video_dump_reset_first) BGET(mainui_get_video_dump_omit_messages) BGET(mainui_get_input_capture_active) SGET(mainui_get_input_capture_file)
+BSET(mainui_set_display_gameonly) BSET(mainui_set_display_fullscreen) BSET(mainui_set_system_messages) BSET(mainui_set_gui_gamepad_enable) USET(mainui_set_gui_gamepad_speed_pct) BSET(mainui_set_gui_pause_while_open) BSET(mainui_set_gui_virtual_keyboard) BSET(mainui_set_frame_rate_limiter) BSET(mainui_set_frame_merge) USET(mainui_set_render_path) USET(mainui_set_filter_pre_mode) USET(mainui_set_filter_scale_mode) USET(mainui_set_filter_crt_mode) BSET(mainui_set_input_kbuzem) BSET(mainui_set_input_player2alloc) BSET(mainui_set_mouse_enable) USET(mainui_set_mouse_scale) BSET(mainui_set_audio_freqscale) BSET(mainui_set_audio_s16) USET(mainui_set_audio_output_rate) USET(mainui_set_audio_latency) USET(mainui_set_audio_resampler) BSET(mainui_set_audio_dcblock) USET(mainui_set_audio_lowpass) USET(mainui_set_audio_lowpass_quality) USET(mainui_set_audio_monitor_mode) USET(mainui_set_audio_monitor_width) USET(mainui_set_audio_reverb) USET(mainui_set_audio_master_volume) USET(mainui_set_spiram_pages_mode) BSET(mainui_set_sd_allow_new_files) void mainui_set_sd_timing_preset(auint p){cu_spisd_model_preset(p,&g_sd_model);} void mainui_set_sd_timing_custom(cu_spisd_model_t const* m){if(m){g_sd_model=*m;g_sd_model.preset=CU_SPISD_PRESET_CUSTOM;}} void mainui_reset_sd_card(void){cu_spisd_reset(0U);} BSET(mainui_set_resident_bootloader_enable) SSET(mainui_set_rom_path) SSET(mainui_set_save_path) SSET(mainui_set_screenshot_path) SSET(mainui_set_controllerdb_path) SSET(mainui_set_resident_bootloader_file) SSET(mainui_set_remote_roms_host) SSET(mainui_set_gui_theme_file) SSET(mainui_set_video_dump_file) BSET(mainui_set_video_dump_active) BSET(mainui_set_video_dump_autoinc) BSET(mainui_set_video_dump_reset_first) BSET(mainui_set_video_dump_omit_messages) BSET(mainui_set_input_capture_active) BSET(mainui_set_recent_roms_frozen)
 boole mainui_get_recent_rom_path(auint i,char*o,auint n){(void)i;if(o&&n)o[0]=0;return FALSE;} boole mainui_load_recent_rom(auint i){(void)i;return FALSE;} void mainui_clear_recent_roms(void){} void mainui_config_save_now(void){} void mainui_config_reload_now(void){} void mainui_config_defaults_now(void){}
 static auint g_save_slot=0U; void savestate_set_slot(auint s){g_save_slot=s%10U;} auint savestate_get_slot(void){return g_save_slot;} boole savestate_save_slot(auint s){(void)s;return TRUE;} boole savestate_load_slot(auint s){(void)s;return TRUE;} boole savestate_slot_exists(auint s){(void)s;return FALSE;}
 #undef BGET
@@ -412,10 +421,14 @@ def main() -> int:
             assert recv_json(c3)["ok"] == 1
             send(c3, "SCREENSHOT_CAPTURE")
             sc = recv_json(c3)
-            assert sc["ok"] == 1 and sc["size"] == 66 and sc["format"] == "bmp24"
+            assert sc["ok"] == 1 and sc["size"] == 66 and sc["format"] == "png"
             send(c3, "SCREENSHOT_READ 0 66")
             sr = recv_json(c3)
-            assert sr["values"][:4] == [66, 77, 0, 1]
+            assert sr["values"][:8] == [137,80,78,71,13,10,26,10]
+            send(c3, "SCREENSHOT_CAPTURE BMP")
+            assert recv_json(c3)["format"] == "bmp24"
+            send(c3,"SCREENSHOT_READ 0 4")
+            assert recv_json(c3)["values"] == [66,77,0,1]
             send(c3, "SCREENSHOT_CLEAR")
             assert recv_json(c3)["ok"] == 1
 

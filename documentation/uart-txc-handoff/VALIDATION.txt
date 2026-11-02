@@ -1,0 +1,36 @@
+UART transmit-complete timer fix - 2026-10-29
+
+Active source: C:/cuzebox-dev-green-led/cuzebox-ex-main
+This is a local source fix and Windows build. No GitHub push was performed.
+The parent checkout contains unrelated changes; the patch includes only this fix.
+
+cu_avr.c owns USART TX completion timing independently of an optional peer.
+It uses configured frame lengths instead of the old fixed 1,304-clock delay.
+The existing usr0_tran/usr0_end and UCSR0A fields hold the scheduling state;
+the saved CPU blob layout was not changed. TXC is sticky and acknowledged by
+W1C/ISR entry. Mask-only changes and TXC acknowledgment preserve pending RX.
+
+Changes are in cu_avr.c, interrupt_regression.c, serial.md, and one reset
+dependency stub in resident_bootloader_regression.c.
+
+Verification completed:
+- Baseline with the new regression failed before the core change.
+- Native Windows full build and interrupt-test, timer1-test, hardware-test,
+  storage-test passed with Timer1/GPIO enabled and ESP present.
+- Both instruction decoders run a non-polling AVR loop until its TX ISR fires.
+- Frame formats/divisors, queued transmission, masks, flag clearing, wrap,
+  watchdog reset, and I/O scheduler restoration covered.
+- Integrated CPU + real loopback peer passed FAST/BALANCED/DEBUG profiles;
+  no third-byte send while full and no RX loss on acknowledgment/mask changes.
+- Lean interrupt-test passed with ESP, debugger, API, Timer1 clock and GPIO
+  models disabled. Its Timer1/hardware regressions also passed.
+- Linux tests/serial_link/run.sh passed.
+- Linux tests/bootloader/run.sh passed.
+- The resulting Windows executable passed tools/test_headless_api.py.
+
+Limits: the forum reporter's specific game ROM was not supplied or tested.
+External XCK edges and baud-generator start phase are not modeled. This fix
+does not add RX/data-register-empty interrupt vectors or a new browser build.
+
+Logs and the patch are in this directory. manifest.json records source/build
+hashes. Original source versions for the three main files are in before/.

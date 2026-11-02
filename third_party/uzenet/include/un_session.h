@@ -32,6 +32,8 @@ uint8_t un_trigger_sample(UnTrigger *t,uint8_t high,uint32_t now);
 void un_session_enter(UnSession *s);
 /* 1 requests platform exit after sending reply. Platform releases ownership. */
 uint8_t un_session_byte(UnSession *s,uint8_t byte);
+/* Platform may hold a CRC-validated packet in rx.data until TX becomes free. */
+uint8_t un_session_dispatch(UnSession *s,uint8_t length);
 uint16_t un_defer(UnSession *s,const uint8_t *p,uint16_t length);
 uint8_t un_deferred_pop(UnSession *s,uint8_t *out);
 /* Drop-in START consumes passive Room !M/00/00 beacons. Preserve every other

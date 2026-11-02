@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential libsdl2-dev libasound2-dev libcurl4-openssl-dev ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y build-essential libsdl2-dev libasound2-dev libcurl4-openssl-dev libssl-dev ffmpeg
       - name: Audit source files
         run: |
           python3 tools/source_audit.py
@@ -48,6 +48,8 @@ jobs:
           python3 tools/test_tv_sync.py
           make check-bootloader
           python3 tools/web_assets_to_c.py --check
+      - name: Pinned UzeNet firmware and adapter regression
+        run: python3 tools/test_uzenet.py
       - name: Build full application
         run: make -j2
       - name: Development validation
@@ -82,9 +84,15 @@ jobs:
       - name: Input playback and video regression
         run: |
           make -j2 TSYS=linux -f tests/preferences/Makefile input-playback-test input-movie-test storage-test
-          test "$(ffprobe -v error -select_streams v:0 -count_frames -show_entries stream=nb_read_frames -of csv=p=0 '_obj_/input-playback-run/playback video.mp4')" = 2
+          test "$(ffprobe -v error -select_streams v:0 -count_frames -show_entries stream=nb_read_frames -of csv=p=0 '_obj_/input-playback-run/playback video.MP4')" = 2
       - name: Screenshot dimensions and JAMMA regression
         run: make -j2 TSYS=linux -f tests/preferences/Makefile screenshot-test screenshot-tool-test
+      - name: PNG exports and clean video regression
+        run: |
+          make -j2 TSYS=linux -f tests/preferences/Makefile cycle-screenshot-test video-messages-test
+          python3 tools/test_screenshot_png.py _obj_
+          python3 tools/test_video_messages.py _obj_
+          python3 tools/test_screenshot_api.py ./cuzebox
       - name: Headless devices and API regression
         run: |
           make -j2 TSYS=linux -f tests/preferences/Makefile headless-test
@@ -106,7 +114,7 @@ jobs:
           node tests/gui/web_source_step_regression.js
           python3 tools/test_source_step_api.py ./cuzebox
       - name: CPU interrupt, EEPROM and Timer1 regressions
-        run: make -j2 TSYS=linux -f tests/preferences/Makefile interrupt-test timer1-test
+        run: make -j2 TSYS=linux -f tests/preferences/Makefile interrupt-test timer1-test hardware-test
       - name: Writable SD and bootloader regressions
         run: |
           sh tests/sd_write/run.sh

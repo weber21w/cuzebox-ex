@@ -1,0 +1,37 @@
+--- a/cu_avr_e.h
++++ b/cu_avr_e.h
+@@ -752,6 +752,11 @@
+ static void op_39(auint arg1, auint arg2) /* OUT */
+ {
+  auint tmp = cpu_state.iors[arg2];
++ if (arg1 == CU_IO_PINC){ /* Match the pixel cycle used by OUT PORTC. */
++  cu_avr_write_io(arg1, tmp);
++  cy1_tail();
++  return;
++ }
+  out_tail();
+ }
+ 
+--- a/cu_avr_n.h
++++ b/cu_avr_n.h
+@@ -510,6 +510,10 @@
+ 
+   case 0x39U: /* OUT */
+    tmp = cpu_state.iors[arg2];
++   if (arg1 == CU_IO_PINC){ /* Match the pixel cycle used by OUT PORTC. */
++    cu_avr_write_io(arg1, tmp);
++    goto cy1_tail;
++   }
+    goto out_tail;
+ 
+   case 0x3AU: /* ADIW */
+--- a/tests/bootloader/interrupt_regression.c
++++ b/tests/bootloader/interrupt_regression.c
+@@ -200,6 +200,7 @@
+  step();
+  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x0FU, "OUT to PINC toggles PORTC");
+  CHECK(cpu_state.iors[CU_IO_PINC] == 0x55U, "a PINC write leaves PINC");
++ CHECK(video_row.pixels[0] == 0x0FU, "OUT PINC reaches the picture on its own cycle, as OUT PORTC does");
+  step();
+  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x8FU, "SBI on PINC toggles only its bit");
+  step();

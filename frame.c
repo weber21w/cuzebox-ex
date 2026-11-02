@@ -33,6 +33,11 @@
 #include "textgui.h"
 #include "renderpath.h"
 #include "cu_esp.h"
+#include "cu_ufile.h"
+#ifdef ENABLE_VCAP
+#include "avconv.h"
+#include "mainui.h"
+#endif
 
 
 
@@ -98,6 +103,131 @@ static auint  frame_break_addr = 0U;
 
 /* Previous state of frame merging */
 static boole  frame_pmerge = FALSE;
+
+/* Three palette-index banks retain completed fields while a partial frame is
+** being rendered. About 950 KiB; collection is memcpy per visible scanline,
+** never an additional operation in the per-cycle CPU macros. */
+static uint8 frame_shot_rows[3][RPULSE_NO*ROW_ACTIVE_CYCLES];
+static uint8 frame_shot_seen[3][RPULSE_NO];
+static auint frame_shot_front[2]={0U,1U},frame_shot_work=2U;
+static boole frame_shot_valid[2],frame_shot_interlaced;
+
+void frame_capture_reset(void)
+{
+ memset(frame_shot_seen,0,sizeof(frame_shot_seen));
+ frame_shot_valid[0]=frame_shot_valid[1]=FALSE;
+ frame_shot_interlaced=FALSE;
+}
+
+static void frame_capture_row(cu_row_t const* row)
+{
+ auint y=row->pno-RPULSE_START;
+ if(y>=RPULSE_NO)return;
+ memcpy(frame_shot_rows[frame_shot_work]+y*ROW_ACTIVE_CYCLES,
+        row->pixels+ROW_BEGINCY,ROW_ACTIVE_CYCLES);
+ frame_shot_seen[frame_shot_work][y]=1U;
+}
+
+static void frame_capture_commit(boole interlaced,auint parity)
+{
+ auint old;
+ parity=interlaced?(parity&1U):0U;
+ if(interlaced!=frame_shot_interlaced)frame_shot_valid[0]=frame_shot_valid[1]=FALSE;
+ old=frame_shot_front[parity];frame_shot_front[parity]=frame_shot_work;frame_shot_work=old;
+ frame_shot_valid[parity]=TRUE;frame_shot_interlaced=interlaced;
+ if(!interlaced)frame_shot_valid[1]=FALSE;
+ memset(frame_shot_seen[frame_shot_work],0,RPULSE_NO);
+}
+
+void frame_capture_geometry(auint* first_row,auint* count,boole* valid,boole* interlaced)
+{
+ auint first=RPULSE_NO,last=0U,p,y;
+ for(p=0U;p<2U;p++)if(frame_shot_valid[p]){
+  auint bank=frame_shot_front[p];
+  for(y=0U;y<RPULSE_NO;y++)if(frame_shot_seen[bank][y]){
+   if(y<first)first=y;
+   if(y>last)last=y;
+  }
+ }
+ *valid=first!=RPULSE_NO;
+ if(!*valid){first=0U;last=RPULSE_NO-1U;}
+ *first_row=RPULSE_START+first;*count=last-first+1U;*interlaced=frame_shot_interlaced;
+}
+
+/* Box and linear filters operate on RGB channel values, before rotation. */
+static uint32 frame_shot_sample(uint8 const* src,auint x,auint w,auint sampling,
+                               uint32 const* pal,guicore_pixfmt_t const* fmt)
+{
+ auint shifts[3]={fmt->rsh,fmt->gsh,fmt->bsh},c;uint32 result=pal[0]&
+     ~((0xFFU<<fmt->rsh)|(0xFFU<<fmt->gsh)|(0xFFU<<fmt->bsh));
+ if(!src)return pal[0];
+ if(!sampling||w==ROW_ACTIVE_CYCLES)return pal[src[x*ROW_ACTIVE_CYCLES/w]];
+ for(c=0U;c<3U;c++){
+  auint sum=0U,den;
+  if(sampling==1U){
+   auint begin=x*ROW_ACTIVE_CYCLES,end=begin+ROW_ACTIVE_CYCLES,i=begin/w;
+   while(i*w<end){
+    auint lo=begin>i*w?begin:i*w,hi=end<(i+1U)*w?end:(i+1U)*w;
+    sum+=((pal[src[i]]>>shifts[c])&255U)*(hi-lo);i++;
+   }
+   den=ROW_ACTIVE_CYCLES;
+  }else{
+   int pos=(int)((2U*x+1U)*ROW_ACTIVE_CYCLES)-(int)w;
+   auint i,t;den=2U*w;
+   if(pos<0)pos=0;
+   if((auint)pos>(ROW_ACTIVE_CYCLES-1U)*den)pos=(int)((ROW_ACTIVE_CYCLES-1U)*den);
+   i=(auint)pos/den;t=(auint)pos%den;
+   sum=((pal[src[i]]>>shifts[c])&255U)*(den-t);
+   if(t)sum+=((pal[src[i+1U]]>>shifts[c])&255U)*t;
+  }
+  result|=((sum+den/2U)/den)<<shifts[c];
+ }
+ return result;
+}
+
+boole frame_capture_cycle_pixels_ex(uint32** pixels,auint* width,auint* height,auint w,auint y_scale,auint sampling)
+{
+ auint first,rows,x,y,h,flags=guicore_get_jamma(),rot=0U,previous=~0U;
+ boole valid,interlaced;uint32* out;uint32 row[2880];
+ uint32 const* pal=guicore_getpalette();guicore_pixfmt_t fmt;
+ if(!pixels||!width||!height)return FALSE;
+ *pixels=NULL;*width=*height=0U;
+ if(w<1U||w>2880U||y_scale<1U||y_scale>10U||sampling>2U)return FALSE;
+ frame_capture_geometry(&first,&rows,&valid,&interlaced);first-=RPULSE_START;
+ guicore_getpixfmt(&fmt);h=rows*y_scale;
+ if(flags&JAMMA_ROTATE_90)rot=1U;
+ else if(flags&JAMMA_ROTATE_180)rot=2U;
+ else if(flags&JAMMA_ROTATE_270)rot=3U;
+ *width=(rot&1U)?h:w;*height=(rot&1U)?w:h;
+ out=(uint32*)malloc((size_t)w*h*sizeof(*out));if(!out)return FALSE;
+ for(y=0U;y<h;y++){
+  /* Woven source rows are half a progressive scanline high. Nearest-neighbor
+  ** Y/2 scaling retains the same field aspect. */
+  auint line=(y*(interlaced?2U:1U))/y_scale,parity=interlaced?(line&1U):0U;
+  auint source=first+(interlaced?line/2U:line);
+  if(!frame_shot_valid[parity])parity^=1U;
+  auint bank=frame_shot_front[parity];
+  if(line!=previous){
+   uint8 const* src=(valid&&frame_shot_valid[parity]&&frame_shot_seen[bank][source])?
+       frame_shot_rows[bank]+source*ROW_ACTIVE_CYCLES:NULL;
+   for(x=0U;x<w;x++)row[x]=frame_shot_sample(src,x,w,sampling,pal,&fmt);
+   previous=line;
+  }
+  for(x=0U;x<w;x++){
+   auint dx=x,dy=y;
+   if(rot==1U){dx=h-1U-y;dy=x;}
+   else if(rot==2U){dx=w-1U-x;dy=h-1U-y;}
+   else if(rot==3U){dx=y;dy=w-1U-x;}
+   if(flags&JAMMA_FLIP_H)dx=*width-1U-dx;
+   if(flags&JAMMA_FLIP_V)dy=*height-1U-dy;
+   out[dy*(*width)+dx]=row[x];
+  }
+ }
+ *pixels=out;return TRUE;
+}
+
+boole frame_capture_cycle_pixels(uint32** pixels,auint* width,auint* height)
+{return frame_capture_cycle_pixels_ex(pixels,width,height,1440U,5U,0U);}
 
 void frame_invalidate_merge(void) { frame_pmerge = FALSE; guicore_reset_fields(); }
 
@@ -606,6 +736,7 @@ auint frame_run(boole drop, boole merge)
   if ((ret & CU_GET_ROW) != 0U){
 
    erowd = cu_avr_get_row();
+   frame_capture_row(erowd);
    tv_offset = cu_avr_get_tv_sync_offset();
    frame_audio[row] = (uint8)(erowd->sample);
    if ( ((erowd->pno) >=  (RPULSE_START            )) &&
@@ -833,11 +964,23 @@ auint frame_run(boole drop, boole merge)
 
  /* Add text GUI elements */
 
+#ifdef ENABLE_VCAP
+ if(!drop&&mainui_get_video_dump_active()){ avconv_stage_clean_frame(); }
+#endif
  if (!guicore_is_headless()){ textgui_draw(drop || gonly, drop); }
  if(!field_complete) guicore_reset_fields();
  if(field_complete && !drop){
   boole interlaced=cu_avr_interlace_field(&field_parity);
   guicore_commit_field(interlaced, field_parity);
+ }
+ if(field_complete){
+  boole interlaced=cu_avr_interlace_field(&field_parity);
+  frame_capture_commit(interlaced,field_parity);
+ }else if(!frame_breakpoint_hit(FALSE,NULL)){
+  /* Like the on-screen renderer, retain bounded output from imperfect-sync
+  ** programs too. A debugger stop is different: keep its last complete image. */
+  if(ret)frame_capture_commit(FALSE,0U);
+  else memset(frame_shot_seen[frame_shot_work],0,RPULSE_NO);
  }
 
  return ret;

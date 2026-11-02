@@ -97,7 +97,7 @@ int main(void)
  CHECK(click_text("RECORD VIDEO") == 0 && mui_input_record_video, "video checkbox works");
  main_cfg.video_dump_reset_first = TRUE;
  avconv_set_autoinc(FALSE);
- avconv_set_filename("playback video.mp4");
+ avconv_set_filename("playback video.MP4");
  cu_avr_get_state()->pc = 100U;
  CHECK(click_text("PLAY FROM BEGINNING") == 0, "GUI playback action");
  CHECK(main_input_capture_active && capture_is_replaying(), "GUI starts replay");
@@ -116,7 +116,7 @@ int main(void)
  CHECK(!main_isadvfr, "EOF cancels frame advance so pause persists");
  CHECK(main_frame_counter == frames, "EOF does not emulate an extra frame");
  CHECK(!main_input_replay_video && !mainui_get_video_dump_active() && !avconv_is_initialized(), "EOF finalizes video");
- file = fopen("playback video.mp4", "rb"); CHECK(file != NULL, "playback video output created");
+ file = fopen("playback video.MP4", "rb"); CHECK(file != NULL, "playback video output created");
  byte = fgetc(file); fclose(file); CHECK(byte != EOF, "video output is not empty");
  CHECK(!main_gui_pause_owned, "EOF pause survives closing the GUI");
  CHECK(mainui_start_input_replay("recorded input.cic", FALSE, TRUE), "restart from beginning");

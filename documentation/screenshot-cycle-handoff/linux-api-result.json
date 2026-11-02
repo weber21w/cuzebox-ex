@@ -1,0 +1,32 @@
+{
+  "width": 1440,
+  "height": 1125,
+  "bytes": 176932,
+  "paused_frame": 120,
+  "file_api_equal": true,
+  "capture_did_not_advance": true,
+  "legacy_bmp": true,
+  "resized": [
+    {
+      "width": 256,
+      "height": 675,
+      "sampling": "NEAREST"
+    },
+    {
+      "width": 240,
+      "height": 675,
+      "sampling": "AREA"
+    },
+    {
+      "width": 192,
+      "height": 675,
+      "sampling": "LINEAR"
+    },
+    {
+      "width": 160,
+      "height": 675,
+      "sampling": "AREA"
+    }
+  ],
+  "metadata_matches": true
+}

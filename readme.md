@@ -33,7 +33,7 @@ configuration, workflows, and implementation details beyond this quick guide.
 | CPU/source debugging, symbols, watches and profiles | [Debugger](documentation/debugger.md), [web debugger and diagnostics](documentation/web-debugger.md) |
 | Input capture playback and video export | [Input files](documentation/input-files.md) |
 | Timer1 compare behavior and emulation limits | [Timer1](documentation/timer1.md) |
-| Optional Timer1 clock and GPIO models | [AVR hardware build options](documentation/avr-hardware-options.md) |
+| Timer1 clock and GPIO models | [AVR hardware build options](documentation/avr-hardware-options.md) |
 | Advanced API inspection | [Run control](documentation/api-run-control.md), [breakpoints](documentation/api-breakpoints.md), [watchpoints](documentation/api-watchpoints.md), [memory snapshots](documentation/api-memory-snapshots.md), [memory scans](documentation/api-memory-scans.md), [profiler](documentation/api-profiler.md), [stack](documentation/api-stack.md) |
 | Controllers, UzeTap, UzeBus and virtual devices | [Input topology](documentation/input-topology.md) |
 | Multiplayer gameplay | [Netplay](documentation/netplay.md) |
@@ -137,6 +137,16 @@ Explicit `TSYS` assignments still select a target, including cross builds:
 | Linux AArch64 | `make -B TARGET_LINUX_AARCH64=1` | AArch64 cross compiler and target SDL2/ALSA libraries; configure `CROSS_COMPILE` and target `pkg-config` paths as needed. |
 | RGB30 / ROCKNIX | `sh tools/build_rgb30.sh` | Lean standalone AArch64 gameplay preset; Windows/WSL wrapper: `./tools/build_rgb30.ps1`. See the [handheld guide](documentation/handhelds-rgb30.md) for dependencies and the ROCKNIX integration template. |
 | PortMaster | `make -B TARGET_PORTMASTER=1 package-portmaster` | AArch64 dependencies; produces a handheld package. `make TARGET_PORTMASTER=1 portmaster-doctor` checks the setup. |
+
+Native download packaging is automated by `.github/workflows/release.yml`:
+Windows ZIP, Linux AppImage/tar.gz, and separate Apple Silicon/Intel macOS app
+test ZIPs. FFmpeg and native dependencies are bundled. Manual runs produce
+Actions artifacts; version tags create a draft release after all jobs pass.
+See [release packaging and storage modes](documentation/releases.md). Installed
+Linux/macOS packages use writable per-user data; Windows ZIPs default portable.
+Existing unmarked developer/handheld launches keep their working-directory
+behavior. Use `--user-data`, `--portable`, `--data-dir`, and `--print-paths`
+to select or inspect native storage locations.
 
 Use `CCOMP`, `CCNAT`, `CC_INC`, `CC_LIB`, `SDL2_CONFIG`, or `PKG_CONFIG`
 overrides when dependencies are outside standard locations.
@@ -319,10 +329,37 @@ routine diagnostics require Debug. Repeated messages and bursts are limited,
 and file writes are summarized on close/flush rather than logged per sector.
 See [Messages and debugging output](documentation/logging.md) for details.
 
-**Tools > Screenshot > Include GUI** is a saved checkbox. Unchecked captures
-the game area; checked captures the complete rendered GUI after drawing.
-The tool shows the last saved filename. GUI-time notices do not queue an OSD
+**Tools > Screenshot** saves PNG by default, without the emulator HUD or frame.
+**BYPASS FILTERS** is enabled by default and saved: capture the latest completed
+field before horizontal sampling, CRT/display filters and frame blending.
+At the default X=1440 and Y=5, each active CPU-cycle sample becomes one column; every scanline
+is repeated five times without interpolation. A 224-line capture is 1440x1120;
+the current renderer's complete 225-line window yields 1440x1125. Black rows
+drawn by the game are retained. Interlaced fields are woven with nearest-neighbor
+5/2 vertical scaling (alternating three/two rows), preserving the same aspect;
+JAMMA rotation
+rotates the image canvas without letterboxing. Pausing does not advance the
+game to take a screenshot. After reset/state load, the cleared capture remains
+black until a new field completes.
+
+Screenshot **X WIDTH** and **Y SCALE** dropdowns can be changed independently.
+Presets set both axes (default CYCLE=1440/5); manual changes remain available.
+X includes 256, 240, 192 and 160 widths, with NEAREST, AREA averaging or LINEAR
+interpolation across the full cycle window. Y offers 1X–10X. The web Controls
+page and `SCREENSHOT_SETTINGS` API expose the same saved preferences. PNGs
+embed capture/scaling metadata (`CUEX.Capture`) so image tools and AI agents can
+interpret dimensions and distinguish exact cycles from resampled output.
+
+Disable **BYPASS FILTERS** to capture the filtered game image instead.
+**INCLUDE GUI** is off by default; enabling it captures the tool's complete
+rendered GUI using display settings instead of cycle capture. The screenshot
+shortcut and default API capture use the same game-only PNG path.
+Files are named `screenshots/Game_shot_0000.png`. Explicit `.bmp` paths and
+`SCREENSHOT_CAPTURE BMP` retain the old rendered-layout BMP export for tools
+that require it. File-writing screenshots remain disabled in the gameplay-only
+Emscripten build. The tool shows the last saved filename. GUI-time notices do not queue an OSD
 backlog, and keyboard presses belong to the GUI while its windows are open.
+See [screenshot details and verification](documentation/screenshots.md).
 
 **Tools > Input Files** selects and plays `.cic` captures, with **Reset Before
 Recording** enabled by default and an optional **Record Video** checkbox. Playback
@@ -426,6 +463,10 @@ With `FLAG_VCAP=1`, use F5 or **DUMP VIDEO** to record. Temporary lossless
 output is encoded to a 720p H.264/AAC MP4 with `ffmpeg`. **RESET FIRST**
 starts recording from the first frame after a ROM reset. Failed encoding
 retains temporary output and error logs.
+**OMIT MESSAGES** defaults on: emulator notices remain visible on screen but
+are excluded from the video. Uncheck it to include notices. The saved
+`VideoDumpOmitMessages` preference also applies to replay-to-video and can be
+changed through web Controls or `EMU_SET video_dump_omit_messages 0|1`.
 
 ## Checks and development
 

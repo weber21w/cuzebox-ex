@@ -1,4 +1,5 @@
 #include "savestate.h"
+#include "frame.h"
 #include "cu_hw_features.h"
 #include "diagnostics.h"
 #ifdef ENABLE_ICAP
@@ -211,20 +212,37 @@ static boole savestate_mkdirs(char const* path)
 	return TRUE;
 }
 
-static char const* savestate_slot_name(auint slot)
+static void savestate_slot_directory(char* path,auint cap,boole legacy)
 {
-	static char path[1024];
 	char romdir[256];
 	char savedir[512];
+	char const* root=mainui_get_save_path();
+	if(root==NULL||root[0]==0){ root="savestates"; }
+	savestate_sanitize_name(romdir, sizeof(romdir), mainui_get_current_rom_name());
+	/* SavePath already names the state directory. The extra component is
+	 * retained only for reading files written before the path correction. */
+	if(legacy){ savestate_join_path(savedir,sizeof(savedir),root,"savestates"); }
+	else{ savestate_copy_str(savedir,sizeof(savedir),root); }
+	savestate_join_path(path,cap,savedir,romdir);
+}
+
+static char const* savestate_slot_name(auint slot,boole legacy)
+{
+	static char path[1024];
 	char base[512];
 	char leaf[64];
-	savestate_sanitize_name(romdir, sizeof(romdir), mainui_get_current_rom_name());
-	savestate_join_path(savedir, sizeof(savedir), mainui_get_save_path(), "savestates");
-	savestate_join_path(base, sizeof(base), savedir, romdir);
-	(void)savestate_mkdirs(base);
+	savestate_slot_directory(base,sizeof(base),legacy);
 	snprintf(leaf, sizeof(leaf), "slot_%u.czs", (unsigned)(slot % SAVESTATE_SLOT_COUNT));
 	savestate_join_path(path, sizeof(path), base, leaf);
 	return path;
+}
+
+static FILE* savestate_open_slot_read(auint slot)
+{
+	FILE* fp=fopen(savestate_slot_name(slot,FALSE),"rb");
+	/* An unreadable or invalid newer save must not silently select stale data. */
+	if(fp==NULL&&errno==ENOENT){ fp=fopen(savestate_slot_name(slot,TRUE),"rb"); }
+	return fp;
 }
 
 static void savestate_sanitize_esp(cu_state_esp_t *esp)
@@ -642,6 +660,7 @@ static boole savestate_restore_impl(savestate_blob_t const *blob, boole preserve
 	    hardware.features==CU_HW_FEATURES&&hardware.phase<1024U)
 	  cu_avr_hardware_restore(hardware.phase,hardware.drive_mask,hardware.drive_value);
 	}
+	frame_capture_reset(); /* Never export pixels from a different machine state. */
 
 	return TRUE;
 }
@@ -683,6 +702,7 @@ boole savestate_save_slot(auint slot)
 {
 	savestate_blob_t blob;
 	FILE *fp;
+	char directory[512];
 	boole ok = FALSE;
 
 	slot %= SAVESTATE_SLOT_COUNT;
@@ -692,7 +712,8 @@ boole savestate_save_slot(auint slot)
 		return FALSE;
 	}
 
-	fp = fopen(savestate_slot_name(slot), "wb");
+	savestate_slot_directory(directory,sizeof(directory),FALSE);
+	fp = savestate_mkdirs(directory) ? fopen(savestate_slot_name(slot,FALSE), "wb") : NULL;
 	if (fp == NULL){
 		print_error("savestate: unable to open slot file for write\n");
 	}else if (fwrite(blob.data, 1U, blob.size, fp) != blob.size){
@@ -722,7 +743,7 @@ boole savestate_load_slot(auint slot)
 
 	slot %= SAVESTATE_SLOT_COUNT;
 	savestate_blob_reset(&blob);
-	fp = fopen(savestate_slot_name(slot), "rb");
+	fp = savestate_open_slot_read(slot);
 	if (fp == NULL){
 		savestate_system_message("SAVE STATE %u LOAD FAILED", (unsigned)slot);
 		return FALSE;
@@ -766,7 +787,7 @@ boole savestate_load_slot(auint slot)
 boole savestate_slot_exists(auint slot)
 {
 	FILE* fp;
-	fp = fopen(savestate_slot_name(slot), "rb");
+	fp = savestate_open_slot_read(slot);
 	if (fp == NULL){ return FALSE; }
 	fclose(fp);
 	return TRUE;

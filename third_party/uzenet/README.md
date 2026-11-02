@@ -3,7 +3,8 @@
 This directory contains the portable UART v4 firmware core copied from
 `C:\uzenet-master\custom-firmware`. The source checkout did not provide a Git
 revision; `snapshot.json` records the synchronization date and each included
-source/header's SHA-256 hash. `tools/test_uzenet.py` verifies those hashes before testing.
+source/header's SHA-256 hash after CRLF-to-LF normalization (`sha256-lf`).
+`tools/test_uzenet.py` verifies complete source coverage and those hashes before testing.
 The upstream project license is included as `LICENSE`.
 
 The portable sources are unchanged. Emulator platform adaptation lives in

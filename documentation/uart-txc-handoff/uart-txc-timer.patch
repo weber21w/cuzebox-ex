@@ -1,0 +1,357 @@
+--- a/cu_avr.c
++++ b/cu_avr.c
+@@ -529,6 +529,26 @@
+ #define VECT_USART0_TX 0x002CU
+ 
+ 
++/* AVR TX timing belongs to the MCU, not its optional ESP/serial peer. Keep
++** the shift deadline in the existing saved CPU state; UDRE distinguishes an
++** empty holding register from a queued second byte. No host polling is needed
++** to complete a frame or request the interrupt used by RLE scanline modes. */
++static auint cu_avr_uart_frame_cycles(void)
++{
++ auint a = cpu_state.iors[CU_IO_UCSR0A];
++ auint b = cpu_state.iors[CU_IO_UCSR0B];
++ auint c = cpu_state.iors[CU_IO_UCSR0C];
++ auint ubrr = cpu_state.iors[CU_IO_UBRR0L] | ((cpu_state.iors[CU_IO_UBRR0H] & 15U) << 8);
++ auint mode = c >> 6;
++ auint size = ((c >> 1) & 3U) | (b & 4U);
++ auint bits = 1U + (size == 7U ? 9U : 5U + (size & 3U)) +
++              ((c & 8U) ? 2U : 1U) + ((c & 0x30U) ? 1U : 0U);
++ auint scale = mode ? 2U : ((a & 2U) ? 8U : 16U);
++ if (mode == 3U){ bits = 8U; } /* MSPIM has no start/parity/stop bits. */
++ return (ubrr + 1U) * scale * bits;
++}
++
++
+ 
+ /*
+ ** Get Watchdog timeout ticks (WDP3 ignored, should be zero)
+@@ -556,6 +576,11 @@
+  }
+  cpu_state.iors[CU_IO_SPL] = 0xFFU;
+  cpu_state.iors[CU_IO_SPH] = 0x10U;
++ cpu_state.iors[CU_IO_UCSR0A] = 1U << UDRE0;
++ cpu_state.iors[CU_IO_UCSR0C] = 6U; /* USART reset format: asynchronous 8N1. */
++ cu_esp_uzebox_modify(CU_IO_UCSR0B, 0U, cpu_state.cycle);
++ cpu_state.usr0_tran = FALSE;
++ cpu_state.usr0_end = 0U;
+ 
+  cpu_state.latch = 0U;
+ 
+@@ -757,21 +782,27 @@
+ 
+  }
+ 
+- /* USART0 peripherals (RLE mode end scanline) */
++ /* USART0 transmit shift register (also used as a scanline timer). */
+ 
+  if (cpu_state.usr0_tran){
+ 
+   if (cpu_state.cycle == cpu_state.usr0_end){
+ 
+-   cpu_state.usr0_tran = FALSE;
+-   cpu_state.iors[CU_IO_UCSR0A] |= 0x40U; /* USART0 TX complete flag */
+-   event_it = TRUE;
+-
+-  }else{
+-
++   /* Advance the peer's existing transmitter too, without doing RX/socket
++   ** polling. It must see frame completion even when the AVR waits in an ISR. */
++   (void)cu_esp_uzebox_write_ready(cpu_state.cycle);
++   if (!(cpu_state.iors[CU_IO_UCSR0A] & (1U << UDRE0))){
++    cpu_state.iors[CU_IO_UCSR0A] |= 1U << UDRE0;
++    cpu_state.usr0_end = WRAP32(cpu_state.cycle + cu_avr_uart_frame_cycles());
++   }else{
++    cpu_state.usr0_tran = FALSE;
++    cpu_state.iors[CU_IO_UCSR0A] |= 1U << TXC0;
++    event_it = TRUE;
++   }
++  }
++  if (cpu_state.usr0_tran){
+    t0 = WRAP32(cpu_state.usr0_end - cpu_state.cycle);
+    if (nextev > t0){ nextev = t0; }
+-
+   }
+ 
+  }
+@@ -1316,17 +1347,34 @@
+ 
+ 
+   case CU_IO_UDR0:    /* USART0 data */
+-   cu_esp_uzebox_write(cval, cpu_state.cycle); /* module will handle dropping based off UART settings and state... */
+-//   cpu_state.usr0_tran = TRUE;
+-//   cpu_state.usr0_end  = WRAP32( cpu_state.cycle + 1304 );
+-//   if ( (WRAP32(cycle_next_event  - cpu_state.cycle)) >
+-//        (WRAP32(cpu_state.usr0_end - cpu_state.cycle)) ){
+-//    cycle_next_event = cpu_state.usr0_end; /* Set USR HW processing target */
+-//   }
+-   break;
+-
+-  case CU_IO_UCSR0B: /* Rx/Tx on/off */
+-  case CU_IO_UCSR0A: /* UART double speed mode */
++   if ((cpu_state.iors[CU_IO_UCSR0B] & (1U << TXEN0)) &&
++       (cpu_state.iors[CU_IO_UCSR0A] & (1U << UDRE0))){
++    cu_esp_uzebox_write(cval, cpu_state.cycle);
++    if (cpu_state.usr0_tran){
++     cpu_state.iors[CU_IO_UCSR0A] &= ~(1U << UDRE0);
++    }else{
++     cpu_state.usr0_tran = TRUE;
++     cpu_state.usr0_end = WRAP32(cpu_state.cycle + cu_avr_uart_frame_cycles());
++     if (WRAP32(cycle_next_event - cpu_state.cycle) >
++         WRAP32(cpu_state.usr0_end - cpu_state.cycle)){
++      cycle_next_event = cpu_state.usr0_end;
++     }
++    }
++   }else{ cval = pval; } /* Disabled or full: hardware ignores the write. */
++   break;
++
++  case CU_IO_UCSR0A: /* U2X/MPCM writable; TXC is write-one-to-clear. */
++   /* Acknowledging TXC must not reconfigure the peer or flush pending RX. */
++   if ((pval ^ cval) & 3U){ cu_esp_uzebox_modify(port, cval, cpu_state.cycle); }
++   cval = (pval & ~3U) | (cval & 3U);
++   if (val & (1U << TXC0)){ cval &= ~(1U << TXC0); }
++   break;
++
++  case CU_IO_UCSR0B: /* Interrupt mask changes may expose a latched TXC. */
++   if ((pval ^ cval) & 0x1DU){ cu_esp_uzebox_modify(port, cval, cpu_state.cycle); }
++   event_it = TRUE;
++   break;
++
+   case CU_IO_UCSR0C: /* UART frame settings(ie 8N1) */
+   case CU_IO_UBRR0L: /* Baud bits 0-7 */
+   case CU_IO_UBRR0H: /* Baud bits 8-11 */
+@@ -1613,8 +1661,10 @@
+    break;
+ 
+   case CU_IO_UCSR0A: /* UART Rx/Tx ready status */
+-   cpu_state.iors[CU_IO_UCSR0A] &= ~((1<<UDRE0) | (1<<RXC0) | (1<<TXC0) | (1<<FE0) | (1<<DOR0) | (1<<UPE0));
+-   cpu_state.iors[CU_IO_UCSR0A] |= cu_esp_uzebox_status(cpu_state.cycle);
++   /* TX flags are MCU state: importing the peer's idle-level TXC would
++   ** reassert an acknowledged interrupt forever. Only RX comes from it. */
++   cpu_state.iors[CU_IO_UCSR0A] &= ~((1<<RXC0) | (1<<FE0) | (1<<DOR0) | (1<<UPE0));
++   cpu_state.iors[CU_IO_UCSR0A] |= cu_esp_uzebox_read_ready(cpu_state.cycle);
+ 
+    ret = cpu_state.iors[CU_IO_UCSR0A];
+    break;
+--- a/tests/bootloader/interrupt_regression.c
++++ b/tests/bootloader/interrupt_regression.c
+@@ -258,6 +258,151 @@
+  CHECK(cpu_state.eep_wrte && cpu_state.eep_end == 4U + EEPROM_EWR_TIM, "new write mode controls operation duration");
+  cu_avr_write_io(CU_IO_EECR, 0U);
+  CHECK((cpu_state.iors[CU_IO_EECR] & 0x32U) == 0x22U, "busy program retains EEPE and mode");
++ return 0;
++}
++
++/* UART TX is a hardware time source even with no attached serial peer. */
++static void uart_setup(auint a, auint b, auint c, auint ubrr)
++{
++ setup();
++ cpu_state.iors[CU_IO_TIMSK1] = cpu_state.iors[CU_IO_TIFR1] = 0U;
++#if defined(ENABLE_ESP)
++ cu_esp_set_serial_route(CU_ESP_SERIAL_DISCONNECTED);
++#endif
++ cu_avr_write_io(CU_IO_UCSR0A, a);
++ cu_avr_write_io(CU_IO_UCSR0B, b);
++ cu_avr_write_io(CU_IO_UCSR0C, c);
++ cu_avr_write_io(CU_IO_UBRR0H, ubrr >> 8);
++ cu_avr_write_io(CU_IO_UBRR0L, ubrr & 255U);
++}
++
++static int uart_timer_test(void (*step)(void))
++{
++ static const struct { auint a,b,c,ubrr,clocks; } cases[] = {
++  {0U,8U,6U,7U,1280U},       /* 8N1, normal speed */
++  {2U,8U,6U,7U,640U},        /* 8N1, double speed */
++  {0U,8U,0U,0U,112U},        /* 5N1, UBRR=0 is valid */
++  {0U,8U,2U,0U,128U},        /* 6N1 */
++  {0U,8U,4U,0U,144U},        /* 7N1 */
++  {0U,12U,0x3EU,1U,416U},    /* 9O2 */
++  {0U,8U,6U,0x123U,46720U},  /* all 12 UBRR bits */
++  {0U,8U,0x46U,7U,160U},     /* synchronous UART master, 8N1 */
++  {0U,8U,0xC6U,7U,128U},     /* USART MSPIM: eight clocks, no framing */
++ };
++ unsigned i;
++ for(i=0U;i<sizeof(cases)/sizeof(cases[0]);++i){
++  uart_setup(cases[i].a,cases[i].b,cases[i].c,cases[i].ubrr);
++  CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"reset UART is empty without a completed transmission");
++  cu_avr_write_io(CU_IO_UDR0,0x55U);
++  CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==cases[i].clocks,"UART schedules configured frame, independently of peer");
++  CHECK(cycle_next_event<=cases[i].clocks,"UART completion is a hardware deadline");
++  cpu_state.cycle=cases[i].clocks-1U;cu_avr_hwexec();
++  CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"UART completion is not early");
++  cpu_state.cycle++;cu_avr_hwexec();
++  CHECK(!cpu_state.usr0_tran && (cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"UART completion latches without polling");
++ }
++
++ uart_setup(0U,8U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x11U);
++ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
++ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x20U),"second byte occupies UART holding register");
++ cpu_state.cycle=2U;cu_avr_write_io(CU_IO_UDR0,0x33U);
++ CHECK(cpu_state.usr0_end==160U,"full UART ignores another write without restarting shift register");
++ cpu_state.cycle=160U;cu_avr_hwexec();
++ CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==320U && (cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"buffered UART continues without intermediate TXC");
++ cpu_state.cycle=320U;cu_avr_hwexec();
++ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x60U,"TXC waits for both UART registers to empty");
++ cu_avr_write_io(CU_IO_UCSR0A,0U);
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"writing zero preserves TXC");
++ cu_avr_write_io(CU_IO_UDR0,0x44U);
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"UDR write does not implicitly acknowledge old TXC");
++ cu_avr_write_io(CU_IO_UCSR0A,0x40U);
++ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x63U)==0x20U,"TXC is write-one-to-clear and other status bits are read-only");
++
++ uart_setup(0U,8U,6U,0U);
++ cpu_state.cycle=0xFFFFFFF0U;cycle_next_event=0xFFFFFFF8U;
++ cu_avr_write_io(CU_IO_UDR0,0U);
++ CHECK(cpu_state.usr0_end==144U,"UART deadline wraps with CPU cycle counter");
++ cpu_state.cycle=144U;cu_avr_hwexec();
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"UART completion survives cycle wrap");
++ cpu_state.iors[CU_IO_SREG]=SREG_IM;event_it_enter=FALSE;cu_avr_itcheck();
++ CHECK(!event_it_enter,"TXC alone cannot interrupt polling-only software");
++ cu_avr_write_io(CU_IO_UCSR0B,0x48U);
++ CHECK(event_it,"enabling TXCIE requests an interrupt check for latched TXC");
++ cu_avr_itcheck();
++ CHECK(event_it_enter && event_it_vect==VECT_USART0_TX,"unmasking pending TXC selects USART vector");
++ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"interrupt acknowledges TXC even after status read");
++ event_it_enter=FALSE;cu_avr_itcheck();
++ CHECK(!event_it_enter,"idle UART does not repeatedly raise TX interrupt");
++
++ uart_setup(0U,0x48U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x55U);
++ cpu_state.cycle=160U;cu_avr_hwexec();
++ event_it_enter=FALSE;cu_avr_itcheck();
++ CHECK(!event_it_enter && (cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"global mask defers UART ISR without losing completion");
++ cu_avr_write_io(CU_IO_SREG,SREG_IM);
++ CHECK(event_it,"unmasking global interrupts rechecks pending UART completion");
++ cu_avr_itcheck();
++ CHECK(event_it_enter && event_it_vect==VECT_USART0_TX,"pending UART interrupt survives global mask");
++
++ uart_setup(0U,8U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x11U);
++ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
++ cu_avr_io_update(); /* Same scheduler reconstruction used after state restore. */
++ cpu_state.cycle=160U;cu_avr_hwexec();
++ CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==320U,"I/O state restoration retains buffered UART deadline");
++ cpu_state.cycle=320U;cu_avr_hwexec();
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"restored UART completes normally");
++
++ uart_setup(0U,0U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x55U);
++ CHECK(!cpu_state.usr0_tran,"disabled transmitter does not start timer");
++ uart_setup(0U,8U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x55U);
++ cu_avr_write_io(CU_IO_UCSR0B,0U);
++ cpu_state.cycle=160U;cu_avr_hwexec();
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"clearing TXEN allows in-flight transmission to finish");
++ uart_setup(0U,8U,6U,0U);
++ cu_avr_write_io(CU_IO_UDR0,0x55U);
++ cu_avr_reset_wd();
++ CHECK(!cpu_state.usr0_tran && (cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"watchdog reset cancels UART timer and completion flag");
++
++ /* Run actual instructions without polling UCSR0A. The interrupt ends the
++  * foreground loop, just as an interrupt-terminated scanline does. */
++ uart_setup(0U,0x48U,6U,0U);
++ instruction(0U,0xCFFFU); /* RJMP . */
++ cpu_state.iors[CU_IO_SREG]=SREG_IM;
++ cu_avr_write_io(CU_IO_UDR0,0x55U);
++ for(i=0U;i<100U && cpu_state.pc!=VECT_USART0_TX;++i) step();
++ CHECK(cpu_state.pc==VECT_USART0_TX && cpu_state.cycle>=160U && cpu_state.cycle<=168U,"UART interrupts a non-polling loop through production decoder");
++ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"actual UART ISR entry clears TXC");
++#if defined(ENABLE_ESP)
++ /* Check the real MCU and endpoint together, not just their separate models.
++  * The third write is ignored while full, and polling RX must not relatch TXC. */
++ for(i=CU_UART_PROFILE_FAST;i<=CU_UART_PROFILE_DEBUG;++i){
++ uart_setup(0U,0x18U,6U,185U);
++ cu_esp_set_serial_route(CU_ESP_SERIAL_LOOPBACK);
++ cu_esp_set_uart_profile(i);
++ cu_avr_write_io(CU_IO_UDR0,0x11U);
++ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
++ cpu_state.cycle=2U;cu_avr_write_io(CU_IO_UDR0,0x33U);
++ cpu_state.cycle=29760U;cu_avr_hwexec();
++ (void)cu_avr_read_io(CU_IO_UCSR0A);
++ cpu_state.cycle=59520U;cu_avr_hwexec();
++ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x80U,"real loopback receives first buffered frame");
++ CHECK(cu_avr_read_io(CU_IO_UDR0)==0x11U,"first UART byte survives CPU scheduler integration");
++ cu_avr_write_io(CU_IO_UCSR0A,0x40U);
++ cu_avr_write_io(CU_IO_UCSR0B,0x58U); /* Change interrupt mask, not RX/TX config. */
++ cpu_state.cycle=89280U;cu_avr_hwexec();
++ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0xC0U)==0x80U,"RX polling does not recreate acknowledged TXC");
++ CHECK(cu_avr_read_io(CU_IO_UDR0)==0x22U,"UART holding register preserves second byte");
++ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x80U),"full UART did not send third byte");
++ cu_avr_write_io(CU_IO_UDR0,0x44U);
++ cu_avr_reset_wd();
++ CHECK(!cu_esp_get_state()->uart_tx_shift_valid,"watchdog reset cancels peer's pending transmission too");
++ }
++ cu_esp_set_uart_profile(CU_UART_PROFILE_FAST);
++#endif
+  return 0;
+ }
+ 
+@@ -404,10 +549,12 @@
+ int main(void)
+ {
+  if (run_decoder(cu_avr_exec) || run_decoder(cu_avr_exec_table) || peripherals_test()) return 1;
++ if (uart_timer_test(cu_avr_exec) || uart_timer_test(cu_avr_exec_table)) return 1;
+  if (pin_toggle_test(cu_avr_exec) || pin_toggle_test(cu_avr_exec_table)) return 1;
+  if (hex_hints_test(cu_avr_exec) || hex_hints_test(cu_avr_exec_table)) return 1;
+  puts("HEX hints passed for both decoders.");
+  puts("Interrupt timing regression passed for switch and function-table decoders.");
++ puts("UART transmit-complete timer regression passed for both decoders.");
+  puts("PINx toggle regression passed for switch and function-table decoders.");
+  return 0;
+ }
+--- a/documentation/serial.md
++++ b/documentation/serial.md
+@@ -198,9 +198,40 @@
+ backends.
+ 
+ Polling-only UART software is also supported correctly. `TXC0` represents an
+-idle or completed transmitter, but it only enters the USART TX interrupt vector
++latched transmission completion, rather than the idle level
++of an attached serial peer. It only enters the USART TX interrupt vector
+ when `TXCIE0` is enabled. This distinction is required by link games that poll
+ `UCSR0A` from a scanline service routine while leaving UART interrupts disabled.
++
++### USART transmit-complete scanline timer
++
++Writing `UDR0` with the transmitter enabled schedules an AVR hardware event.
++Completion runs even without an attached ESP/serial peer and without polling
++`UCSR0A`. This supports video modes that use the USART TX interrupt to end a
++scanline. The old fixed 1,304-cycle timer is not used: the deadline follows
++`UBRR0`, `U2X0`, character size, parity and stop bits. Synchronous master timing
++uses the two-clock divider; MSPIM uses eight bits without UART framing.
++External XCK input edges and baud-generator start phase are not modeled.
++
++The model retains a transmit shift register and a one-byte holding register.
++`UDRE0` becomes clear while the holding register is occupied; another write
++while full is ignored. `TXC0` latches only after both registers empty. It starts
++clear after reset, remains set until acknowledged, and is cleared by writing
++one to `TXC0` or servicing its interrupt. Status reads do not acknowledge or
++reassert it. Enabling `TXCIE0` after completion exposes the pending interrupt;
++the global interrupt mask and normal vector priority still apply. Disabling TX
++lets an already scheduled frame finish; reset cancels it.
++
++The timing/holding state uses the existing saved CPU fields, so the CPU blob
++layout is unchanged. The existing serial endpoint still handles byte delivery
++and receive status. This change does not add USART receive or data-register-
++empty interrupt vectors.
++
++Run `make -f tests/preferences/Makefile interrupt-test timer1-test hardware-test`
++for the CPU timing and polling regressions. The UART checks exercise both
++instruction decoders, frame formats, buffering, masks, flag acknowledgment,
++CPU-cycle wrap and reset, including an actual non-polling AVR loop interrupted
++by transmit completion.
+ 
+ The Serial window uses a wider 620-by-420 layout. TCP mode, connection status,
+ and the last socket error are displayed independently so `CONNECTED` and error
+--- a/tests/bootloader/resident_bootloader_regression.c
++++ b/tests/bootloader/resident_bootloader_regression.c
+@@ -9,6 +9,7 @@
+ void cu_ctr_reset(void){}
+ void cu_spi_reset(auint cycle){ (void)cycle; }
+ void cu_esp_reset_pin(uint8 state, auint cycle){ (void)state; (void)cycle; }
++void cu_esp_uzebox_modify(auint port, auint val, auint cycle){ (void)port; (void)val; (void)cycle; }
+ 
+ static int hexbyte(char const *p)
+ {

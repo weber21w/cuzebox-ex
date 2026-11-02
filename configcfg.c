@@ -209,6 +209,7 @@ void appcfg_defaults(app_config_t* cfg)
 	appcfg_copy_str(cfg->video_dump_file, APPCFG_PATH_MAX, "video/CAPTURE001.MP4");
 	cfg->video_dump_autoinc = TRUE;
 	cfg->video_dump_reset_first = FALSE;
+	cfg->video_dump_omit_messages = TRUE;
 	appcfg_copy_str(cfg->gui_theme_name, sizeof(cfg->gui_theme_name), "BOOTLOADER");
 	appcfg_copy_str(cfg->gui_theme_file, sizeof(cfg->gui_theme_file), "themes/bootloader.cfg");
 	appcfg_set_color(cfg->gui_colors[0], 255U, 232U, 196U, 255U);
@@ -228,6 +229,10 @@ void appcfg_defaults(app_config_t* cfg)
 	appcfg_copy_str(cfg->rom_path, APPCFG_PATH_MAX, "roms");
 	appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, "screenshots");
 	cfg->screenshot_include_gui = FALSE;
+	cfg->screenshot_bypass_filters = TRUE;
+	cfg->screenshot_x_width = 1440U;
+	cfg->screenshot_y_scale = 5U;
+	cfg->screenshot_sampling = 0U;
 	appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, "savestates");
 	appcfg_copy_str(cfg->controllerdb_path, APPCFG_PATH_MAX, "");
 	cfg->resident_bootloader_enable = TRUE;
@@ -237,7 +242,11 @@ void appcfg_defaults(app_config_t* cfg)
 		cfg->recent_roms[i][0] = 0;
 	}
 	cfg->recent_roms_frozen = FALSE;
+#ifdef CUEX_DISTRIBUTION
+	cfg->api_server = FALSE;
+#else
 	cfg->api_server = TRUE;
+#endif
 	cfg->api_server_port = API_SERVER_DEFAULT_PORT;
 	cfg->cheats_enabled = TRUE;
 	cfg->cheats_autoloadsave = TRUE;
@@ -406,7 +415,8 @@ boole appcfg_save(app_config_t const* cfg, const char* path)
 	fprintf(f, "RemoteRomsHost=%s\n", cfg->remote_roms_host);
 	fprintf(f, "VideoDumpFile=%s\n", cfg->video_dump_file);
 	fprintf(f, "VideoDumpAutoInc=%u\n", (unsigned)(cfg->video_dump_autoinc ? 1U : 0U));
-	fprintf(f, "VideoDumpResetFirst=%u\n\n", (unsigned)(cfg->video_dump_reset_first ? 1U : 0U));
+	fprintf(f, "VideoDumpResetFirst=%u\n", (unsigned)(cfg->video_dump_reset_first ? 1U : 0U));
+	fprintf(f, "VideoDumpOmitMessages=%u\n\n", (unsigned)(cfg->video_dump_omit_messages ? 1U : 0U));
 
 	fprintf(f, "# Bootloader / flash persistence\n");
 	fprintf(f, "# ResidentBootloader: retain Bootloader 5 for UZE loads (default on); HEX replaces flash.\n");
@@ -438,6 +448,8 @@ boole appcfg_save(app_config_t const* cfg, const char* path)
 	fprintf(f, "RomPath=%s\n", cfg->rom_path);
 	fprintf(f, "ScreenshotPath=%s\n", cfg->screenshot_path);
 	fprintf(f, "ScreenshotIncludeGui=%u\n", cfg->screenshot_include_gui ? 1U : 0U);
+	fprintf(f, "ScreenshotBypassFilters=%u\n", cfg->screenshot_bypass_filters ? 1U : 0U);
+	fprintf(f, "ScreenshotXWidth=%u\nScreenshotYScale=%u\nScreenshotSampling=%u\n", (unsigned)cfg->screenshot_x_width, (unsigned)cfg->screenshot_y_scale, (unsigned)cfg->screenshot_sampling);
 	fprintf(f, "SavePath=%s\n", cfg->save_path);
 	fprintf(f, "ControllerDbPath=%s\n\n", cfg->controllerdb_path);
 
@@ -449,7 +461,7 @@ boole appcfg_save(app_config_t const* cfg, const char* path)
 	fprintf(f, "\n");
 
 	fprintf(f, "# API server\n");
-	fprintf(f, "# ApiServer is temporary default-on for development. Change to 0 before release.\n");
+	fprintf(f, "# ApiServer controls localhost API/web tools; distribution builds default off.\n");
 	fprintf(f, "ApiServer=%u\n", cfg->api_server ? 1U : 0U);
 	fprintf(f, "ApiServerPort=%u\n\n", (unsigned)cfg->api_server_port);
 
@@ -690,6 +702,8 @@ boole appcfg_load_or_create(app_config_t* cfg, const char* path)
 			cfg->video_dump_autoinc = appcfg_parse_bool(val, cfg->video_dump_autoinc);
 		}else if (strcmp(key, "VideoDumpResetFirst") == 0){
 			cfg->video_dump_reset_first = appcfg_parse_bool(val, cfg->video_dump_reset_first);
+		}else if (strcmp(key, "VideoDumpOmitMessages") == 0){
+			cfg->video_dump_omit_messages = appcfg_parse_bool(val, cfg->video_dump_omit_messages);
 		}else if (strcmp(key, "GuiTitleHeight") == 0){
 			/* Ignored: title height is compile-time fixed. */
 		}else if (strcmp(key, "RomPath") == 0){
@@ -698,6 +712,14 @@ boole appcfg_load_or_create(app_config_t* cfg, const char* path)
 			appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, val);
 		}else if (strcmp(key, "ScreenshotIncludeGui") == 0){
 			cfg->screenshot_include_gui = appcfg_parse_bool(val, cfg->screenshot_include_gui);
+		}else if (strcmp(key, "ScreenshotBypassFilters") == 0){
+			cfg->screenshot_bypass_filters = appcfg_parse_bool(val, cfg->screenshot_bypass_filters);
+		}else if (strcmp(key, "ScreenshotXWidth") == 0){
+			cfg->screenshot_x_width = (auint)strtoul(val,NULL,10);
+		}else if (strcmp(key, "ScreenshotYScale") == 0){
+			cfg->screenshot_y_scale = (auint)strtoul(val,NULL,10);
+		}else if (strcmp(key, "ScreenshotSampling") == 0){
+			cfg->screenshot_sampling = (auint)strtoul(val,NULL,10);
 		}else if (strcmp(key, "SavePath") == 0){
 			appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, val);
 		}else if (strcmp(key, "ControllerDbPath") == 0){
@@ -876,6 +898,9 @@ boole appcfg_load_or_create(app_config_t* cfg, const char* path)
 	if (cfg->netplay_relay_host[0] == 0){ appcfg_copy_str(cfg->netplay_relay_host, APPCFG_PATH_MAX, "uzenet.us"); }
 	if (cfg->remote_roms_host[0] == 0){ appcfg_copy_str(cfg->remote_roms_host, APPCFG_PATH_MAX, "uzenet.us"); }
 	if (cfg->screenshot_path[0] == 0){ appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, "screenshots"); }
+	if(cfg->screenshot_x_width<1U||cfg->screenshot_x_width>2880U)cfg->screenshot_x_width=1440U;
+	if(cfg->screenshot_y_scale<1U||cfg->screenshot_y_scale>10U)cfg->screenshot_y_scale=5U;
+	if(cfg->screenshot_sampling>2U)cfg->screenshot_sampling=0U;
 	if (cfg->save_path[0] == 0){ appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, "savestates"); }
 	if (cfg->log_verbosity > CU_LOG_TRACE){ cfg->log_verbosity = CU_LOG_INFO; }
 	if (cfg->resident_bootloader_file[0] == 0){ appcfg_copy_str(cfg->resident_bootloader_file, APPCFG_PATH_MAX, "Bootloader.hex"); }

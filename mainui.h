@@ -140,6 +140,14 @@ char const* mainui_get_host_midi_port_label_at(auint idx);
 char const* mainui_get_rom_path(void);
 char const* mainui_get_screenshot_path(void);
 boole mainui_get_screenshot_include_gui(void);
+boole mainui_get_screenshot_bypass_filters(void);
+auint mainui_get_screenshot_x_width(void);
+auint mainui_get_screenshot_y_scale(void);
+auint mainui_get_screenshot_sampling(void);
+boole mainui_set_screenshot_scale(auint x_width,auint y_scale,auint sampling);
+boole mainui_screenshot_settings(char const* args,char* json,auint capacity);
+void mainui_screenshot_metadata(char* json,auint capacity,auint width,auint height,boole legacy,boole gui);
+void mainui_set_screenshot_bypass_filters(boole enable);
 void mainui_set_screenshot_include_gui(boole enable);
 boole mainui_save_screenshot_gui(uint32 const* pixels, auint pitch, auint width, auint height, char* out_path, auint out_size);
 char const* mainui_get_save_path(void);
@@ -180,10 +188,12 @@ char const* mainui_get_video_dump_active_file(void);
 char const* mainui_get_video_dump_status(void);
 boole mainui_get_video_dump_autoinc(void);
 boole mainui_get_video_dump_reset_first(void);
+boole mainui_get_video_dump_omit_messages(void);
 void mainui_set_video_dump_active(boole active);
 void mainui_set_video_dump_file(char const* name);
 void mainui_set_video_dump_autoinc(boole enable);
 void mainui_set_video_dump_reset_first(boole enable);
+void mainui_set_video_dump_omit_messages(boole enable);
 boole mainui_get_input_capture_active(void);
 boole mainui_input_movie_restore(unsigned slot, boole seek, uint64_t frame);
 void mainui_set_input_capture_active(boole active);
@@ -200,6 +210,8 @@ boole mainui_save_screenshot_file(char const* path);
 /* Capture the current CUzeBox display as a complete 24-bit BMP in memory.
 ** The caller owns *out_data and must free() it. */
 boole mainui_capture_screenshot_bmp(uint8** out_data, auint* out_size, auint* out_width, auint* out_height);
+/* Default game-only PNG, using the saved bypass-filters policy. Caller frees. */
+boole mainui_capture_screenshot_png(uint8** out_data, auint* out_size, auint* out_width, auint* out_height);
 void mainui_get_netplay_runtime(mainui_netplay_runtime_t* out);
 auint mainui_get_netplay_rollback_window(void);
 void mainui_set_netplay_rollback_window(auint frames);

@@ -19,9 +19,9 @@ pending suppression survives save-state and rewind restoration via an optional
 12-byte timer trailer; the existing CPU layout and version-1 save-state header
 are unchanged. Old states without this trailer remain loadable.
 
-The default build counts one timer tick per CPU cycle for enabled clock
-selections. The optional `FLAG_AVR_TIMER1_CLOCK=1` build adds internal prescaling,
-counter stop/start and GTCCR prescaler reset/hold. It remains disabled by default.
+The default native `FLAG_AVR_TIMER1_CLOCK=1` build models internal prescaling,
+counter stop/start and GTCCR prescaler reset/hold. This is the new standard;
+its distinct strict replay behavior identifier is intentional.
 See [AVR hardware build options](avr-hardware-options.md) for build commands,
 state/replay compatibility and the remaining unsupported timer features.
 

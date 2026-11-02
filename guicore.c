@@ -1881,9 +1881,21 @@ boole guicore_capture_pixels(uint32** out_pixels, auint* out_width, auint* out_h
 boole guicore_capture_game_pixels(uint32** out_pixels, auint* out_width, auint* out_height)
 {
  auint saved_flags = guicore_flags;
+ auint dx,dy,w,h,rw,rh,y;
+ guicore_view_t view;
  boole ok;
  guicore_flags |= GUICORE_GAMEONLY;
+ guicore_getview(&view);
+ guicore_get_content_rect(&view,&dx,&dy,&w,&h,&rw,&rh);
  ok = guicore_capture_pixels(out_pixels, out_width, out_height);
+ if(ok&&(w!=*out_width||h!=*out_height)){
+  uint32* crop=(uint32*)malloc((size_t)w*h*sizeof(*crop));
+  if(crop){
+   for(y=0U;y<h;y++)memcpy(crop+y*w,*out_pixels+(dy+y)*(*out_width)+dx,w*sizeof(*crop));
+  }
+  free(*out_pixels);*out_pixels=crop;
+  if(crop){*out_width=w;*out_height=h;}else{*out_width=*out_height=0U;ok=FALSE;}
+ }
  guicore_flags = saved_flags;
  return ok;
 }

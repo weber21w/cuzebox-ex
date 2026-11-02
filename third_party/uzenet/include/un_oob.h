@@ -16,7 +16,7 @@ typedef struct {
     uint32_t seq,tx_id,rx_id,consumed,ack_id,send_at;
     uint16_t retry_ms;
     uint8_t mask,tx_offset,tx_sent,rx_used,rx_total,rx_count,rx_channel,rx_dest;
-    uint8_t ack_pending,ack[8],data[UO_MESSAGE_MAX];
+    uint8_t ack_pending,ack_turn,ack[8],data[UO_MESSAGE_MAX];
 } UoPeer;
 typedef struct {
     UoPeer peer[4];

@@ -13,6 +13,23 @@ This page documents the current model, the major code paths, the intended workfl
 
 ## Scope
 
+The standard build enables `FLAG_ESP_AT_HARDWARE_TIMING=1`. For the modern
+ESP-AT profile, measured UART divider timing, command readiness and internal
+reply pauses are replayed from 1,096 observations across 80 command/baud/sleep
+cases on firmware `805b233a`. Command bytes still serialize at the selected
+baud before dispatch; host socket completion remains required. Measured echo-enabled cases include 9600 baud (AT, UART query and invalid
+command, modes 0/3), plus 57600 baud (AT, modes 0/3; UART query, mode 0).
+Other combinations use the existing timing behavior. Set the flag to `0` explicitly
+to build without the empirical timing data.
+
+The measurements cover modem-sleep modes 0, 1 and 3, not CPU light sleep.
+Observed sample ranges are not guaranteed latency bounds. In particular,
+Windows TCP refusal can still take longer than the physical module; replay
+does not invent a connection result before the host reports one. Exact AT
+response fixes and the portable UzeNet protocol implementation apply with
+either timing setting. The standard Timer1 and GPIO models are documented in
+[AVR hardware build options](avr-hardware-options.md).
+
 In CUzeBox, "ESP8266 emulation" means the virtual module available through the `ESP MODULE` serial route.
 
 It does **not** mean every serial backend in the emulator. The other routes:

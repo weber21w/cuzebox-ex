@@ -1,9 +1,50 @@
 #include "un_endpoint.h"
 #include "un_snapshot.h"
+#include "un_recovery.h"
 #include <string.h>
 __attribute__((weak)) uint8_t ue_start(const uint8_t config[19],uint32_t now){(void)config;(void)now;return UE_NOT_READY;}
+__attribute__((weak)) uint8_t ue_scores(const uint8_t *p,uint8_t n,uint32_t now,uint8_t out[22]){(void)p;(void)n;(void)now;(void)out;return 0;}
 void ue_reset(UnEndpoint *e){memset(e,0,sizeof(*e));e->read_peer=4;e->policy[3]=17;e->name_fallback='?';}
+__attribute__((weak)) uint8_t ue_stop(UrClient *c,uint8_t begin,uint32_t now){(void)now;if(begin)uc_restart(c);return 1;}
+void ue_cancel_control(UnEndpoint *e,UrGame *g,UrClient *c,uint32_t now){
+    uint8_t begin=!e->cancelling;
+    if(begin){ue_reset(e);ug_reset(g);e->cancelling=1;}
+    uint8_t result=e->cancelling==2?1:ue_stop(c,begin,now);
+    if(result==1)e->cancelling=2;
+    un_send(UN_CANCEL_REPLY,&result,1);
+}
 static void error(UnEndpoint *e,uint8_t code){e->reply[1]=UE_ERROR;e->reply[2]=code;e->reply_n=3;}
+static void performance(UnEndpoint *e,UrClient *c,uint8_t page,uint32_t now){
+    UrMetrics *m=&c->metrics;
+    if(page==255){
+        uint8_t paused=m->paused,queued=m->uart_queued;memset(m,0,sizeof *m);
+        m->paused=paused;m->pause_at=now;m->uart_queued=queued;
+        memset(c->snapshots.link_rx,0,sizeof c->snapshots.link_rx);
+        memset(c->snapshots.link_base,0,sizeof c->snapshots.link_base);
+        memset(c->snapshots.link_seen,0,sizeof c->snapshots.link_seen);
+        e->performance_serial=0;e->reply[1]=UE_OK;return;
+    }
+    if(page>=6){error(e,UE_BAD_REQUEST);return;}
+    if(!page){
+        uint32_t values[6][5]={
+            {now,now-c->born,m->uart_rx,m->uart_tx,m->paused_ms+(m->paused?now-m->pause_at:0)},
+            {m->captures,m->delivered,m->replaced,m->stream_tx,m->stream_rx},
+            {m->reordered,m->gaps,m->input_frames,m->input_events,m->uart_peak},
+            {m->critical_packets,m->gameplay_packets,m->background_packets,c->next,c->released},
+            {0,0,0,0,(uint32_t)m->uart_queued|((uint32_t)m->paused<<8)},
+            {c->snapshots.captured[0],c->snapshots.captured[1],c->snapshots.captured[2],c->snapshots.captured[3],un_snapshot_timed(c->config)?c->snapshots.valid&15u:0}
+        };
+        for(unsigned car=0;car<4;car++){
+            unsigned bit=1u<<car,owner=(c->lobby.active&bit)?bit:1u;
+            values[4][car]=((c->snapshots.valid&bit) && owner!=c->history.local)?now-m->received_at[car]:UINT32_MAX;
+        }
+        for(unsigned a=0;a<6;a++)for(unsigned b=0;b<5;b++)ur_put32(e->performance[a]+4*b,values[a][b]);
+        if(!++e->performance_serial)e->performance_serial=1;
+    }
+    if(!e->performance_serial){error(e,UE_NOT_READY);return;}
+    e->reply[1]=UE_OK;e->reply[2]=e->performance_serial;e->reply[3]=e->performance_serial>>8;
+    memcpy(e->reply+4,e->performance[page],20);e->reply_n=24;
+}
 static int ending(UnEndpoint *e,UrClient *c,uint32_t now){
     if(!c->services.end_code)return 0;
     uint8_t code=us_end_status(c,now);
@@ -20,16 +61,193 @@ static int snapshot_index(const uint8_t *v){
 static int snapshot_owner(const UrClient *c,const uint8_t *v,uint8_t source){
     int index=snapshot_index(v);uint8_t car=1u<<(v[0]&3u);
     if(index<0)return 0;
-    return source==(index>=8?1u:((c->lobby.active&car)?car:1u));
+    if(un_snapshot_jnb(c->config))return index<4 && (source==1u || source==car);
+    unsigned host=un_recovery_enabled(c->config)?(c->lobby.host<4?1u<<c->lobby.host:0):1u;
+    return source==(index>=8?host:((c->lobby.active&car)?car:host));
 }
-static void snapshot_store(UrClient *c,const uint8_t *v,int local){
+static void snapshot_store(UrClient *c,const uint8_t *v,int local,uint32_t now){
     int index=snapshot_index(v);uint16_t bit=1u<<index;
+    if(un_snapshot_jnb(c->config)){
+        unsigned car=v[0]&3u;
+        /* Host world records and client input records must never overwrite
+         * each other's retained slots, even for the same controlled rabbit. */
+        index=car+((local?(c->history.local!=1u):(c->history.local==1u))?4u:0u);
+        bit=1u<<index;
+        if(local){c->metrics.captures++;if(c->snapshots.pending[car])c->metrics.replaced++;}
+        else{if(c->snapshots.unread&bit)c->metrics.replaced++;c->metrics.received_at[car]=now;}
+        memcpy(c->snapshots.data[index],v,14);c->snapshots.valid|=bit;
+        if(local)c->snapshots.pending[car]=c->history.local==1u?(c->lobby.active&14u):1u;
+        else c->snapshots.unread|=bit;
+        return;
+    }
     if(index>=8 && (c->snapshots.valid&bit))return; /* immutable round setup */
+    if(index<4){
+        if(local){
+            c->metrics.captures++;
+            if(c->snapshots.pending[index] || (c->snapshots.dirty&bit))c->metrics.replaced++;
+        }else{
+            if(c->snapshots.unread&bit)c->metrics.replaced++;
+            c->metrics.received_at[index]=now;
+        }
+    }
     memcpy(c->snapshots.data[index],v,14);c->snapshots.valid|=bit;
     if(local){
-        if(index<4 && un_snapshot_enabled(c->config))c->snapshots.pending[index]=c->lobby.active&~c->history.local;
+        if(index<4 && un_snapshot_enabled(c->config))c->snapshots.pending[index]=un_recovery_enabled(c->config)?128:c->lobby.active&~c->history.local;
         else c->snapshots.dirty|=bit;
     }else c->snapshots.unread|=bit;
+}
+static void snapshot_upload(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now){
+    (void)now;
+    if(!e->snapshot_stream)return;
+    if(un_recovery_enabled(c->config) && (c->recovery.game_ack!=c->recovery.generation || !(c->lobby.active&c->history.local)))return;
+    if(c->state!=UC_READY || c->protocol!=UR_PROFILE_LOBBY || !un_snapshot_enabled(c->config) ||
+       !e->running || c->lobby.phase!=2 || c->lobby.epoch!=e->snapshot_epoch)return;
+    if(n!=13 && n!=24){e->snapshot_error=UE_BAD_REQUEST;return;}
+    if(((uint16_t)p[0]|((uint16_t)p[1]<<8))!=e->snapshot_epoch)return; /* stale race */
+    uint8_t record[14];unsigned seen=0;
+    for(unsigned at=2;at<n;at+=11){
+        if(!(un_recovery_enabled(c->config)?un_snapshot_recovery_unpack(record,p+at):un_snapshot_unpack(record,p+at)) || !snapshot_owner(c,record,c->history.local) ||
+           (seen&(1u<<record[0]))){e->snapshot_error=UE_BAD_REQUEST;return;}
+        seen|=1u<<record[0];
+    }
+    for(unsigned at=2;at<n;at+=11){
+        if(un_recovery_enabled(c->config))un_snapshot_recovery_unpack(record,p+at);else un_snapshot_unpack(record,p+at);
+        snapshot_store(c,record,1,now);
+    }
+}
+void ue_snapshot_write(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now){
+    if(e->snapshot_stream==1)snapshot_upload(e,c,p,n,now);
+}
+void ue_timed_write(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now){
+    if(e->cancelling || e->snapshot_stream!=2)return;
+    if(c->state!=UC_READY || !e->running || c->protocol!=UR_PROFILE_LOBBY ||
+       !un_snapshot_timed(c->config) || c->lobby.phase!=2 || c->lobby.epoch!=e->snapshot_epoch)return;
+    if(n!=17){e->snapshot_error=UE_BAD_REQUEST;return;}
+    if(((uint16_t)p[0]|((uint16_t)p[1]<<8))!=e->snapshot_epoch)return;
+    uint8_t legacy[13];memcpy(legacy,p,2);memcpy(legacy+2,p+6,11);
+    uint8_t record[14];
+    if(!un_snapshot_unpack(record,p+6) || !snapshot_owner(c,record,c->history.local)){
+        e->snapshot_error=UE_BAD_REQUEST;return;
+    }
+    uint32_t tick=ur_get32(p+2);unsigned car=p[6]&3u;
+    if((c->snapshots.valid&(1u<<car)) && (int32_t)(tick-c->snapshots.captured[car])<=0)return;
+    snapshot_upload(e,c,legacy,sizeof legacy,now);
+    if(!e->snapshot_error && c->state==UC_READY && c->lobby.phase==2 && c->lobby.epoch==e->snapshot_epoch)
+        c->snapshots.captured[car]=tick;
+}
+void ue_input_write(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now){
+    (void)now;
+    if(e->cancelling || !e->input_duplex)return;
+    if(c->state!=UC_READY || !e->running || c->services.failure || c->services.desync || c->services.end_code){e->input_error=UE_BACKEND;return;}
+    unsigned stride=__builtin_popcount(c->history.local)*c->history.width;
+    if(n<9 || n>24 || p[8]>8 || n!=9+p[8]*stride){e->input_error=UE_BAD_REQUEST;return;}
+    uint32_t consumed=ur_get32(p),first=ur_get32(p+4),last=first+p[8];
+    if(last<first || last>=0xffffffbfUL){e->input_error=UE_EXHAUSTED;return;}
+    if(consumed>e->input_sent){e->input_error=UE_BAD_SEQUENCE;return;}
+    /* Validate all retained duplicates before committing any part of a batch. */
+    for(uint32_t frame=first;frame<last && frame<c->next;frame++){
+        if(frame<c->history.floor)continue;
+        UrFrame *v=ur_frame(&c->history,frame,0);unsigned at=9+(frame-first)*stride;
+        if(!v){e->input_error=UE_BAD_SEQUENCE;return;}
+        for(unsigned seat=0;seat<4;seat++)if(c->history.local&(1u<<seat)){
+            if(memcmp(v->pads+UR_STRIDE(c->history.width)*seat,p+at,c->history.width)){
+                e->input_error=UE_BAD_SEQUENCE;return;
+            }
+            at+=c->history.width;
+        }
+    }
+    if(consumed>e->frame){
+        if(!uc_release(c,consumed)){e->input_error=UE_BAD_SEQUENCE;return;}
+        e->frame=consumed;up_advance(c,consumed,now);e->input_dirty=1;
+    }
+    /* Receipt progress must survive upload backpressure: otherwise a full
+     * input window can block the very consumption cursor that frees it. */
+    if(first>c->next || (last>c->next && last-c->history.floor>UR_WINDOW)){e->input_dirty|=2;return;}
+    for(uint32_t frame=c->next;frame<last;frame++){
+        uint8_t pads[UR_PAD_MAX]={0};unsigned at=9+(frame-first)*stride;
+        for(unsigned seat=0;seat<4;seat++)if(c->history.local&(1u<<seat)){
+            memcpy(pads+UR_STRIDE(c->history.width)*seat,p+at,c->history.width);at+=c->history.width;
+        }
+        if(!uc_submit(c,frame,pads)){e->input_error=UE_BACKEND;return;}
+        e->input_dirty=1;
+    }
+}
+static uint8_t input_duplex_service(UnEndpoint *e,UrClient *c,uint32_t now){
+    if(!e->input_duplex)return 0;
+    uint8_t p[24]={UE_OK};unsigned n=10,count=0;
+    if(c->state!=UC_READY || !e->running || c->services.failure || c->services.desync || c->services.end_code)
+        e->input_error=UE_BACKEND;
+    if(e->input_error){
+        p[0]=UE_ERROR;p[1]=e->input_error;e->input_duplex=e->input_error=0;
+        un_send(UN_INPUT_FRAME,p,2);return 1;
+    }
+    unsigned stride=__builtin_popcount(c->history.all&~c->history.local)*c->history.width;
+    if(!stride)return 0;
+    while(count<8 && n+stride<=sizeof p){
+        UrFrame *v=uc_fetch(c,e->frame+count);if(!v || v->mask!=c->history.all)break;
+        for(unsigned seat=0;seat<4;seat++)if((c->history.all&~c->history.local)&(1u<<seat)){
+            memcpy(p+n,v->pads+UR_STRIDE(c->history.width)*seat,c->history.width);n+=c->history.width;
+        }
+        count++;
+    }
+    if(!e->input_dirty && e->frame+count<=e->input_sent && now-e->input_at<(count?100u:1000u))return 0;
+    if(e->input_dirty&2)p[0]|=1; /* accepted watermark requests gap/window retry */
+    ur_put32(p+1,c->next);ur_put32(p+5,e->frame);p[9]=count;
+    if(e->frame+count>e->input_sent)e->input_sent=e->frame+count;
+    e->input_dirty=0;e->input_at=now;c->metrics.input_events++;
+    un_send(UN_INPUT_FRAME,p,n);return 1;
+}
+/* Called only with an empty platform TX slot. One bounded frame is staged;
+ * fresh states replace pending values while PA7 holds that frame paused. */
+static uint8_t snapshot_stream_service(UnEndpoint *e,UrClient *c,uint32_t now){
+    if(!e->snapshot_stream)return 0;
+    uint8_t type=e->snapshot_stream==2?UN_TIMED_FRAME:UN_SNAPSHOT_FRAME;
+    uint8_t payload[24]={e->snapshot_epoch,e->snapshot_epoch>>8};
+    if(un_snapshot_jnb(c->config) && c->state==UC_READY){
+        uint32_t roster=c->lobby.active|((uint32_t)c->lobby.pending<<8)|((uint32_t)c->lobby.phase<<16)|((uint32_t)c->lobby.ready<<24);
+        if(e->snapshot_epoch!=c->lobby.epoch || roster!=e->snapshot_roster || now-e->snapshot_roster_at>=1000u){
+            e->snapshot_epoch=c->lobby.epoch;e->snapshot_roster=roster;e->snapshot_roster_at=now;
+            payload[0]=c->lobby.epoch;payload[1]=c->lobby.epoch>>8;payload[2]=255;
+            payload[3]=c->lobby.active;payload[4]=c->lobby.pending;payload[5]=c->lobby.phase;payload[6]=c->lobby.ready;
+            un_send(type,payload,13);return 1;
+        }
+        if(c->lobby.phase!=2)return 0;
+    }
+    if(un_recovery_enabled(c->config) && c->state>=UC_BINDING && c->state<UC_READY){
+        if(now-e->snapshot_at>=1000){e->snapshot_at=now;un_send(type,payload,2);return 1;}
+        return 0;
+    }
+    if(c->state!=UC_READY || !e->running || c->protocol!=UR_PROFILE_LOBBY ||
+       !un_snapshot_enabled(c->config))e->snapshot_error=UE_BACKEND;
+    else if((c->lobby.phase!=2 && !(un_recovery_enabled(c->config) && !c->lobby.phase)) || c->lobby.epoch!=e->snapshot_epoch)e->snapshot_error=UE_NOT_READY;
+    if(e->snapshot_error){
+        if(un_recovery_enabled(c->config)){c->recovery.game_failed=1;c->recovery.ack=0;}
+        payload[2]=e->snapshot_error;e->snapshot_error=e->snapshot_stream=0;
+        un_send(type,payload,3);return 1;
+    }
+    unsigned n=2;
+    for(unsigned k=0;k<4 && n<24;k++){
+        unsigned car=(c->snapshots.read_scan+k)&3u;
+        unsigned index=car+((un_snapshot_jnb(c->config) && c->history.local==1u)?4u:0u);
+        if(!(c->snapshots.unread&(1u<<index)))continue;
+        if(e->snapshot_stream==2){
+            ur_put32(payload+2,c->snapshots.captured[car]);
+            uint32_t age=now-c->metrics.received_at[car];if(age>65535)age=65535;
+            payload[6]=age;payload[7]=age>>8;
+            un_snapshot_pack(payload+8,c->snapshots.data[car]);n=19;
+        }else{
+            if(un_recovery_enabled(c->config))un_snapshot_recovery_pack(payload+n,c->snapshots.data[car]);
+            else un_snapshot_pack(payload+n,c->snapshots.data[index]);
+            n+=11;
+        }
+        c->metrics.delivered++;
+        if(un_recovery_enabled(c->config))c->recovery.forwarded|=1u<<car;
+        c->snapshots.unread&=(uint16_t)~(1u<<index);
+        if(e->snapshot_stream==2)break;
+    }
+    if(n==2 && (uint32_t)(now-e->snapshot_at)<1000u)return 0;
+    c->snapshots.read_scan=(c->snapshots.read_scan+1u)&3u;e->snapshot_at=now;
+    un_send(type,payload,n);return 1;
 }
 static void snapshot_tick(UrClient *c,uint32_t now){
     if(c->snapshots.epoch!=c->lobby.epoch){
@@ -47,7 +265,7 @@ static void snapshot_tick(UrClient *c,uint32_t now){
              * it now loses immutable CONFIG/setup data permanently. */
             if((int16_t)(epoch-c->lobby.epoch)>0)continue;
             if(epoch==c->lobby.epoch && snapshot_owner(c,v->data+2,v->mask))
-                snapshot_store(c,v->data+2,0);
+                snapshot_store(c,v->data+2,0,now);
         }
         (void)uo_ack(c,peer,v->rx_id);
     }
@@ -66,6 +284,20 @@ static void snapshot_tick(UrClient *c,uint32_t now){
 }
 /* Drop-in snapshots live on the ESP. UART moves at most 16 bytes per request;
  * reliable OOB moves bounded records, independently of the input timeline. */
+/* Large frozen joins use the existing 1536-byte storage as a bounded ring.
+ * UART consumers acknowledge each 16-byte read before its storage is reused.
+ * Small joins retain the original whole-snapshot contract. */
+#define UE_JOIN_STREAM_MAX 65520u
+static void join_ring_read(const UrClient *c,unsigned offset,uint8_t *dst,unsigned count){
+    unsigned at=offset%sizeof c->join.data,n=sizeof c->join.data-at;
+    if(n>count)n=count;
+    memcpy(dst,c->join.data+at,n);memcpy(dst+n,c->join.data,count-n);
+}
+static void join_ring_write(UrClient *c,unsigned offset,const uint8_t *src,unsigned count){
+    unsigned at=offset%sizeof c->join.data,n=sizeof c->join.data-at;
+    if(n>count)n=count;
+    memcpy(c->join.data+at,src,n);memcpy(c->join.data,src+n,count-n);
+}
 static void join_tick(UnEndpoint *e,UrClient *c,uint32_t now){
     if(c->join.reset && !c->join.primed){
         e->frame=c->join.base;e->granted=e->sampled=0;
@@ -83,20 +315,23 @@ static void join_tick(UnEndpoint *e,UrClient *c,uint32_t now){
             if(epoch<c->lobby.epoch || c->lobby.phase!=1){
                 (void)uo_ack(c,peer,v->rx_id);continue;
             }
-            if(!total || total>sizeof c->join.data ||
+            if(!total || total>UE_JOIN_STREAM_MAX ||
                offset!=c->join.received || offset+n>total ||
-               (c->join.total && c->join.total!=total)){uc_fail(c,7);return;}
-            c->join.total=total;memcpy(c->join.data+offset,v->data+6,n);c->join.received+=n;
+               (c->join.total && c->join.total!=65535u && c->join.total!=total)){uc_fail(c,7);return;}
+            /* Do not acknowledge a full ring. The immutable OOB record waits
+             * here until AVR drains it, propagating backpressure to sender. */
+            if(total>sizeof c->join.data && (!c->join.total || c->join.received-c->join.read+n>sizeof c->join.data))continue;
+            c->join.total=total;join_ring_write(c,offset,v->data+6,n);c->join.received+=n;
         }
         (void)uo_ack(c,peer,v->rx_id);
     }
-    if(c->history.local==1 && c->join.total && c->join.sent<c->join.total &&
+    if(c->history.local==1 && c->join.total && c->join.sent<c->join.total && c->join.sent<c->join.used &&
        !c->oob.pending && c->oob.uploaded==c->oob.total){
-        unsigned offset=c->join.sent,n=c->join.total-offset;if(n>122)n=122;
+        unsigned offset=c->join.sent,n=c->join.used-offset;if(n>122)n=122;
         uint16_t id=c->oob.id+1;
         if(!id){uc_fail(c,9);return;}
         uint8_t message[128]={offset,offset>>8,c->join.total,c->join.total>>8,c->lobby.epoch,c->lobby.epoch>>8};
-        memcpy(message+6,c->join.data+offset,n);
+        join_ring_read(c,offset,message+6,n);
         uint8_t request[24]={id,id>>8,c->lobby.active&~1u,0xcf,n+6,0};
         for(unsigned pos=0;pos<n+6;){
             unsigned count=n+6-pos;if(count>18)count=18;
@@ -114,28 +349,54 @@ static void join_tick(UnEndpoint *e,UrClient *c,uint32_t now){
     }
 }
 static void join_command(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n){
+    if(!n){
+        e->reply[1]=UE_OK;e->reply[2]=2;e->reply[3]=16;
+        e->reply[4]=(uint8_t)UE_JOIN_STREAM_MAX;e->reply[5]=UE_JOIN_STREAM_MAX>>8;e->reply_n=6;return;
+    }
     if(c->protocol!=UR_PROFILE_DROPIN || !c->join.reset || n<2){error(e,UE_BAD_REQUEST);return;}
     unsigned offset=p[0]|((unsigned)p[1]<<8);
-    if(offset==65535u && n==4){
+    if(offset==65534u && n==4){
+        unsigned total=p[2]|((unsigned)p[3]<<8);
+        /* v2: receivers can opt into a bounded stream before its length is
+         * known. The first authenticated host record fixes that length. */
+        if(total==65535u && c->history.local!=1){
+            if(!c->join.total)c->join.total=65535u;
+        }else{
+            if(!total || total>UE_JOIN_STREAM_MAX || (total&15) ||
+               (c->join.total && c->join.total!=total)){error(e,UE_BAD_REQUEST);return;}
+            c->join.total=total;
+        }
+        e->reply[1]=UE_OK;
+    }else if(offset==65535u && n==4){
         unsigned total=p[2]|((unsigned)p[3]<<8);
         unsigned used=c->history.local==1?c->join.used:c->join.received;
-        if(!total || total>sizeof c->join.data || used!=total ||
-           (c->join.total && c->join.total!=total)){error(e,UE_BAD_REQUEST);return;}
+        if(!total || total>UE_JOIN_STREAM_MAX || used!=total ||
+           (c->join.total && c->join.total!=total) ||
+           (total>sizeof c->join.data && c->history.local!=1 && c->join.read!=total)){error(e,UE_BAD_REQUEST);return;}
         c->join.total=total;
         if(c->lobby.phase==2 && c->join.primed==2)e->reply[1]=UE_OK;
         else c->join.ready=1;
     }else if(c->lobby.phase!=1)error(e,UE_BAD_REQUEST);
     else if(c->history.local==1 && n>2 && n<=18){
-        unsigned count=n-2;
-        if(offset+count>sizeof c->join.data || offset>c->join.used ||
-           (offset<c->join.used && (offset+count>c->join.used || memcmp(c->join.data+offset,p+2,count))))error(e,UE_BAD_REQUEST);
-        else{memcpy(c->join.data+offset,p+2,count);if(offset==c->join.used)c->join.used+=count;e->reply[1]=UE_OK;}
+        unsigned count=n-2,stream=c->join.total>sizeof c->join.data;
+        if(offset+count>(stream?c->join.total:sizeof c->join.data) || offset>c->join.used ||
+           (offset<c->join.used && ((stream && offset<c->join.sent) || offset+count>c->join.used)))error(e,UE_BAD_REQUEST);
+        else if(stream && offset+count-c->join.sent>sizeof c->join.data){} /* WAIT */
+        else if(offset<c->join.used){
+            uint8_t previous[16];join_ring_read(c,offset,previous,count);
+            if(memcmp(previous,p+2,count))error(e,UE_BAD_REQUEST);else e->reply[1]=UE_OK;
+        }else{join_ring_write(c,offset,p+2,count);c->join.used+=count;e->reply[1]=UE_OK;}
     }else if(c->history.local!=1 && n==2){
-        if(offset>sizeof c->join.data-16)error(e,UE_BAD_REQUEST);
-        else if(c->join.received>=offset+16){memcpy(e->reply+2,c->join.data+offset,16);e->reply_n=18;e->reply[1]=UE_OK;}
+        unsigned stream=c->join.total>sizeof c->join.data;
+        if(offset>(stream?c->join.total:sizeof c->join.data)-16 || (stream && offset!=c->join.read))error(e,UE_BAD_REQUEST);
+        else if(c->join.received>=offset+16){
+            join_ring_read(c,offset,e->reply+2,16);e->reply_n=18;e->reply[1]=UE_OK;
+            if(stream)c->join.read+=16;
+        }
     }else error(e,UE_BAD_REQUEST);
 }
 void ue_tick(UnEndpoint *e,UrClient *c,uint32_t now){
+    if(e->cancelling)return;
     if(!e->configured || c->state!=UC_READY || c->protocol==UR_PROFILE_LIVE)return;
     if(c->protocol==UR_PROFILE_READYSTART && !c->lobby.active)return;
     if(c->protocol==UR_PROFILE_DROPIN)join_tick(e,c,now);
@@ -151,6 +412,10 @@ void ue_tick(UnEndpoint *e,UrClient *c,uint32_t now){
 static void ready(UnEndpoint *e,UrGame *g,UrClient *c,uint32_t now){
     if(c->state==UC_FAILED){error(e,UE_BACKEND);return;}
     if(c->state!=UC_READY)return;
+    if(un_recovery_enabled(c->config) && !c->recovery.generation){
+        if(now-c->born>=5000)error(e,UE_NEGOTIATION);
+        return;
+    }
     if(c->protocol==UR_PROFILE_READYSTART && c->lobby.phase!=2)return;
     if(c->protocol>=UR_PROFILE_LOBBY && !(c->lobby.active&c->history.local))return;
     if(c->protocol==UR_PROFILE_LIVE){e->running=1;goto ready_reply;}
@@ -328,6 +593,7 @@ static void exchange(UnEndpoint *e,UrGame *g,UrClient *c,const uint8_t *p,uint8_
  * authenticated recovery window. SEND acknowledges ESP storage, not a round trip. */
 static void input_stream(UnEndpoint *e,UrClient *c,uint8_t op,const uint8_t *p,uint8_t n,uint32_t now,
                          unsigned records,unsigned bytes,uint8_t burst){
+    if(e->input_duplex){error(e,UE_BAD_REQUEST);return;}
     if(!e->running || c->state!=UC_READY){error(e,UE_NOT_READY);return;}
     if(e->delay || e->window || e->granted || e->sampled ||
        (c->protocol!=UR_PROFILE && c->protocol!=UR_PROFILE_REDUNDANT)){
@@ -368,14 +634,19 @@ static void input_stream(UnEndpoint *e,UrClient *c,uint8_t op,const uint8_t *p,u
         }
         if(!count)return;
         if(!uc_release(c,e->frame+count)){error(e,UE_BACKEND);return;}
+        c->metrics.input_events++;
         if(burst)e->reply[6]=count;
         e->frame+=count;up_advance(c,e->frame,now);e->reply[1]=UE_OK;
     }
 }
 static void snapshot(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now,uint8_t burst){
+    if(un_recovery_enabled(c->config) && e->running && c->state>=UC_BINDING && c->state<UC_READY)return;
     if((n!=0 && n!=11 && n!=14 && n!=22) ||
        ((n==11 || n==22) && !un_snapshot_enabled(c->config)) || c->protocol!=UR_PROFILE_LOBBY || !e->running ||
-       c->state!=UC_READY || !(c->lobby.active&c->history.local)){error(e,UE_BAD_REQUEST);return;}
+       c->state!=UC_READY || (!(c->lobby.active&c->history.local) && !(un_recovery_enabled(c->config) && !n))){error(e,UE_BAD_REQUEST);return;}
+    if(un_snapshot_timed(c->config) && ((n==11 || n==22) || (n==14 && !(p[0]&0xc0u)))){
+        error(e,UE_BAD_REQUEST);return;
+    }
     snapshot_tick(c,now);
     if(n==11 || n==22){
         uint8_t record[14];unsigned seen=0;
@@ -384,7 +655,7 @@ static void snapshot(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32
                (seen&(1u<<record[0]))){error(e,UE_BAD_REQUEST);return;}
             seen|=1u<<record[0];
         }
-        for(unsigned at=0;at<n;at+=11){un_snapshot_unpack(record,p+at);snapshot_store(c,record,1);}
+        for(unsigned at=0;at<n;at+=11){un_snapshot_unpack(record,p+at);snapshot_store(c,record,1,now);}
         /* Steady-state replies omit the redundant lobby header, freeing
          * room for two complete states inside the 24-byte UART payload.
          * Lobby polls still observe membership/epoch changes. */
@@ -394,6 +665,7 @@ static void snapshot(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32
                 unsigned car=(c->snapshots.read_scan+k)&3u;
                 if(!(c->snapshots.unread&(1u<<car)))continue;
                 un_snapshot_pack(e->reply+e->reply_n,c->snapshots.data[car]);e->reply_n+=11;
+                c->metrics.delivered++;
                 c->snapshots.unread&=(uint16_t)~(1u<<car);
             }
             c->snapshots.read_scan=(c->snapshots.read_scan+1u)&3u;
@@ -401,7 +673,7 @@ static void snapshot(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32
         }
     }else{
         if(n && !snapshot_owner(c,p,c->history.local)){error(e,UE_BAD_REQUEST);return;}
-        if(n)snapshot_store(c,p,1);
+        if(n)snapshot_store(c,p,1,now);
     }
     e->reply[1]=UE_OK;e->reply[2]=c->lobby.active;e->reply[3]=c->lobby.phase;
     e->reply[4]=c->lobby.epoch;e->reply[5]=c->lobby.epoch>>8;e->reply_n=burst?7:6;
@@ -419,6 +691,7 @@ static void snapshot(UnEndpoint *e,UrClient *c,const uint8_t *p,uint8_t n,uint32
     }
     if(c->lobby.phase && (c->snapshots.unread&(1u<<index))){
         memcpy(e->reply+e->reply_n,c->snapshots.data[index],14);e->reply_n+=14;
+        if(index<4){c->metrics.delivered++;if(un_recovery_enabled(c->config))c->recovery.forwarded|=1u<<index;}
         c->snapshots.unread&=(uint16_t)~(1u<<index);
         if(index<8)c->snapshots.read_scan=(index+1u)&7u;
         if(burst)e->reply[6]=1;
@@ -518,8 +791,12 @@ static void fence(UnEndpoint *e,UrClient *c,uint8_t op,const uint8_t *p,uint8_t 
     else if(result==2){c->services.barrier_wait=0;e->reply[1]=UE_OK;}
 }
 uint8_t ue_service(UnEndpoint *e,UrGame *g,UrClient *c,uint32_t now){
+    if(e->cancelling)return 0;
     ue_tick(e,c,now);
-    if(!e->awaiting)return 0;
+    if(!e->awaiting){
+        if(input_duplex_service(e,c,now))return 1;
+        return snapshot_stream_service(e,c,now);
+    }
     e->reply[0]=e->tag;e->reply[1]=0;e->reply_n=2;
     if(e->request[1]==UE_EXCHANGE)
         exchange(e,g,c,e->request+2,e->request_n-2,now);
@@ -532,6 +809,8 @@ uint8_t ue_service(UnEndpoint *e,UrGame *g,UrClient *c,uint32_t now){
 }
 void ue_command(UnEndpoint *e,UrGame *g,UrClient *c,const uint8_t *p,uint8_t n,uint32_t now){
     uint8_t fail[3]={n?p[0]:0,UE_ERROR,UE_BAD_SEQUENCE};
+    if(e->cancelling==1){fail[2]=UE_NOT_READY;un_send(UE_REPLY,fail,3);return;}
+    if(e->cancelling==2)e->cancelling=0;
     if(n<2 || n>24){fail[2]=UE_BAD_REQUEST;un_send(UE_REPLY,fail,3);return;}
     if(e->valid && p[0]==e->tag){
         if(n==e->request_n && !memcmp(p,e->request,n)){
@@ -554,26 +833,90 @@ void ue_command(UnEndpoint *e,UrGame *g,UrClient *c,const uint8_t *p,uint8_t n,u
         }
     }else if(op==UE_POLL && !n && e->configured)ready(e,g,c,now);
     else if(op==UE_JOIN)join_command(e,c,p,n);
+    else if(op==UE_LOBBY && n==3 && un_recovery_enabled(c->config) && c->state>=UC_BINDING && c->state<UC_READY){
+        c->recovery.game_ack=0;e->recovery_reported=0;
+        if(p[0])return; /* WAIT: an offline command has not reached Room. */
+        e->reply[1]=UE_OK;e->reply[2]=e->reply[3]=e->reply[5]=0;e->reply[4]=c->lobby.phase;
+        e->reply[6]=c->lobby.epoch;e->reply[7]=c->lobby.epoch>>8;e->reply_n=8;
+    }
     else if(op==UE_LOBBY && n==3 && UR_IS_READYSTART(c->config[18]) &&
             (c->state!=UC_READY || !c->lobby.active)){
         if(c->state==UC_FAILED)error(e,UE_BACKEND);
     }
     else if(op==UE_LOBBY && n==3 && (c->protocol==UR_PROFILE_LOBBY || c->protocol==UR_PROFILE_READYSTART || c->protocol==UR_PROFILE_LIVE) && c->state==UC_READY && p[0]<=3){
         uint16_t epoch=(uint16_t)p[1]|((uint16_t)p[2]<<8);
-        if(p[0] && !c->lobby.waiting &&
-           (c->lobby.action!=p[0] || c->lobby.expected!=epoch || !c->lobby.ack)){
-            if(c->lobby.request==UINT32_MAX)error(e,UE_EXHAUSTED);
-            else{c->lobby.request++;c->lobby.action=p[0];c->lobby.expected=epoch;c->lobby.waiting=1;c->lobby.error=0;c->last_tx=now-250;}
+        uint8_t action=p[0];
+        if(un_recovery_enabled(c->config) && !(c->lobby.active&c->history.local) && action){
+            /* The CPU's finish already counts for this reserved driver. A
+             * returning game may reach analysis before its countdown ends. */
+            if(action!=3)return;
+            action=0;
         }
-        if(!p[0] || !c->lobby.waiting){
-            if(c->lobby.error && p[0] && c->protocol!=UR_PROFILE_READYSTART)error(e,UE_BAD_REQUEST);
+        if(action && !c->lobby.waiting &&
+           (c->lobby.action!=action || c->lobby.expected!=epoch || !c->lobby.ack)){
+            if(c->lobby.request==UINT32_MAX)error(e,UE_EXHAUSTED);
+            else{c->lobby.request++;c->lobby.action=action;c->lobby.expected=epoch;c->lobby.waiting=1;c->lobby.error=0;c->last_tx=now-250;}
+        }
+        if(!action || !c->lobby.waiting){
+            if(c->lobby.error && action && c->protocol!=UR_PROFILE_READYSTART)error(e,UE_BAD_REQUEST);
             else{e->reply[1]=UE_OK;e->reply[2]=c->lobby.active;e->reply[3]=c->lobby.pending;
                 e->reply[4]=c->lobby.phase;e->reply[5]=c->lobby.ready;
                 e->reply[6]=c->lobby.epoch;e->reply[7]=c->lobby.epoch>>8;e->reply_n=8;
+                if(un_recovery_enabled(c->config)){
+                    e->reply[3]=c->lobby.host<4?1u<<c->lobby.host:0;e->reply[5]=c->recovery.countdown;
+                    uint8_t complete=c->lobby.phase==1 || c->recovery.forwarded==15 ||
+                        (!(c->snapshots.valid&15) && (c->lobby.active&c->history.local));
+                    if(complete && c->recovery.generation && !c->recovery.game_failed){
+                        if(e->recovery_reported==c->recovery.generation && c->recovery.game_ack!=c->recovery.generation){
+                            c->recovery.game_ack=c->recovery.ack=c->recovery.generation;
+                            c->recovery.dirty=1;c->last_tx=now-250;
+                        }
+                        e->recovery_reported=c->recovery.generation;
+                    }
+                }
                 if(c->protocol==UR_PROFILE_READYSTART){e->reply[8]=c->history.local;e->reply_n=9;}}
         }
     }
     else if(op==UE_SNAPSHOT)snapshot(e,c,p,n,now,0);
+    else if(op==UE_SNAPSHOT_STREAM && n<=1){
+        if(!n){e->reply[1]=UE_OK;e->reply[2]=1;e->reply[3]=2;e->reply_n=4;}
+        else if(!p[0]){e->snapshot_stream=e->snapshot_error=0;e->reply[1]=UE_OK;}
+        else if(p[0]>2 || (p[0]==2)!=!!un_snapshot_timed(c->config) || e->input_duplex ||
+                c->protocol!=UR_PROFILE_LOBBY || !un_snapshot_enabled(c->config))error(e,UE_BAD_REQUEST);
+        else if(!e->running || c->state!=UC_READY || c->lobby.phase!=2)error(e,UE_NOT_READY);
+        else{snapshot_tick(c,now);e->snapshot_stream=p[0];e->snapshot_error=0;e->snapshot_epoch=c->lobby.epoch;e->snapshot_at=now;e->reply[1]=UE_OK;}
+    }
+    else if(op==UE_PERFORMANCE && n<=1){
+        if(!n){e->reply[1]=UE_OK;e->reply[2]=1;e->reply[3]=6;e->reply[4]=20;e->reply_n=5;}
+        else performance(e,c,p[0],now);
+    }
+    else if(op==UE_SCORES){
+        uint8_t count=ue_scores(p,n,now,e->reply+2);
+        if(!count || count>22)error(e,UE_BAD_REQUEST);
+        else{
+            e->reply[1]=UE_OK;e->reply_n=2+count;
+            if(n==6 && p[0]==4 && count>=9 && !e->reply[2]){
+                unsigned length=e->reply[10];
+                if(length>13 || count!=9+length)error(e,UE_BACKEND);
+                else for(unsigned i=0;i<length;i++)e->reply[11+i]=display_char(e,e->reply[11+i]);
+            }
+        }
+    }
+    else if(op==UE_CAPTURE_TIME && !n){
+        e->reply[1]=UE_OK;e->reply[2]=1;e->reply[3]=32;e->reply[4]=1;e->reply[5]=2;e->reply_n=6;
+    }
+    else if(op==UE_INPUT_STREAM && n<=1){
+        if(!n){e->reply[1]=UE_OK;e->reply[2]=1;e->reply[3]=8;e->reply[4]=24;e->reply_n=5;}
+        else if(!p[0]){e->input_duplex=e->input_error=0;e->reply[1]=UE_OK;}
+        else if(p[0]!=1 || e->snapshot_stream || e->delay || e->window || e->granted || e->sampled ||
+                (c->protocol!=UR_PROFILE && c->protocol!=UR_PROFILE_REDUNDANT) || c->history.all==c->history.local)error(e,UE_BAD_REQUEST);
+        else if(!e->running || c->state!=UC_READY || c->services.barrier_wait)error(e,UE_NOT_READY);
+        else{
+            if(!e->input_duplex){e->input_stream=e->input_duplex=e->input_dirty=1;e->input_error=0;
+                e->input_sent=e->frame;e->input_at=now;}
+            e->reply[1]=UE_OK;
+        }
+    }
     else if(op==UE_LIVE)live(e,c,p,n,1,0);
     else if(op==UE_BURST)burst(e,c,p,n,now);
     else if(op==UE_BURST_ACK && n==1 && e->running && c->state==UC_READY &&

@@ -1,0 +1,8 @@
+{
+  "cu_avr.c": "18347fdd55f5ca8a43d2f64f84c4ce7080b47b6ba9bd75ce56629e9e911d771f",
+  "tests/bootloader/interrupt_regression.c": "73213a8576b3a250d0dbac3fd5f050fc48ce461bb861816232bfdb867463516d",
+  "documentation/serial.md": "3927df598fe27892265b917ee2e13926bed7393e362ad03c8b2527183749b997",
+  "tests/bootloader/resident_bootloader_regression.c": "7f71b2856949c258e3820342ff1fce0896a02c4071c1e19ac0d7d09c052872bc",
+  "_obj_/uart-txc-fix/cuzebox.exe": "083224e295ee9de789b74a8d3f106a258e904562a02c8738a8e7c4af2774beaa",
+  "_obj_/uart-txc-fix/uart-txc-timer.patch": "c62e9b4db2247f675668412d4241771afaf23ed5b45ff75f20266c456a27bdf0"
+}

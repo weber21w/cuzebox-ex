@@ -358,6 +358,14 @@ endif
 #
 ifeq ($(TSYS),emscripten)
 # Browser-native SDL2/MicroUI build. Native servers and OS backends stay absent.
+# Browser UART/GPIO is supplied by its separate web overlay. Keep its existing
+# AVR feature combination unless the browser builder explicitly selects one.
+ifeq ($(origin FLAG_AVR_TIMER1_CLOCK),file)
+FLAG_AVR_TIMER1_CLOCK:=0
+endif
+ifeq ($(origin FLAG_AVR_GPIO),file)
+FLAG_AVR_GPIO:=0
+endif
 OBD?=_obj_/emscripten
 OUT?=$(OBD)/cuzebox.html
 ifeq ($(FLAG_USE_SDL1),1)
@@ -475,6 +483,9 @@ CFLAGS+= -DHEADLESS=1
 endif
 CFLAGS+= -DFLAG_PRINTF_WHISPER=$(FLAG_PRINTF_WHISPER)
 CFLAGS+= -DFLAG_AVR_TIMER1_CLOCK=$(FLAG_AVR_TIMER1_CLOCK) -DFLAG_AVR_GPIO=$(FLAG_AVR_GPIO)
+ifneq ($(FLAG_ESP_AT_HARDWARE_TIMING),0)
+CFLAGS+= -DCU_ESP_AT_CAPTURE_PROFILE=1
+endif
 ifneq ($(ENABLE_MICROUI),0)
 CFLAGS+= -DENABLE_MICROUI=1
 endif

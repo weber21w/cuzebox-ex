@@ -41,7 +41,15 @@ COMMON=(
     -Wl,--gc-sections -o "$TMP/esp_uart_hotpath_test"
 "$TMP/esp_uart_hotpath_test"
 
+# The capture-profile trial also uses the measured ESP transmitter clock.
+"$CC_BIN" "${COMMON[@]}" -DCU_ESP_AT_CAPTURE_PROFILE=1 -c "$ROOT/cu_uart.c" -o "$TMP/cu_uart_capture.o"
+"$CC_BIN" "${COMMON[@]}" -DCU_ESP_AT_CAPTURE_PROFILE=1 \
+    "$ROOT/tests/serial_link/esp_uart_hotpath_test.c" "$TMP/cu_uart_capture.o" \
+    -Wl,--gc-sections -o "$TMP/esp_uart_capture_test"
+"$TMP/esp_uart_capture_test"
+
 python3 "$ROOT/tests/serial_link/uart_irq_mask_test.py"
+python3 "$ROOT/tests/serial_link/connect_failure_test.py"
 python3 "$ROOT/tests/serial_link/tcp_serial_source_audit.py"
 
 "$CC_BIN" "${COMMON[@]}" -DENABLE_ESP_SOFTAP=1 \

@@ -1,0 +1,28 @@
+UART TXC fix - matched-core performance comparison, 2026-10-29
+
+Seven alternating old/new runs per case on Windows. Each run executes
+115,200,000 emulated CPU clocks through the production switch decoder.
+Core compilation uses the same -O3 feature flags and no core LTO; the same
+benchmark object, UART/AT implementation and other dependency objects are
+linked to both cores. Rendering/audio and actual network/serial connections
+are excluded. AT replies and loopback output are drained between CPU slices.
+Process CPU time is measured with GetProcessTimes. These are short synthetic
+workloads with timing quantization/variation, not end-to-end hardware tests.
+
+Case                 Old median CPU s  New median CPU s  Change
+Idle UART            0.546875          0.546875           0.00%
+ESP AT ~224 kbaud     0.953125          0.984375          +3.28%
+Host serial ~224k     0.953125          0.937500          -1.64%
+Host serial ~9600     1.031250          1.031250           0.00%
+Host serial ~1.79M    1.046875          1.031250          -1.49%
+
+All seven old/new runs in every case had matching emulated cycle AND byte
+counts. Treat the small negative raw-serial medians as approximately unchanged,
+not a demonstrated universal speedup. The ESP overhead is host CPU cost;
+configured baud and emulated throughput are unchanged in these workloads.
+
+performance.json contains the valid samples and workload counts. The initial
+performance-invalid-harness files are deliberately excluded: the initial setup
+overwrote the new core's read-only UDRE flag, preventing transmission. The
+corrected harness preserves UDRE and rejects zero-data or mismatched workloads.
+No production-source changes were needed for this measurement.

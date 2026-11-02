@@ -1,0 +1,142 @@
+[
+  {
+    "path": "api_server.c",
+    "before_text_sha256": "558ed93bf59fea10566306522da8205c2b74107ed20794d2886c26d37fda7db6",
+    "after_text_sha256": "335eb8f46d55faef99a2caee746d6829f43aeea603d9b6fe549aa9d202913783"
+  },
+  {
+    "path": "configcfg.c",
+    "before_text_sha256": "d3d99e80d0019c574408493230a8b815b40d930cb6e59e612af34768942da09d",
+    "after_text_sha256": "ec54a8f682e9eb2a0221e77c7364981e8a948e3f5fba23db04162bc2387e88a5"
+  },
+  {
+    "path": "configcfg.h",
+    "before_text_sha256": "5f8e694cbadef99e1ed9235d57036e504aadc837206632b8208addea23bd340b",
+    "after_text_sha256": "f83fdf387ee12bf38389bf9cada56e91fb18996ac46097bd5f29c8a320385df2"
+  },
+  {
+    "path": "documentation/api/commands.md",
+    "before_text_sha256": "d0be107bc46ef12c37ee3c2fa2b5694fbb7641e9ebfe9f489def01fde2e94e04",
+    "after_text_sha256": "c045f41390e73ac07ebfb650ace7103dbe7499b3b96621d1af337920c2e62e65"
+  },
+  {
+    "path": "documentation/screenshots.md",
+    "before_text_sha256": null,
+    "after_text_sha256": "dd63099bd1edc4e7a5a36b332da477d1d21e9eb3787b04e8a583a27b5cf53770"
+  },
+  {
+    "path": "frame.c",
+    "before_text_sha256": "69d46fd98d667d1b9998ba04a2c72acf8ceef069bc4dcbaa658a5def44066728",
+    "after_text_sha256": "c7e2af672f57001bb76ced339ec1b8dd54c3d04641454dc8f19900760b2cfcdc"
+  },
+  {
+    "path": "frame.h",
+    "before_text_sha256": "ab355aa1910cab982d43563c82bff5ddc5d37869f5d737fa60f5eb04d081b0ce",
+    "after_text_sha256": "00fb4799ed4f2a8fc163da1e11ccef82f5ca99cf850c6a5175d27f44f7bbf4fe"
+  },
+  {
+    "path": "guicore.c",
+    "before_text_sha256": "b3adcfad112e023d006deff66d1bae60d2d4c0716740a3bc0ec41658b8f9e22e",
+    "after_text_sha256": "706e357f310b676c36176b200801c89dee5d19afb0b95217dee1c2ad1f62fb11"
+  },
+  {
+    "path": "main.c",
+    "before_text_sha256": "d82b4d63c698460bb43204400a160855deb1be19c7da434101d323c9c95cdaef",
+    "after_text_sha256": "d8997a54b4fb5452cd7762a451b7a529f4de562450b6cedb7f305c822e8c10f3"
+  },
+  {
+    "path": "mainui.h",
+    "before_text_sha256": "0d7e4e06628248ac594296c4474512c02ffa86b3bd5a70a69c0ef4a965f2bdd0",
+    "after_text_sha256": "5eb4e8ff785d865d1793ebdf3bdde562b6b5ec13a1a893ac96b645e8a16f230c"
+  },
+  {
+    "path": "microui/mui_integration.c",
+    "before_text_sha256": "fd59ce2f54b7099b7425544c590ca71b140e290270e142b60090d2fc813b9638",
+    "after_text_sha256": "e5b45ff8d2d023e56876551e84cf306dc0cc43670508b4ee8e06352b894a1377"
+  },
+  {
+    "path": "readme.md",
+    "before_text_sha256": "9ad0b5c7a54c8162c46fc4fe02a60c5c9f3248f42cca3dfbceb73ffb686c9041",
+    "after_text_sha256": "dc1326de1128ced370aff0d9b5dc91886ce45fa7615d213ce340110071879f72"
+  },
+  {
+    "path": "savestate.c",
+    "before_text_sha256": "2769a7d43d8fc8aa0e3b720edcce6da4ed6b353a28af96b396b035759a9e7469",
+    "after_text_sha256": "62272fbff244c349db617eb2f5b9e52c1966e9c498a0a8ce3179f22139c3f48a"
+  },
+  {
+    "path": "screenshot_options.h",
+    "before_text_sha256": null,
+    "after_text_sha256": "7deb5b0fe03b26ab69c671706fdccec38a574b4138bff7e5b9aa5a7c013fd732"
+  },
+  {
+    "path": "screenshot_png.h",
+    "before_text_sha256": null,
+    "after_text_sha256": "cb30cc4bda63a15fffd1ea3f3f4cfa6ea26f71577420d8085abd180311037fee"
+  },
+  {
+    "path": "tests/gui/cycle_screenshot_regression.c",
+    "before_text_sha256": null,
+    "after_text_sha256": "3b13b62b0a9cb67d54a1dc5d5ba486542735fc08c01455a4df24b5d9c023b1e3"
+  },
+  {
+    "path": "tests/gui/screenshot_tool_regression.c",
+    "before_text_sha256": "d4c635fa68f0cd89b339e32cd840a6837a25cebdc5fe024dc7a38bab847f654e",
+    "after_text_sha256": "ea5e28b74724f444bdf8af63fb22909eb1701e2bd8b5370185aae2072279b809"
+  },
+  {
+    "path": "tests/preferences/Makefile",
+    "before_text_sha256": "84338a4548eed00505ad10ef761c09a316b9b71dc8c3dc484ad42c477f1661e7",
+    "after_text_sha256": "100e8253642f9a49903be84bad96c70ed91b040c5d40ae9c63154aa732b2c5c7"
+  },
+  {
+    "path": "tests/preferences/preferences_regression.c",
+    "before_text_sha256": "11ea7ea9b4bc861c261757f394a91622c19186680d973eb12e2be75488e5dfb1",
+    "after_text_sha256": "a840beea16bc06d7d41b3f80ba8cca4324624537e07a1293a7b8ab8fb330b1ea"
+  },
+  {
+    "path": "tools/cuzebox_web_debugger.py",
+    "before_text_sha256": "7e2c9d88369c6fe3fc9bf3fa223550da13dd2be0441324d0a2684bfa6fe0e5b9",
+    "after_text_sha256": "326406d955745454608d3b65ca5f77e6da4aff0c57d336ec55531c13ad80f63e"
+  },
+  {
+    "path": "tools/test_api_multiclient.py",
+    "before_text_sha256": "10ae085476a2bc46815ea06e90875d612dec8d256426747e1e188b6b5e654c39",
+    "after_text_sha256": "0c6967ed56531354e285e1970e3bd44f15418c4965109613da9802ff044b9123"
+  },
+  {
+    "path": "tools/test_embedded_web_server.py",
+    "before_text_sha256": "89ac28debf3edcf35273cf783fabe7dee263dfbe5bb61c924d937444a7cfc022",
+    "after_text_sha256": "5956cd0a6ed02ee705170ca8d0f1dfb60ac0be2f180f6a13f9bd5184a00395ea"
+  },
+  {
+    "path": "tools/test_headless_api.py",
+    "before_text_sha256": "5e4ca2d85e6295c233089f3bab14fbaf711c693b6f49529023e3452038e0f074",
+    "after_text_sha256": "c7c2fe5fbc9e294bcc9d0cbb8ffc57332c50aa917af458a788d4dfd107a09520"
+  },
+  {
+    "path": "tools/test_screenshot_api.py",
+    "before_text_sha256": null,
+    "after_text_sha256": "fb167414fe019effc9e865616caec6728850df0056cfa3b1092798a45adbc400"
+  },
+  {
+    "path": "tools/test_screenshot_png.py",
+    "before_text_sha256": null,
+    "after_text_sha256": "e476b663291e4bb1fccbb9dfbf9fa2645beaae6c1520b15aa1083594bf4fb582"
+  },
+  {
+    "path": "tools/test_screenshot_web_controls.js",
+    "before_text_sha256": null,
+    "after_text_sha256": "258c5a447bd61562b2b46492f0a9ef75b41c0164e1bbd88761243814e8ad6e87"
+  },
+  {
+    "path": "tools/web_debugger/controls.html",
+    "before_text_sha256": "d7ec5b81d6f13dcb99e2676fd42766091bd96e64ebc516f530ddc0911e302316",
+    "after_text_sha256": "63079c2a72e4554a3431a4ddb1b6b089f43bdc02d2807c052ec66a8093ca2589"
+  },
+  {
+    "path": "web_server.c",
+    "before_text_sha256": "c99218aa46b5437c2ef7ed3db1cd809815ed4aa8be586c7b5705c4d3b508a763",
+    "after_text_sha256": "ab64e1815fb835753f86a13b14ec315dedf9e366572d909958b61467c357ce4c"
+  }
+]

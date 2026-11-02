@@ -69,6 +69,11 @@ static FILE* avconv_pipe_v = NULL;
 static auint avconv_afrac = 0U;
 static boole avconv_sigpipe_ignored = FALSE;
 static boole avconv_autoinc = TRUE;
+static boole avconv_omit_messages = TRUE;
+static boole avconv_clean_valid = FALSE;
+static boole avconv_frame_staged = FALSE;
+static boole avconv_frame_omit = TRUE;
+static uint32 avconv_clean_pixels[640U * 228U];
 static char  avconv_name[AVCONV_NAME_CAP] = "video/CAPTURE001.MP4";
 static char  avconv_active_name[AVCONV_NAME_CAP] = "";
 static char  avconv_status[AVCONV_NAME_CAP] = "READY";
@@ -290,6 +295,27 @@ static void avconv_prepare_active_name(void)
 	(void)avconv_mkdirs_for_file(avconv_active_name);
 }
 
+boole avconv_get_omit_messages(void){ return avconv_omit_messages; }
+
+void avconv_set_omit_messages(boole enable)
+{
+ /* A GUI/API change after rendering applies to the next frame. Keep the
+  * pending frame's choice so toggling cannot discard its video/audio. */
+ avconv_omit_messages=enable;
+}
+
+void avconv_stage_clean_frame(void)
+{
+ auint y,pitch;
+ uint32 const* pixels;
+ avconv_frame_staged=TRUE;avconv_frame_omit=avconv_omit_messages;
+ avconv_clean_valid=FALSE;
+ if(!avconv_frame_omit)return;
+ pitch=guicore_getpitch();pixels=guicore_getpixbuf()+20U*pitch;
+ for(y=0U;y<228U;y++)memcpy(avconv_clean_pixels+y*640U,pixels+y*pitch,640U*sizeof(uint32));
+ avconv_clean_valid=TRUE;
+}
+
 void avconv_push(uint8 const* samples, auint len)
 {
 	uint32* pixbuf;
@@ -301,6 +327,10 @@ void avconv_push(uint8 const* samples, auint len)
 	char    tstr[1024];
 	char    pixs[5] = {'0', '0', '0', '0', 0};
 	guicore_pixfmt_t pixfmt;
+	boole omit=avconv_frame_staged?avconv_frame_omit:avconv_omit_messages;
+	/* Wait for a rendered clean frame, including after a live option change.
+	 * Never fall back to a buffer which may already contain messages. */
+	if(omit&&!avconv_clean_valid)return;
 
 	if (!avconv_sigpipe_ignored){
 		#ifdef SIGPIPE
@@ -388,7 +418,7 @@ void avconv_push(uint8 const* samples, auint len)
 		}
 	}
 
-	pixbuf = guicore_getpixbuf() + (640U * 20U);
+	pixbuf = omit ? avconv_clean_pixels : guicore_getpixbuf() + (640U * 20U);
 	if (fwrite(pixbuf, (640U * 228U) * sizeof(uint32), 1U, avconv_pipe_v) != 1U){
 		AVCONV_PCLOSE(avconv_pipe_v);
 		AVCONV_PCLOSE(avconv_pipe_a);
@@ -398,6 +428,8 @@ void avconv_push(uint8 const* samples, auint len)
 		avconv_set_status("VIDEO DUMP VIDEO PIPE WRITE FAILED");
 		return;
 	}
+	avconv_clean_valid=FALSE;
+	avconv_frame_staged=FALSE;
 	if (fwrite(&(samp48k[0]), areq, 1U, avconv_pipe_a) != 1U){
 		AVCONV_PCLOSE(avconv_pipe_v);
 		AVCONV_PCLOSE(avconv_pipe_a);
@@ -416,6 +448,8 @@ boole avconv_is_initialized(void)
 
 void avconv_finalize(void)
 {
+	avconv_clean_valid=FALSE;
+	avconv_frame_staged=FALSE;
 	int  rc;
 	int  c0 = 0;
 	int  c1 = 0;

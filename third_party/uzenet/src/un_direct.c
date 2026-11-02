@@ -1,4 +1,5 @@
 #include "un_client.h"
+#include "un_recovery.h"
 #include <string.h>
 void ud_reset_peer(UrClient *c,unsigned peer){
     if(peer>=4)return;
@@ -15,6 +16,7 @@ void ud_reset_peer(UrClient *c,unsigned peer){
 /* Pair-specific keys arrive only over the existing authenticated TLS stream.
  * Direction domain (2+sender) and the match ID bind every peer packet. */
 int ud_offer(UrClient *c,const uint8_t t[68],uint32_t now) {
+    if(un_recovery_enabled(c->config))return 0;
     if(c->protocol==UR_PROFILE_LIVE || c->protocol<UR_PROFILE || c->state<UC_BINDING || c->state>UC_READY || memcmp(t,"UNCP",4) || t[4]!=1 || t[5] ||
        t[6]>=4 || t[6]==c->peer || t[7]!=c->peer || memcmp(t+8,c->match,8) || t[17]!=c->history.width ||
        !t[16] || (t[16]&~c->history.all) || (t[16]&c->history.local) || !ur_get32(t+18) || !(t[22]|t[23]))return 0;

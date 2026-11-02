@@ -27,7 +27,7 @@ def run(*arguments):
 
 
 class LocalNetwork:
-    def __init__(self, source, work, players=2, baud=115200):
+    def __init__(self, source, work, players=2, baud=115200, relay_address="127.0.0.1"):
         self.source = Path(source).resolve()
         self.work = Path(work).resolve()
         if not 1 <= players <= 4:
@@ -37,6 +37,8 @@ class LocalNetwork:
         self.players = players
         if baud not in (9600, 115200):
             raise ValueError("Choose 9600 or 115200 baud")
+        socket.inet_aton(relay_address)
+        self.relay_address = relay_address
         self.baud = baud
         self.processes, self.logs, self.identities = [], [], []
         self.room_port = port()
@@ -53,7 +55,7 @@ class LocalNetwork:
 
     def lookup(self, digest):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-            connection.settimeout(3)
+            connection.settimeout(15)
             connection.connect(str(self.identity_socket))
             connection.sendall(b"UZCERT01" + digest)
             reply = bytearray()
@@ -115,7 +117,7 @@ class LocalNetwork:
         if room_source.count(binding) != 2:
             raise RuntimeError("Room bind code changed; review loopback adaptation before launching")
         room_copy = work / "room-server-local.c"
-        room_copy.write_text(room_source.replace(binding, ".sin_addr.s_addr = htonl(INADDR_LOOPBACK);"),
+        room_copy.write_text(room_source.replace("uaddr"+binding, f'uaddr.sin_addr.s_addr = inet_addr("{self.relay_address}");').replace(binding, ".sin_addr.s_addr = htonl(INADDR_LOOPBACK);"),
                              encoding="utf-8")
         run("cc", "-std=gnu11", "-O2", "-pthread", f"-DPORT={self.room_port}",
             f"-DUDP_PORT={self.room_port}", f'-DIDENTITY_PATH="{self.identity_socket}"',
@@ -125,9 +127,10 @@ class LocalNetwork:
             f'-DROOM_STATUS_PATH="{work / "room-status.json"}"',
             room_copy,
             source / "uzenet-identity/uzenet-identity-client.c",
+            source / "uzenet-audit/native.c",
             "-lssl", "-lcrypto", "-o", work / "room")
         process = self.launch(["stdbuf", "-oL", "-eL", work / "room"], name="room",
-                              env=dict(os.environ, UZENET_UN_RELAY_IPV4="127.0.0.1"))
+                              env=dict(os.environ, UZENET_UN_RELAY_IPV4=self.relay_address))
         for _ in range(100):
             try:
                 with socket.create_connection(("127.0.0.1", self.room_port), timeout=.1):

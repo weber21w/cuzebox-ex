@@ -1,5 +1,7 @@
 # Build outputs (generated source headers are intentionally retained).
 /_obj_/
+/build/
+/dist/
 /cuzebox
 /cuzebox.exe
 /cuzebox.js

@@ -16,9 +16,25 @@ typedef struct {
  * source: 1 client, 2 services, 3 checksum, 4 abnormal end, 5 endpoint, 6 UART I/O (reason 1).
  * peers uses global seat bits, zero when the source cannot identify a peer. */
 typedef struct {uint8_t source,reason,stage,peers;} UrFailure;
+/* Cumulative transport counters. Read on demand; no telemetry packets/timer.
+ * Counts/rate denominator avoid division in the packet and UART hot paths. */
+typedef struct {
+    uint32_t uart_rx,uart_tx,paused_ms,pause_at;
+    uint32_t captures,delivered,replaced,stream_tx,stream_rx,reordered,gaps;
+    uint32_t input_frames,input_events,critical_packets,gameplay_packets,background_packets;
+    uint32_t received_at[4];
+    uint16_t uart_peak;
+    uint8_t paused,uart_queued;
+} UrMetrics;
 
 typedef struct UrClient {
+    struct {
+        uint16_t generation,ack,game_ack;
+        uint8_t reserved,returning,countdown,forwarded,dirty,game_failed;
+        uint32_t received,ack_at;
+    } recovery;
     UrFailure failure;
+    UrMetrics metrics;
     struct {
         uint32_t sequence[64],next;
         uint8_t value[64][4],out[5],pending,scan;
@@ -26,7 +42,7 @@ typedef struct UrClient {
     } live;
     struct {
         uint8_t data[1536],want,ready,reset,primed;
-        uint16_t used,total,sent,received;
+        uint16_t used,total,sent,received,read;
         uint32_t base,polled;
     } join;
     struct {
@@ -36,6 +52,8 @@ typedef struct UrClient {
          * retains just its newest state and the peers still needing it. */
         uint32_t sequence,received[4],sent_at[4];
         uint8_t pending[4],stream_scan,read_scan;
+        uint32_t captured[4],link_tx[4],link_rx[4],link_base[4];
+        uint64_t link_seen[4];
     } snapshots;
     struct {
         uint8_t active,pending,phase,ready,action,waiting,error,host;
@@ -49,7 +67,7 @@ typedef struct UrClient {
      * An unread game chat message cannot block ESP-owned metadata. */
     UrOob service;
     UrServices services;
-    uint8_t message_turn;
+    uint8_t message_turn,message_streak;
     UrReplay replay;
     UrPeer peers[4];
     uint8_t key[32],match[8],config[19],nonce[4],seed[4],endpoint[6],challenge[8];
@@ -77,6 +95,9 @@ UrFrame *uc_fetch(UrClient *c,uint32_t frame);
 int uc_release(UrClient *c,uint32_t next);
 void uc_fail(UrClient *c,uint8_t error);
 void uc_rtt(UrLink *link,uint32_t elapsed);
+/* Platform supplies actual encoded bytes and PA7 pause state under its UART
+ * lock. Pause time is charged once per interval, including timer rollover. */
+void uc_uart_metrics(UrClient *c,uint32_t now,unsigned rx,unsigned tx,unsigned queued,int paused);
 /* Transport-independent peer path: endpoints are IPv4[4], little-endian port16.
  * No key, endpoint, or Internet packet crosses the AVR interface. */
 int ud_offer(UrClient *c,const uint8_t ticket[68],uint32_t now);

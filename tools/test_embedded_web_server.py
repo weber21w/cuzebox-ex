@@ -7,6 +7,8 @@ SDL=r'''
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <strings.h>
+#define SDL_strcasecmp strcasecmp
 typedef struct SDL_Thread { pthread_t t; int (*fn)(void*); void* data; int rc; } SDL_Thread;
 static void* sdl_tramp(void* p){ SDL_Thread* t=(SDL_Thread*)p; t->rc=t->fn(t->data); return 0; }
 static inline SDL_Thread* SDL_CreateThread(int (*fn)(void*),const char* name,void* data){(void)name;SDL_Thread*t=calloc(1,sizeof(*t));if(!t)return 0;t->fn=fn;t->data=data;if(pthread_create(&t->t,0,sdl_tramp,t)){free(t);return 0;}return t;}
@@ -41,6 +43,7 @@ class FakeAPI(threading.Thread):
     elif cmd=='GET_STATE': c.sendall(b'{"ok":1,"frame":123,"paused":0}\n')
     elif cmd=='PING': c.sendall(b'{"ok":1,"reply":"PONG"}\n')
     elif cmd=='EMU_STATUS': c.sendall((json.dumps({'ok':1,'rom_dir':self.rom_dir},separators=(',',':'))+'\n').encode())
+    elif cmd.startswith('SCREENSHOT_SETTINGS'): c.sendall(b'{"ok":1,"x_width":256,"y_scale":3,"sampling":"AREA"}\n')
     elif cmd.startswith('MEM_SIZE '):
      reg=cmd.split()[1].upper();sizes={'SRAM':4096,'IO':256,'FLASH':65536,'EEPROM':2048,'SPIRAM':8192};c.sendall((json.dumps({'ok':1,'region':reg,'size':sizes.get(reg,0)},separators=(',',':'))+'\n').encode())
     elif cmd.startswith('READ_MEM '):
@@ -49,7 +52,9 @@ class FakeAPI(threading.Thread):
      parts=cmd.split(' ',2);path=parts[2];self.loaded_path=path
      try:self.loaded_bytes=pathlib.Path(path).read_bytes();c.sendall(b'{"ok":1,"loaded":1}\n')
      except OSError:c.sendall(b'{"ok":0,"error":"missing upload"}\n')
-    elif cmd=='SCREENSHOT_CAPTURE': c.sendall((json.dumps({'ok':1,'size':len(self.screenshot),'width':4,'height':4,'format':'bmp24'},separators=(',',':'))+'\n').encode())
+    elif cmd in ('SCREENSHOT_CAPTURE','SCREENSHOT_CAPTURE BMP'):
+     self.screenshot=(b'BM'+bytes(range(64))) if cmd.endswith(' BMP') else (b'\x89PNG\r\n\x1a\n'+bytes(range(58)))
+     c.sendall((json.dumps({'ok':1,'size':len(self.screenshot),'width':4,'height':4,'format':'bmp24' if cmd.endswith(' BMP') else 'png','capture':{'schema':'cuex-shot-1','path':'cycle','width':4,'height':4}},separators=(',',':'))+'\n').encode())
     elif cmd.startswith('SCREENSHOT_READ '):
      _,a,n=cmd.split();a=int(a,0);n=int(n,0);vals=list(self.screenshot[a:a+n]);c.sendall((json.dumps({'ok':1,'offset':a,'len':len(vals),'values':vals},separators=(',',':'))+'\n').encode())
     elif cmd=='SCREENSHOT_CLEAR': c.sendall(b'{"ok":1}\n')
@@ -76,7 +81,9 @@ def main():
   exe=d/'webtest';subprocess.run([cc,'-std=gnu99','-DENABLE_API_SERVER=1','-I',str(d),'-I',str(ROOT),str(ROOT/'web_server.c'),str(d/'h.c'),'-pthread','-o',str(exe)],check=True)
   hp,ap=free_port(),free_port();api=FakeAPI(ap);api.rom_dir=td;api.start();proc=subprocess.Popen([str(exe),str(hp),str(ap)])
   try:
-   home=wait_http(hp);assert b'CUzeBox Web Tools' in home
+   home=wait_http(hp);assert b'CUzeboxEX Web Tools' in home
+   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/controls');r=c.getresponse();controls=r.read();c.close();assert b'SCREENSHOT_SETTINGS' in controls and b'Y scale' in controls and b'X sampling' in controls and b'Preset' in controls
+   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('POST','/api/command',json.dumps({'command':'SCREENSHOT_SETTINGS SET X_WIDTH 256'}),{'Content-Type':'application/json'});r=c.getresponse();settings=json.loads(r.read());c.close();assert settings['x_width']==256 and settings['sampling']=='AREA'
    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/debugger');r=c.getresponse();dbg=r.read();c.close();assert r.status==200 and b'Cycle-domain scanline beam' in dbg and b'VIDEO_BEAM' in dbg
    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/sd');r=c.getresponse();sd=r.read();c.close();assert r.status==200 and b'SLOW' in sd and b'NORMAL' in sd and b'FAST' in sd and b'CUSTOM' in sd and b'inter-sector' in sd
    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/audio');r=c.getresponse();aud=r.read();c.close();assert r.status==200 and b'Audio Scope' in aud and b'AUDIO_SCOPE' in aud and b'zero scope hot-path overhead' in aud
@@ -85,6 +92,8 @@ def main():
    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/memory-dump?region=SRAM&addr=17&len=700&name=test.bin');r=c.getresponse();dump=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and dump==api.mem[17:717] and 'test.bin' in (hdr or '')
 
    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/screenshot-download?name=shot.bmp');r=c.getresponse();shot=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and shot==b'BM'+bytes(range(64)) and 'shot.bmp' in (hdr or '') and r.getheader('Content-Type')=='image/bmp'
+   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/screenshot-download');r=c.getresponse();shot=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and shot.startswith(b'\x89PNG\r\n\x1a\n') and 'screenshot.png' in (hdr or '') and r.getheader('Content-Type')=='image/png'
+   assert json.loads(r.getheader('X-CUEX-Capture-Metadata'))=={'schema':'cuex-shot-1','path':'cycle','width':4,'height':4}
 
    # Browser ROM upload accepts binary bodies (including NULs), stores a persistent
    # copy, then asks the ordinary API to load the resulting path.

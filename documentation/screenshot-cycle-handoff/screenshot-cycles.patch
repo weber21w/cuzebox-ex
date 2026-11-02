@@ -1,0 +1,1822 @@
+diff --git a/api_server.c b/api_server.c
+--- a/api_server.c
++++ b/api_server.c
+@@ -2317,15 +2317,19 @@
+ 	api_queue_json(buf);
+ }
+ 
+-static void api_handle_screenshot_capture(void)
++static void api_handle_screenshot_capture(char* rest)
+ {
+ 	uint8* data = NULL;
+ 	auint size = 0U, width = 0U, height = 0U;
+-	char buf[256];
++	char buf[1900],meta[1400];
+ 	api_client_t* client = api_active_client();
++	char* format=rest?strtok(rest," \t"):NULL;
++	boole bmp=format&&strcmp(format,"BMP")==0;
++	if(format&&!bmp&&strcmp(format,"PNG")!=0){api_reply_error("Expected PNG or BMP");return;}
+ 	if (client == NULL){ api_reply_error("No active API client"); return; }
+ 	api_screenshot_buffer_clear(client);
+-	if (!mainui_capture_screenshot_bmp(&data, &size, &width, &height) || data == NULL || size == 0U){
++	if (!(bmp?mainui_capture_screenshot_bmp(&data,&size,&width,&height):
++	          mainui_capture_screenshot_png(&data,&size,&width,&height)) || data == NULL || size == 0U){
+ 		if (data != NULL){ free(data); }
+ 		api_reply_error("Failed to capture screenshot in memory");
+ 		return;
+@@ -2334,9 +2338,10 @@
+ 	client->screenshot_size = size;
+ 	client->screenshot_width = width;
+ 	client->screenshot_height = height;
+-	snprintf(buf, sizeof(buf), "\"size\":%u,\"width\":%u,\"height\":%u,\"format\":\"bmp24\"",
+-		(unsigned)size, (unsigned)width, (unsigned)height);
+-	api_reply_ok_simple(buf);
++	mainui_screenshot_metadata(meta,sizeof(meta),width,height,bmp,FALSE);
++	snprintf(buf, sizeof(buf), "{\"ok\":1,\"size\":%u,\"width\":%u,\"height\":%u,\"format\":\"%s\",\"capture\":%s}",
++		(unsigned)size, (unsigned)width, (unsigned)height,bmp?"bmp24":"png",meta);
++	api_queue_json(buf);
+ }
+ 
+ static void api_handle_screenshot_read(char* rest)
+@@ -4785,7 +4790,7 @@
+ 
+ static void api_handle_help(void)
+ {
+-	api_queue_json("{\"ok\":1,\"commands\":[\"PING\",\"HELP\",\"DIAGNOSTICS STATUS|ENABLE|DISABLE|CLEAR|READ|MASK|TRIGGERS|ARM|DISARM|TRIGGER|RESTORE\",\"LOGICAL STATUS|CONFIG|RANGE|CONDITION|INPUT|START|CONTINUE|STOP|CLEAR|READ|EXPORT|CHECKPOINT\",\"SUBSCRIBE <FRAME|CPU|SERIAL|ESP|BREAK|WATCH|ALL>...\",\"UNSUBSCRIBE <...>\",\"GET_SUBSCRIPTIONS\",\"GET_ROM_INFO\",\"GET_STATE\",\"GET_FRAME\",\"READ_REGS\",\"WRITE_REG <R0..R31> <VALUE>\",\"GET_DEBUG_INFO\",\"STACK [COUNT]\",\"CALLSTACK [COUNT]\",\"MEMSNAP TAKE <SLOT> <REGION> <ADDR> <LEN>\",\"MEMSNAP DIFF <SLOT> [MAX]\",\"MEMSNAP LIST\",\"MEMSNAP CLEAR <SLOT>\",\"MEMSCAN START <SLOT> <REGION> <ADDR> <LEN> [ANY|VALUE|OP VALUE]\",\"MEMSCAN REFINE <SLOT> <OP> [VALUE]\",\"MEMSCAN RESULTS <SLOT> [OFFSET] [COUNT]\",\"MEMSCAN STATUS\",\"MEMSCAN CLEAR <SLOT|ALL>\",\"DISASM <ADDR|PC> [COUNT]\",\"RUN_STATUS\",\"RUN_TO <ADDR|PC>\",\"SOURCE_STEP INTO|OVER|OUT [INSTRUCTION_LIMIT]\",\"STEP_INTO\",\"STEP_OVER\",\"STEP_OUT\",\"PROFILE ON|OFF|CLEAR\",\"READ_PROFILE <ADDR> [LEN]\",\"PROFILE_TOP [COUNT] [CYCLES|HITS]\",\"DEBUG_PROFILE STATUS|SAVE|RELOAD\",\"WATCH SET <SLOT> <SRAM|IO|SPIRAM> <R|W|RW> <START> [END]\",\"WATCH GUARD <SLOT> <SRAM|IO|SPIRAM> <R|W|RW> <START> <END>\",\"WATCH CLEAR <SLOT|ALL>\",\"WATCH LIST\",\"WATCH HIT [CLEAR]\",\"MEM_TRACE STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]\",\"BREAK SET <ADDR>\",\"BREAK CLEAR <ADDR|ALL>\",\"BREAK LIST [START] [COUNT]\",\"BREAK NEXT [START]\",\"BREAK TEMP SET|CLEAR|LIST\",\"BREAK STEP [COUNT]\",\"BREAK STEP_CLEAR\",\"MEM_SIZE <REGION>\",\"MEM_REGIONS\",\"READ_MEM <REGION> <ADDR> [LEN]\",\"WRITE_MEM <REGION> <ADDR> <VALUE> [VALUE...]\",\"READ_SYMBOL <NAME>\",\"WRITE_SYMBOL <NAME> <VALUE>\",\"SOURCE_STATUS\",\"SOURCE_LIST [START] [COUNT]\",\"SOURCE_AT <ADDR|PC>\",\"SOURCE_READ <FILE_INDEX> <START_LINE> [COUNT]\",\"SOURCE_BREAK <FILE_INDEX> <LINE> [SET|CLEAR]\",\"LOAD_SYMBOLS <AUTO|PATH>\",\"CLEAR_SYMBOLS\",\"DWARF_STATUS\",\"DWARF_LOCALS [PC] [OFFSET] [COUNT]\",\"DWARF_GLOBALS [OFFSET] [COUNT]\",\"DWARF_VALUE <ID> [PC]\",\"DWARF_WRITE <ID> <VALUE> [PC]\",\"DWARF_TYPE <TYPE_ID>\",\"SD_STATUS\",\"SD_PAYLOAD CURRENT [START] [COUNT] [COMPARE]|SECTOR <N> [START] [COUNT] [COMPARE]\",\"SD_TRACE STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]|BREAK ...|HIT [CLEAR]\",\"SD_FS_HISTORY [COUNT]\",\"SD_TIMING_ANALYSIS [COUNT]\",\"SD_FAULT STATUS|SET <slot> <kind> <value> <ONCE|PERSIST> [CMD ...] [SECTOR ...]|CLEAR <slot|ALL>\",\"SD_REPLAY STATUS|RECORD|STOP|REPLAY [TOLERANCE]|CLEAR|READ [START] [COUNT]|SAVE <PATH>|LOAD <PATH>|BREAK_END ON|OFF\",\"SD_PRESET <SLOW|NORMAL|FAST|CUSTOM>\",\"SD_SET <SETTING> <VALUE>\",\"SD_RESET\",\"AUDIO_SCOPE STATUS|ENABLE|DISABLE|CLEAR|SOURCE [COUNT]|OUTPUT [COUNT]\",\"AUDIO_DEBUG STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]|BREAK OFF|RAIL|OUTSIDE <LOW> <HIGH>|HIT [CLEAR]\",\"SERIAL_STATUS\",\"SERIAL_SET <SETTING> <VALUE>\",\"SERIAL_TRACE STATUS|ON|OFF|CLEAR|READ|EXPORT\",\"TCP_DIAG STATUS|RESET|FLUSH\",\"ESP_STATUS\",\"NETPLAY_STATUS\",\"WAIT_FRAME <TARGET> [TIMEOUT_FRAMES]\",\"WAIT_MEM <REGION> <ADDR> <OP> <VALUE> [TIMEOUT_FRAMES]\",\"SET_INPUT <PLAYER> <MASK> <FRAMES>\",\"QUEUE_INPUT <PLAYER> <MASK> <FRAMES> [MASK FRAMES]...\",\"CLEAR_INPUT <PLAYER>\",\"RUN_FRAMES <COUNT>\",\"LOAD_ROM WAIT|RUN <PATH>\",\"INPUT_MOVIE STATUS|RECORD RESET|HERE <PATH>|PLAY <PATH>|STOP|CHECKPOINT TAKE|RESTORE <SLOT>|SEEK <FRAME>\",\"SCREENSHOT [PATH]\",\"SCREENSHOT_CAPTURE\",\"SCREENSHOT_READ <OFFSET> [LEN]\",\"SCREENSHOT_CLEAR\",\"VIDEO_BEAM STATUS|ENABLE|DISABLE|READ [START] [COUNT]\",\"BEAM_HISTORY STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]\",\"RASTER_BREAK STATUS|SET <ROW|ANY> <CYCLE>|EVENT <RISE|FALL> [ROW|ANY]|CLEAR|HIT_CLEAR\",\"LOGIC_TRACE STATUS|ENABLE|DISABLE|CLEAR|MASK [DEFAULT|ALL|NONE|VALUE]|READ [SEQ] [COUNT]\",\"SCANLINE_PROFILE STATUS|ENABLE|DISABLE|CLEAR|ROWS [START] [COUNT]|ROW <ROW>\",\"PAUSE\",\"RESUME\",\"STEP_FRAME\",\"RESET\",\"QUIT\"]}");
++	api_queue_json("{\"ok\":1,\"commands\":[\"PING\",\"HELP\",\"DIAGNOSTICS STATUS|ENABLE|DISABLE|CLEAR|READ|MASK|TRIGGERS|ARM|DISARM|TRIGGER|RESTORE\",\"LOGICAL STATUS|CONFIG|RANGE|CONDITION|INPUT|START|CONTINUE|STOP|CLEAR|READ|EXPORT|CHECKPOINT\",\"SUBSCRIBE <FRAME|CPU|SERIAL|ESP|BREAK|WATCH|ALL>...\",\"UNSUBSCRIBE <...>\",\"GET_SUBSCRIPTIONS\",\"GET_ROM_INFO\",\"GET_STATE\",\"GET_FRAME\",\"READ_REGS\",\"WRITE_REG <R0..R31> <VALUE>\",\"GET_DEBUG_INFO\",\"STACK [COUNT]\",\"CALLSTACK [COUNT]\",\"MEMSNAP TAKE <SLOT> <REGION> <ADDR> <LEN>\",\"MEMSNAP DIFF <SLOT> [MAX]\",\"MEMSNAP LIST\",\"MEMSNAP CLEAR <SLOT>\",\"MEMSCAN START <SLOT> <REGION> <ADDR> <LEN> [ANY|VALUE|OP VALUE]\",\"MEMSCAN REFINE <SLOT> <OP> [VALUE]\",\"MEMSCAN RESULTS <SLOT> [OFFSET] [COUNT]\",\"MEMSCAN STATUS\",\"MEMSCAN CLEAR <SLOT|ALL>\",\"DISASM <ADDR|PC> [COUNT]\",\"RUN_STATUS\",\"RUN_TO <ADDR|PC>\",\"SOURCE_STEP INTO|OVER|OUT [INSTRUCTION_LIMIT]\",\"STEP_INTO\",\"STEP_OVER\",\"STEP_OUT\",\"PROFILE ON|OFF|CLEAR\",\"READ_PROFILE <ADDR> [LEN]\",\"PROFILE_TOP [COUNT] [CYCLES|HITS]\",\"DEBUG_PROFILE STATUS|SAVE|RELOAD\",\"WATCH SET <SLOT> <SRAM|IO|SPIRAM> <R|W|RW> <START> [END]\",\"WATCH GUARD <SLOT> <SRAM|IO|SPIRAM> <R|W|RW> <START> <END>\",\"WATCH CLEAR <SLOT|ALL>\",\"WATCH LIST\",\"WATCH HIT [CLEAR]\",\"MEM_TRACE STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]\",\"BREAK SET <ADDR>\",\"BREAK CLEAR <ADDR|ALL>\",\"BREAK LIST [START] [COUNT]\",\"BREAK NEXT [START]\",\"BREAK TEMP SET|CLEAR|LIST\",\"BREAK STEP [COUNT]\",\"BREAK STEP_CLEAR\",\"MEM_SIZE <REGION>\",\"MEM_REGIONS\",\"READ_MEM <REGION> <ADDR> [LEN]\",\"WRITE_MEM <REGION> <ADDR> <VALUE> [VALUE...]\",\"READ_SYMBOL <NAME>\",\"WRITE_SYMBOL <NAME> <VALUE>\",\"SOURCE_STATUS\",\"SOURCE_LIST [START] [COUNT]\",\"SOURCE_AT <ADDR|PC>\",\"SOURCE_READ <FILE_INDEX> <START_LINE> [COUNT]\",\"SOURCE_BREAK <FILE_INDEX> <LINE> [SET|CLEAR]\",\"LOAD_SYMBOLS <AUTO|PATH>\",\"CLEAR_SYMBOLS\",\"DWARF_STATUS\",\"DWARF_LOCALS [PC] [OFFSET] [COUNT]\",\"DWARF_GLOBALS [OFFSET] [COUNT]\",\"DWARF_VALUE <ID> [PC]\",\"DWARF_WRITE <ID> <VALUE> [PC]\",\"DWARF_TYPE <TYPE_ID>\",\"SD_STATUS\",\"SD_PAYLOAD CURRENT [START] [COUNT] [COMPARE]|SECTOR <N> [START] [COUNT] [COMPARE]\",\"SD_TRACE STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]|BREAK ...|HIT [CLEAR]\",\"SD_FS_HISTORY [COUNT]\",\"SD_TIMING_ANALYSIS [COUNT]\",\"SD_FAULT STATUS|SET <slot> <kind> <value> <ONCE|PERSIST> [CMD ...] [SECTOR ...]|CLEAR <slot|ALL>\",\"SD_REPLAY STATUS|RECORD|STOP|REPLAY [TOLERANCE]|CLEAR|READ [START] [COUNT]|SAVE <PATH>|LOAD <PATH>|BREAK_END ON|OFF\",\"SD_PRESET <SLOW|NORMAL|FAST|CUSTOM>\",\"SD_SET <SETTING> <VALUE>\",\"SD_RESET\",\"AUDIO_SCOPE STATUS|ENABLE|DISABLE|CLEAR|SOURCE [COUNT]|OUTPUT [COUNT]\",\"AUDIO_DEBUG STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]|BREAK OFF|RAIL|OUTSIDE <LOW> <HIGH>|HIT [CLEAR]\",\"SERIAL_STATUS\",\"SERIAL_SET <SETTING> <VALUE>\",\"SERIAL_TRACE STATUS|ON|OFF|CLEAR|READ|EXPORT\",\"TCP_DIAG STATUS|RESET|FLUSH\",\"ESP_STATUS\",\"NETPLAY_STATUS\",\"WAIT_FRAME <TARGET> [TIMEOUT_FRAMES]\",\"WAIT_MEM <REGION> <ADDR> <OP> <VALUE> [TIMEOUT_FRAMES]\",\"SET_INPUT <PLAYER> <MASK> <FRAMES>\",\"QUEUE_INPUT <PLAYER> <MASK> <FRAMES> [MASK FRAMES]...\",\"CLEAR_INPUT <PLAYER>\",\"RUN_FRAMES <COUNT>\",\"LOAD_ROM WAIT|RUN <PATH>\",\"INPUT_MOVIE STATUS|RECORD RESET|HERE <PATH>|PLAY <PATH>|STOP|CHECKPOINT TAKE|RESTORE <SLOT>|SEEK <FRAME>\",\"SCREENSHOT [PATH]\",\"SCREENSHOT_SETTINGS [STATUS|PRESET name|SET key value]\",\"SCREENSHOT_CAPTURE [PNG|BMP]\",\"SCREENSHOT_READ <OFFSET> [LEN]\",\"SCREENSHOT_CLEAR\",\"VIDEO_BEAM STATUS|ENABLE|DISABLE|READ [START] [COUNT]\",\"BEAM_HISTORY STATUS|ENABLE|DISABLE|CLEAR|READ [SEQ] [COUNT]\",\"RASTER_BREAK STATUS|SET <ROW|ANY> <CYCLE>|EVENT <RISE|FALL> [ROW|ANY]|CLEAR|HIT_CLEAR\",\"LOGIC_TRACE STATUS|ENABLE|DISABLE|CLEAR|MASK [DEFAULT|ALL|NONE|VALUE]|READ [SEQ] [COUNT]\",\"SCANLINE_PROFILE STATUS|ENABLE|DISABLE|CLEAR|ROWS [START] [COUNT]|ROW <ROW>\",\"PAUSE\",\"RESUME\",\"STEP_FRAME\",\"RESET\",\"QUIT\"]}");
+ }
+ 
+ static void api_process_command(char* line)
+@@ -4964,8 +4969,12 @@
+ 		api_handle_run_frames(rest);
+ 	}else if ((strcmp(cmd, "LOAD_ROM") == 0) || (strcmp(cmd, "load_rom") == 0)){
+ 		api_handle_load_rom(rest);
++	}else if (!api_stricmp(cmd,"SCREENSHOT_SETTINGS")){
++		char reply[4096];
++		if(mainui_screenshot_settings(rest,reply,sizeof(reply)))api_queue_json(reply);
++		else api_reply_error("SCREENSHOT_SETTINGS: STATUS, PRESET name, or SET X_WIDTH|Y_SCALE|SAMPLING|BYPASS_FILTERS|INCLUDE_GUI value");
+ 	}else if ((strcmp(cmd, "SCREENSHOT_CAPTURE") == 0) || (strcmp(cmd, "screenshot_capture") == 0)){
+-		api_handle_screenshot_capture();
++		api_handle_screenshot_capture(rest);
+ 	}else if ((strcmp(cmd, "SCREENSHOT_READ") == 0) || (strcmp(cmd, "screenshot_read") == 0)){
+ 		api_handle_screenshot_read(rest);
+ 	}else if ((strcmp(cmd, "SCREENSHOT_CLEAR") == 0) || (strcmp(cmd, "screenshot_clear") == 0)){
+diff --git a/configcfg.c b/configcfg.c
+--- a/configcfg.c
++++ b/configcfg.c
+@@ -228,6 +228,10 @@
+ 	appcfg_copy_str(cfg->rom_path, APPCFG_PATH_MAX, "roms");
+ 	appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, "screenshots");
+ 	cfg->screenshot_include_gui = FALSE;
++	cfg->screenshot_bypass_filters = TRUE;
++	cfg->screenshot_x_width = 1440U;
++	cfg->screenshot_y_scale = 5U;
++	cfg->screenshot_sampling = 0U;
+ 	appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, "savestates");
+ 	appcfg_copy_str(cfg->controllerdb_path, APPCFG_PATH_MAX, "");
+ 	cfg->resident_bootloader_enable = TRUE;
+@@ -438,6 +442,8 @@
+ 	fprintf(f, "RomPath=%s\n", cfg->rom_path);
+ 	fprintf(f, "ScreenshotPath=%s\n", cfg->screenshot_path);
+ 	fprintf(f, "ScreenshotIncludeGui=%u\n", cfg->screenshot_include_gui ? 1U : 0U);
++	fprintf(f, "ScreenshotBypassFilters=%u\n", cfg->screenshot_bypass_filters ? 1U : 0U);
++	fprintf(f, "ScreenshotXWidth=%u\nScreenshotYScale=%u\nScreenshotSampling=%u\n", (unsigned)cfg->screenshot_x_width, (unsigned)cfg->screenshot_y_scale, (unsigned)cfg->screenshot_sampling);
+ 	fprintf(f, "SavePath=%s\n", cfg->save_path);
+ 	fprintf(f, "ControllerDbPath=%s\n\n", cfg->controllerdb_path);
+ 
+@@ -698,6 +704,14 @@
+ 			appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, val);
+ 		}else if (strcmp(key, "ScreenshotIncludeGui") == 0){
+ 			cfg->screenshot_include_gui = appcfg_parse_bool(val, cfg->screenshot_include_gui);
++		}else if (strcmp(key, "ScreenshotBypassFilters") == 0){
++			cfg->screenshot_bypass_filters = appcfg_parse_bool(val, cfg->screenshot_bypass_filters);
++		}else if (strcmp(key, "ScreenshotXWidth") == 0){
++			cfg->screenshot_x_width = (auint)strtoul(val,NULL,10);
++		}else if (strcmp(key, "ScreenshotYScale") == 0){
++			cfg->screenshot_y_scale = (auint)strtoul(val,NULL,10);
++		}else if (strcmp(key, "ScreenshotSampling") == 0){
++			cfg->screenshot_sampling = (auint)strtoul(val,NULL,10);
+ 		}else if (strcmp(key, "SavePath") == 0){
+ 			appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, val);
+ 		}else if (strcmp(key, "ControllerDbPath") == 0){
+@@ -876,6 +890,9 @@
+ 	if (cfg->netplay_relay_host[0] == 0){ appcfg_copy_str(cfg->netplay_relay_host, APPCFG_PATH_MAX, "uzenet.us"); }
+ 	if (cfg->remote_roms_host[0] == 0){ appcfg_copy_str(cfg->remote_roms_host, APPCFG_PATH_MAX, "uzenet.us"); }
+ 	if (cfg->screenshot_path[0] == 0){ appcfg_copy_str(cfg->screenshot_path, APPCFG_PATH_MAX, "screenshots"); }
++	if(cfg->screenshot_x_width<1U||cfg->screenshot_x_width>2880U)cfg->screenshot_x_width=1440U;
++	if(cfg->screenshot_y_scale<1U||cfg->screenshot_y_scale>10U)cfg->screenshot_y_scale=5U;
++	if(cfg->screenshot_sampling>2U)cfg->screenshot_sampling=0U;
+ 	if (cfg->save_path[0] == 0){ appcfg_copy_str(cfg->save_path, APPCFG_PATH_MAX, "savestates"); }
+ 	if (cfg->log_verbosity > CU_LOG_TRACE){ cfg->log_verbosity = CU_LOG_INFO; }
+ 	if (cfg->resident_bootloader_file[0] == 0){ appcfg_copy_str(cfg->resident_bootloader_file, APPCFG_PATH_MAX, "Bootloader.hex"); }
+diff --git a/configcfg.h b/configcfg.h
+--- a/configcfg.h
++++ b/configcfg.h
+@@ -122,6 +122,10 @@
+ 	char  rom_path[APPCFG_PATH_MAX];
+ 	char  screenshot_path[APPCFG_PATH_MAX];
+ 	boole screenshot_include_gui;
++	boole screenshot_bypass_filters;
++	auint screenshot_x_width;
++	auint screenshot_y_scale;
++	auint screenshot_sampling;
+ 	char  save_path[APPCFG_PATH_MAX];
+ 	ginput_controller_options_t controller_options[GINPUT_MAX_CONTROLLERS];
+ 	shortcut_binding_t shortcuts[SHORTCUT_COUNT];
+diff --git a/documentation/api/commands.md b/documentation/api/commands.md
+--- a/documentation/api/commands.md
++++ b/documentation/api/commands.md
+@@ -615,19 +615,70 @@
+ and generates no extra silence. Screenshot scaling, filters, and JAMMA
+ transforms run on request, with the visual debug HUD omitted in headless mode.
+ 
+-### `SCREENSHOT_CAPTURE`
+-
+-Captures the current rendered CUzeBox display as a 24-bit BMP entirely
++### `SCREENSHOT_SETTINGS [STATUS|PRESET <name>|SET <key> <value>]`
++
++Read or change persistent emulator-wide screenshot settings. No argument is
++equivalent to STATUS. The native screenshot dialog and web Controls page use
++these same settings. Changes affect future captures; already captured bytes
++are unchanged. Use `CONFIG SAVE` to flush preferences explicitly.
++
++SET keys: `X_WIDTH` (integer 1–2880), `Y_SCALE` (integer 1–10), `SAMPLING`
++(`NEAREST`, `AREA`, `LINEAR`), `BYPASS_FILTERS` (0|1), `INCLUDE_GUI` (0|1).
++Invalid commands return `ok:0` without changing scale. Presets set both axes,
++leaving sampling and bypass unchanged: CYCLE=1440/5 (default), RAW=1440/1,
++WIDTH320=320/1, WIDTH256=256/1, WIDTH240=240/1, WIDTH192=192/1, WIDTH160=160/1.
++Axes remain editable; `preset` is derived and becomes CUSTOM for other pairs.
++
++STATUS and successful mutations return `x_width`, `y_scale`, `sampling`,
++`bypass_filters`, `include_gui`, `preset`, `x_min`, `x_max`, `y_min`, `y_max`,
++`x_choices`, `sampling_choices` and `presets` (name/x_width/y_scale objects).
++
++```text
++SCREENSHOT_SETTINGS PRESET WIDTH256
++SCREENSHOT_SETTINGS SET Y_SCALE 3
++SCREENSHOT_SETTINGS SET SAMPLING AREA
++SCREENSHOT_CAPTURE
++```
++
++This exports a 256 by source_rows*3 cycle PNG with the full 1440-cycle interval
++area-averaged to 256 columns. Width does not assert the game uses a 256-pixel
++mode. Scale controls apply only with bypass enabled. Filtered/GUI/BMP output
++retains rendered dimensions. INCLUDE_GUI affects native GUI saves only.
++
++### `SCREENSHOT_CAPTURE [PNG|BMP]`
++
++Captures a game-only RGB PNG by default, entirely
+ in memory and associates it with the requesting API client. The response
+-includes byte size, width, height, and format. No host screenshot file is
++includes byte size, width, height, format and a `capture` metadata object. No host screenshot file is
+ created.
+ 
+-File and in-memory screenshots both apply JAMMA rotations/mirrors and active
+-display filters, keeping the HUD upright and omitting the interactive menu.
+-Dimensions follow the display layout: 640 × 560 normally, 320 × 280 in small
+-mode, or 620 × 456 / 310 × 228 in game-only mode. Rotated content is fitted
+-inside the same viewport with letterboxing, as on screen. Clients should use
+-the returned dimensions rather than assuming the raw 640 × 280 backbuffer.
++With the default settings (`ScreenshotBypassFilters=1`, X=1440, Y=5), each of the 1,440 active cycle
++samples is one column and each captured scanline is repeated five times.
++Sampling, display filters, HUD and frame blending are excluded. Black game
++rows remain intact. The current completed field window has up to 225 rows;
++interlaced fields weave with nearest-neighbor 5/2 scaling to preserve aspect,
++and JAMMA rotation/mirrors change the image canvas
++without adding letterboxing. No emulation runs merely to capture an image.
++Reset/state load clears the cached pixels until the next completed field.
++With bypass disabled, PNG uses the filtered game-only image. The GUI tool's
++explicit Include GUI capture does not change the default API game-only path.
++
++The response format is `png`, or `bmp24` with explicit `BMP`. Explicit BMP
++retains the historical current rendered layout, including its HUD and fitting.
++Always use the returned dimensions and format. The default `SCREENSHOT` file
++command also writes PNG; explicit `.bmp` filenames request the legacy export.
++
++**For AI/image consumers:** use `capture.schema == "cuex-shot-1"` and retain
++the capture response with its bytes. PNG embeds identical JSON under the tEXt
++keyword `CUEX.Capture`. Web downloads expose it through the
++`X-CUEX-Capture-Metadata` header. Check `path`, `source_valid`, `scale_applied`,
++`sampling`, `cycle_exact_x`, actual dimensions, pre-rotation dimensions and
++`jamma_flags` before mapping image points to emulated cycles. Smaller X widths
++lose cycle detail; AREA/LINEAR blend RGB samples. A cleared cache is black with
++`source_valid:0`, which does not mean the guest rendered black. Capture is the
++latest completed field, not necessarily the current partial debugger field.
++The complete field definitions, sampling formulas, interlace mapping and
++orientation rules are in [Screenshot interpretation](../screenshots.md#interpreting-screenshots-in-ai-agents).
+ 
+ ### `SCREENSHOT_READ <OFFSET> [LEN]`
+ 
+diff --git a/documentation/screenshots.md b/documentation/screenshots.md
+new file mode 100644
+--- /dev/null
++++ b/documentation/screenshots.md
+@@ -0,0 +1,183 @@
++# Screenshot output
++
++Native CUEX defaults to **PNG, game only, BYPASS FILTERS enabled**. This applies
++to the screenshot shortcut, automatic `SCREENSHOT` files, default
++`SCREENSHOT_CAPTURE` API output, and Tools > Screenshot with Include GUI off.
++The web tools download PNG with `image/png` and a `.png` filename.
++
++## Cycle capture
++
++`frame.c` retains palette indices from the latest completed field, before
++horizontal sampling, display filters, CRT effects and frame merging. A bounded
++frame from a program with imperfect sync can also be retained. A debugger stop
++mid-field keeps the preceding complete image; capture never advances emulation.
++
++- The active interval is 1,440 CPU cycles starting at cycle 299, matching the
++  renderer's cycle-domain extraction window. At default X=1440 every cycle
++  becomes one column. Smaller widths resample this complete interval.
++- By default progressive source rows repeat five times, without interpolation. Thus a
++  224-row capture is 1440x1120. The current renderer accepts up to 225 visible
++  rows, normally producing 1440x1125. Dimensions follow captured row bounds;
++  there is no mode-name lookup or fixed assumption of 224 rows.
++- Legitimate black rows and columns are preserved. No content-based black
++  trimming is used: blank game output is different from the emulator HUD.
++- Interlaced fields weave before nearest-neighbor 5/2 vertical scaling.
++  Alternating three/two rows retain both fields and the progressive aspect
++  instead of doubling image height. A missing opposite field duplicates the
++  available field, without blending.
++- JAMMA rotation/mirrors apply to the image canvas, including portrait output;
++  screenshots do not acquire landscape letterboxing.
++- Reset and state restore invalidate cached fields. Until a new frame completes,
++  cycle capture returns a black image rather than another game's stale pixels.
++
++Three bounded palette-index banks use about 950 KiB. Collection is one memcpy
++per visible scanline; CPU instruction/pixel macros are unchanged. RGB expansion
++and PNG compression run only when requested. This is additional frame-renderer
++work; the earlier UART-only performance comparison does not measure it.
++
++## Scale, presets and sampling
++
++Tools > Screenshot and the web Controls page provide independent **X WIDTH**,
++**Y SCALE**, **SAMPLE X** and **PRESET** dropdowns. Defaults are CYCLE, 1440
++(1X), 5X and NEAREST. A preset changes only X and Y; either axis and sampling
++remain editable. The preset is derived from the current pair, becoming CUSTOM
++when no preset matches. These preferences persist with the normal config.
++
++| Preset | X width | Y scale |
++| --- | ---: | ---: |
++| CYCLE (default) | 1440 | 5 |
++| RAW | 1440 | 1 |
++| WIDTH320 | 320 | 1 |
++| WIDTH256 | 256 | 1 |
++| WIDTH240 | 240 | 1 |
++| WIDTH192 | 192 | 1 |
++| WIDTH160 | 160 | 1 |
++
++X choices include 1440, 2880 (2X), 720, 480, 384, 376, 360, 352, 320, 288,
++256, 240, 224, 192 and 160. The API additionally accepts any integer width
++1–2880. Y choices are integer 1X–10X. Width is the exported full-window width,
++**not a detected native game resolution**. A mode's actual active drawing may
++occupy only part of the window. No mode detection or black-edge trimming occurs.
++
++- NEAREST uses source column `floor(x * 1440 / output_width)`. It preserves
++  palette values but downsampling can lose thin details and alias dithering.
++- AREA averages RGB over `[x*1440/W, (x+1)*1440/W)`, weighting partial cycles
++  by overlap. This is useful for shrinking unusual cycle timings or dithering.
++- LINEAR samples at pixel centers, `(x+0.5)*1440/W-0.5`, blending adjacent
++  RGB values and clamping edges. It can soften edges; unlike AREA it does not
++  integrate all cycles in a wide downsampling interval.
++
++RGB averaging is in encoded channel values, rounded to nearest integer; it
++does not apply gamma correction. At width 1440 all three are exact identity.
++Vertical scaling is always nearest-neighbor. Progressive height is source
++rows times Y. Interlaced height uses the same formula, with Y/2 per woven row;
++Y=1 retains only one parity under nearest sampling, so use Y>=2 to retain both.
++Scale is applied before JAMMA rotation, followed by mirrors in rotated space.
++
++Config keys are `ScreenshotXWidth=1440`, `ScreenshotYScale=5`,
++`ScreenshotSampling=0` (0=NEAREST, 1=AREA, 2=LINEAR), alongside
++`ScreenshotBypassFilters=1` and `ScreenshotIncludeGui=0`. Invalid loaded scale
++values fall back to defaults. Older configs inherit these defaults.
++
++Scale/sampling controls apply to cycle captures with BYPASS FILTERS enabled.
++Filtered display export, explicit BMP and full-GUI saves use their actual
++rendered dimensions; their metadata says `scale_applied:0`. Include GUI only
++affects Tools > Screenshot saves; API, web download and shortcuts stay game only.
++
++## Interpreting screenshots in AI agents
++
++`SCREENSHOT_CAPTURE` returns a `capture` JSON object frozen with the image.
++The identical JSON is embedded in PNG's `tEXt` chunk, keyword **CUEX.Capture**.
++With Pillow, read `json.loads(image.info['CUEX.Capture'])`. Both web servers
++also send this object in the `X-CUEX-Capture-Metadata` download header. PNG
++pixel dimensions alone cannot establish game resolution or cycle accuracy.
++
++The schema `cuex-shot-1` specifies:
++
++| Field | Meaning |
++| --- | --- |
++| path | cycle, display, gui, or legacy_bmp |
++| filters_bypassed / scale_applied | Whether raw cycle capture and export scaling were used |
++| source_valid | Cycle cache has a completed field; zero means black fallback, not observed game output |
++| source_cycle_begin / source_width_cycles | 299 / 1440 for cycle captures; zero otherwise |
++| source_row_first / source_rows | First pulse-counter row (normally 19) and field-row span, including black rows |
++| source_fields | 1 progressive or 2 woven; unavailable opposite field duplicates the available field |
++| requested_x_width / requested_y_scale / sampling | Saved settings, even when scale_applied is zero |
++| x_scale_num / x_scale_den | Cycle-to-export X ratio, W/1440 |
++| y_scale_num / y_scale_den | Woven-row-to-export Y ratio, Y/fields |
++| pre_rotation_width / pre_rotation_height | Cycle canvas before JAMMA rotation, W by source_rows*Y; other paths report actual dimensions |
++| width / height | Actual PNG/BMP dimensions after orientation |
++| jamma_flags | Existing JAMMA bits: rotate90=1, rotate180=2, rotate270=4, flip H=8, flip V=16 |
++| cycle_exact_x | One output column per cycle, only true for a cycle capture at width 1440 |
++
++Only use the cycle-coordinate fields when `path == 'cycle'` and
++`source_valid == 1`. Other paths return zero cycle geometry and scale ratios.
++Undo mirrors first, then rotation, to map an output point to pre-rotation
++coordinates `(x,y)`. For NEAREST, its cycle is
++`299 + floor(x*1440/pre_rotation_width)`; its woven source line is
++`floor(y*source_fields/requested_y_scale)`. The pulse row is
++`source_row_first + floor(line/source_fields)` and interlace parity is `line%2`.
++AREA/LINEAR output represents multiple source cycles; use the sampling formulas
++above rather than treating it as one DAC sample. Capture returns the latest
++completed field(s), so a breakpoint in the next partial field can precede the
++current debugger CPU position. Repeated screenshots do not run the CPU.
++
++Settings are emulator-wide and affect future captures; already captured bytes
++and the returned capture metadata remain unchanged. Agents should keep the
++capture response alongside downloaded bytes instead of reinterpreting an old
++image using the latest settings.
++
++## Options and compatibility
++
++`ScreenshotBypassFilters=1` is the saved default. Disable BYPASS FILTERS to use
++the filtered game image at display sampling/scaling. This path also removes
++the emulator surround and portrait letterboxing. Existing config files that
++lack the new key inherit the enabled default.
++
++INCLUDE GUI remains off by default. In the GUI tool, enabling it explicitly
++captures the completed GUI surface using display settings. The tool explains
++that bypass does not apply to full-GUI output. API and shortcut defaults remain
++game-only independently of this tool-specific override.
++
++Explicit `.bmp` file paths and `SCREENSHOT_CAPTURE BMP` preserve historical
++rendered-layout BMP export, including the old HUD/fitting behavior. The default
++API format is `png`; explicit BMP returns `bmp24`. Clients must use returned
++dimensions/format. Existing screenshot read/clear commands are unchanged.
++
++The dependency-free RGB PNG encoder uses PNG Up filtering and fixed-Huffman
++DEFLATE with short-distance runs. It adds no libpng/zlib build dependency and
++performs no color quantization. PNG CRCs use the existing CRC32 implementation.
++
++File-writing screenshots remain disabled in the gameplay-only Emscripten build;
++no replacement browser emulator binary was built for this change.
++
++## Verification
++
++From the source root, use a fresh object directory for each platform/flag set:
++
++```sh
++make -j2 -f tests/preferences/Makefile TSYS=linux \
++  OBD=_obj_/shots OUT=_obj_/shots/cuzebox \
++  all screenshot-test cycle-screenshot-test screenshot-tool-test preferences-test
++python3 tools/test_screenshot_png.py _obj_/shots
++python3 tools/test_screenshot_api.py _obj_/shots/cuzebox --rom /path/to/game.uze
++python3 tools/test_api_multiclient.py
++python3 tools/test_embedded_web_server.py
++node tools/test_screenshot_web_controls.js
++```
++
++The cycle test checks every sample in a 1440x1120 fixture, fivefold repetition,
++black game rows, partial-field isolation, filter independence, multiple heights,
++rotation/mirror mappings, interlaced aspect and reset. Encoder cases include
++one-pixel rows, high-entropy RGB, solid colors and long runs. The Python decoder
++independently verifies PNG chunk CRCs, DEFLATE via standard zlib, and complete
++RGB byte equality; it also uses Pillow as a second decoder when available.
++
++The GUI test exercises actual controls, saved preferences and full-GUI opt-in.
++Legacy BMP tests still cover 64 layout/rotation/mirror combinations. The API
++test compares file and in-memory PNG bytes and verifies capture leaves a paused
++game on the same frame, while retaining explicit BMP support.
++It additionally checks 256/240/192/160 output, nearest/area/linear sampling,
++independent axis overrides, invalid commands and matching PNG/API metadata.
++The web tests cover settings forwarding, download metadata and controls-page
++JavaScript preset/axis/sampling interactions.
+diff --git a/frame.c b/frame.c
+--- a/frame.c
++++ b/frame.c
+@@ -33,6 +33,7 @@
+ #include "textgui.h"
+ #include "renderpath.h"
+ #include "cu_esp.h"
++#include "cu_ufile.h"
+ 
+ 
+ 
+@@ -98,6 +99,131 @@
+ 
+ /* Previous state of frame merging */
+ static boole  frame_pmerge = FALSE;
++
++/* Three palette-index banks retain completed fields while a partial frame is
++** being rendered. About 950 KiB; collection is memcpy per visible scanline,
++** never an additional operation in the per-cycle CPU macros. */
++static uint8 frame_shot_rows[3][RPULSE_NO*ROW_ACTIVE_CYCLES];
++static uint8 frame_shot_seen[3][RPULSE_NO];
++static auint frame_shot_front[2]={0U,1U},frame_shot_work=2U;
++static boole frame_shot_valid[2],frame_shot_interlaced;
++
++void frame_capture_reset(void)
++{
++ memset(frame_shot_seen,0,sizeof(frame_shot_seen));
++ frame_shot_valid[0]=frame_shot_valid[1]=FALSE;
++ frame_shot_interlaced=FALSE;
++}
++
++static void frame_capture_row(cu_row_t const* row)
++{
++ auint y=row->pno-RPULSE_START;
++ if(y>=RPULSE_NO)return;
++ memcpy(frame_shot_rows[frame_shot_work]+y*ROW_ACTIVE_CYCLES,
++        row->pixels+ROW_BEGINCY,ROW_ACTIVE_CYCLES);
++ frame_shot_seen[frame_shot_work][y]=1U;
++}
++
++static void frame_capture_commit(boole interlaced,auint parity)
++{
++ auint old;
++ parity=interlaced?(parity&1U):0U;
++ if(interlaced!=frame_shot_interlaced)frame_shot_valid[0]=frame_shot_valid[1]=FALSE;
++ old=frame_shot_front[parity];frame_shot_front[parity]=frame_shot_work;frame_shot_work=old;
++ frame_shot_valid[parity]=TRUE;frame_shot_interlaced=interlaced;
++ if(!interlaced)frame_shot_valid[1]=FALSE;
++ memset(frame_shot_seen[frame_shot_work],0,RPULSE_NO);
++}
++
++void frame_capture_geometry(auint* first_row,auint* count,boole* valid,boole* interlaced)
++{
++ auint first=RPULSE_NO,last=0U,p,y;
++ for(p=0U;p<2U;p++)if(frame_shot_valid[p]){
++  auint bank=frame_shot_front[p];
++  for(y=0U;y<RPULSE_NO;y++)if(frame_shot_seen[bank][y]){
++   if(y<first)first=y;
++   if(y>last)last=y;
++  }
++ }
++ *valid=first!=RPULSE_NO;
++ if(!*valid){first=0U;last=RPULSE_NO-1U;}
++ *first_row=RPULSE_START+first;*count=last-first+1U;*interlaced=frame_shot_interlaced;
++}
++
++/* Box and linear filters operate on RGB channel values, before rotation. */
++static uint32 frame_shot_sample(uint8 const* src,auint x,auint w,auint sampling,
++                               uint32 const* pal,guicore_pixfmt_t const* fmt)
++{
++ auint shifts[3]={fmt->rsh,fmt->gsh,fmt->bsh},c;uint32 result=pal[0]&
++     ~((0xFFU<<fmt->rsh)|(0xFFU<<fmt->gsh)|(0xFFU<<fmt->bsh));
++ if(!src)return pal[0];
++ if(!sampling||w==ROW_ACTIVE_CYCLES)return pal[src[x*ROW_ACTIVE_CYCLES/w]];
++ for(c=0U;c<3U;c++){
++  auint sum=0U,den;
++  if(sampling==1U){
++   auint begin=x*ROW_ACTIVE_CYCLES,end=begin+ROW_ACTIVE_CYCLES,i=begin/w;
++   while(i*w<end){
++    auint lo=begin>i*w?begin:i*w,hi=end<(i+1U)*w?end:(i+1U)*w;
++    sum+=((pal[src[i]]>>shifts[c])&255U)*(hi-lo);i++;
++   }
++   den=ROW_ACTIVE_CYCLES;
++  }else{
++   int pos=(int)((2U*x+1U)*ROW_ACTIVE_CYCLES)-(int)w;
++   auint i,t;den=2U*w;
++   if(pos<0)pos=0;
++   if((auint)pos>(ROW_ACTIVE_CYCLES-1U)*den)pos=(int)((ROW_ACTIVE_CYCLES-1U)*den);
++   i=(auint)pos/den;t=(auint)pos%den;
++   sum=((pal[src[i]]>>shifts[c])&255U)*(den-t);
++   if(t)sum+=((pal[src[i+1U]]>>shifts[c])&255U)*t;
++  }
++  result|=((sum+den/2U)/den)<<shifts[c];
++ }
++ return result;
++}
++
++boole frame_capture_cycle_pixels_ex(uint32** pixels,auint* width,auint* height,auint w,auint y_scale,auint sampling)
++{
++ auint first,rows,x,y,h,flags=guicore_get_jamma(),rot=0U,previous=~0U;
++ boole valid,interlaced;uint32* out;uint32 row[2880];
++ uint32 const* pal=guicore_getpalette();guicore_pixfmt_t fmt;
++ if(!pixels||!width||!height)return FALSE;
++ *pixels=NULL;*width=*height=0U;
++ if(w<1U||w>2880U||y_scale<1U||y_scale>10U||sampling>2U)return FALSE;
++ frame_capture_geometry(&first,&rows,&valid,&interlaced);first-=RPULSE_START;
++ guicore_getpixfmt(&fmt);h=rows*y_scale;
++ if(flags&JAMMA_ROTATE_90)rot=1U;
++ else if(flags&JAMMA_ROTATE_180)rot=2U;
++ else if(flags&JAMMA_ROTATE_270)rot=3U;
++ *width=(rot&1U)?h:w;*height=(rot&1U)?w:h;
++ out=(uint32*)malloc((size_t)w*h*sizeof(*out));if(!out)return FALSE;
++ for(y=0U;y<h;y++){
++  /* Woven source rows are half a progressive scanline high. Nearest-neighbor
++  ** Y/2 scaling retains the same field aspect. */
++  auint line=(y*(interlaced?2U:1U))/y_scale,parity=interlaced?(line&1U):0U;
++  auint source=first+(interlaced?line/2U:line);
++  if(!frame_shot_valid[parity])parity^=1U;
++  auint bank=frame_shot_front[parity];
++  if(line!=previous){
++   uint8 const* src=(valid&&frame_shot_valid[parity]&&frame_shot_seen[bank][source])?
++       frame_shot_rows[bank]+source*ROW_ACTIVE_CYCLES:NULL;
++   for(x=0U;x<w;x++)row[x]=frame_shot_sample(src,x,w,sampling,pal,&fmt);
++   previous=line;
++  }
++  for(x=0U;x<w;x++){
++   auint dx=x,dy=y;
++   if(rot==1U){dx=h-1U-y;dy=x;}
++   else if(rot==2U){dx=w-1U-x;dy=h-1U-y;}
++   else if(rot==3U){dx=y;dy=w-1U-x;}
++   if(flags&JAMMA_FLIP_H)dx=*width-1U-dx;
++   if(flags&JAMMA_FLIP_V)dy=*height-1U-dy;
++   out[dy*(*width)+dx]=row[x];
++  }
++ }
++ *pixels=out;return TRUE;
++}
++
++boole frame_capture_cycle_pixels(uint32** pixels,auint* width,auint* height)
++{return frame_capture_cycle_pixels_ex(pixels,width,height,1440U,5U,0U);}
+ 
+ void frame_invalidate_merge(void) { frame_pmerge = FALSE; guicore_reset_fields(); }
+ 
+@@ -606,6 +732,7 @@
+   if ((ret & CU_GET_ROW) != 0U){
+ 
+    erowd = cu_avr_get_row();
++   frame_capture_row(erowd);
+    tv_offset = cu_avr_get_tv_sync_offset();
+    frame_audio[row] = (uint8)(erowd->sample);
+    if ( ((erowd->pno) >=  (RPULSE_START            )) &&
+@@ -839,6 +966,15 @@
+   boole interlaced=cu_avr_interlace_field(&field_parity);
+   guicore_commit_field(interlaced, field_parity);
+  }
++ if(field_complete){
++  boole interlaced=cu_avr_interlace_field(&field_parity);
++  frame_capture_commit(interlaced,field_parity);
++ }else if(!frame_breakpoint_hit(FALSE,NULL)){
++  /* Like the on-screen renderer, retain bounded output from imperfect-sync
++  ** programs too. A debugger stop is different: keep its last complete image. */
++  if(ret)frame_capture_commit(FALSE,0U);
++  else memset(frame_shot_seen[frame_shot_work],0,RPULSE_NO);
++ }
+ 
+  return ret;
+ }
+diff --git a/frame.h b/frame.h
+--- a/frame.h
++++ b/frame.h
+@@ -49,6 +49,17 @@
+ /* Discard shifted previous-frame samples after a display timing change. */
+ void frame_invalidate_merge(void);
+ void frame_set_area_weighted(boole enabled);
++/* Latest completed cycle-domain field, prior to sampling, filters or blending.
++ * Each DAC clock is one column; progressive rows repeat five times. Woven
++ * interlaced rows use nearest-neighbor 5/2 scaling to retain the same aspect.
++ * The caller owns the returned native-pixel-format buffer. */
++boole frame_capture_cycle_pixels(uint32** pixels,auint* width,auint* height);
++/* Configurable cycle export: width 1..2880, Y 1..10, sampling
++ * 0=nearest, 1=area RGB average, 2=linear. Rotation follows scaling. */
++boole frame_capture_cycle_pixels_ex(uint32** pixels,auint* width,auint* height,auint x_width,auint y_scale,auint sampling);
++/* Bounds in pulse-counter rows; a reset/no completed field has valid=FALSE. */
++void frame_capture_geometry(auint* first_row,auint* rows,boole* valid,boole* interlaced);
++void frame_capture_reset(void);
+ 
+ 
+ /*
+diff --git a/guicore.c b/guicore.c
+--- a/guicore.c
++++ b/guicore.c
+@@ -1881,9 +1881,21 @@
+ boole guicore_capture_game_pixels(uint32** out_pixels, auint* out_width, auint* out_height)
+ {
+  auint saved_flags = guicore_flags;
++ auint dx,dy,w,h,rw,rh,y;
++ guicore_view_t view;
+  boole ok;
+  guicore_flags |= GUICORE_GAMEONLY;
++ guicore_getview(&view);
++ guicore_get_content_rect(&view,&dx,&dy,&w,&h,&rw,&rh);
+  ok = guicore_capture_pixels(out_pixels, out_width, out_height);
++ if(ok&&(w!=*out_width||h!=*out_height)){
++  uint32* crop=(uint32*)malloc((size_t)w*h*sizeof(*crop));
++  if(crop){
++   for(y=0U;y<h;y++)memcpy(crop+y*w,*out_pixels+(dy+y)*(*out_width)+dx,w*sizeof(*crop));
++  }
++  free(*out_pixels);*out_pixels=crop;
++  if(crop){*out_width=w;*out_height=h;}else{*out_width=*out_height=0U;ok=FALSE;}
++ }
+  guicore_flags = saved_flags;
+  return ok;
+ }
+diff --git a/main.c b/main.c
+--- a/main.c
++++ b/main.c
+@@ -70,6 +70,8 @@
+ #include "audio.h"
+ #include "ginput.h"
+ #include "frame.h"
++#include "screenshot_png.h"
++#include "screenshot_options.h"
+ #include "netplay.h"
+ #include "netplay_host.h"
+ #include "eepdump.h"
+@@ -825,6 +827,7 @@
+ {
+  cu_avr_set_hex_hint_hook(main_hex_hint);
+  cu_avr_reset();
++ frame_capture_reset();
+  /* A CPU reset clears bus state; the configured controllers stay connected. */
+  main_cfg_apply_virtual_runtime();
+ }
+@@ -2627,7 +2630,7 @@
+ 	if (j == 0U){ strcpy(stem, "cuzebox"); }
+ 	else{ stem[j] = 0; }
+ 	for (i = 0U; i < 10000U; i++){
+-		snprintf(candidate, sizeof(candidate), "%s/%s_shot_%04u.bmp", base, stem, (unsigned)i);
++		snprintf(candidate, sizeof(candidate), "%s/%s_shot_%04u.png", base, stem, (unsigned)i);
+ 		fp = fopen(candidate, "rb");
+ 		if (fp == NULL){
+ 			strncpy(out, candidate, out_size - 1U);
+@@ -2639,12 +2642,12 @@
+ 	return FALSE;
+ }
+ 
+-static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels, auint pitch, auint texw, auint texh)
++static boole main_save_screenshot_pixels(char const* path, uint32 const* pixels, auint pitch, auint texw, auint texh,boole gui)
+ {
+ #ifdef TARGET_EMSCRIPTEN
+     /* MEMFS retains each saved file until tab closure. No file-writing tools
+      * in the gameplay web build, including shortcut-driven screenshots. */
+-    (void)path; (void)pixels; (void)pitch; (void)texw; (void)texh;
++    (void)path; (void)pixels; (void)pitch; (void)texw; (void)texh;(void)gui;
+     return FALSE;
+ #else
+ 	guicore_pixfmt_t pixfmt;
+@@ -2670,6 +2673,16 @@
+ 		}
+ 	}
+ 	guicore_getpixfmt(&pixfmt);
++	if (!SDL_strcasecmp(strrchr(path,'.') ? strrchr(path,'.') : "", ".png")){
++		uint8* png=NULL;auint bytes=0U;FILE* f;boole ok;
++		if(!screenshot_png_encode(pixels,pitch,texw,texh,pixfmt.rsh,pixfmt.gsh,pixfmt.bsh,&png,&bytes))return FALSE;
++		{char meta[1400];mainui_screenshot_metadata(meta,sizeof(meta),texw,texh,FALSE,gui);
++		 if(!screenshot_png_annotate(&png,&bytes,meta)){free(png);return FALSE;}}
++		f=fopen(path,"wb");if(!f){free(png);return FALSE;}
++		ok=fwrite(png,1U,bytes,f)==bytes;
++		if(fclose(f)!=0)ok=FALSE;
++		free(png);return ok;
++	}
+ 	rmask = 0xFFUL << pixfmt.rsh;
+ 	gmask = 0xFFUL << pixfmt.gsh;
+ 	bmask = 0xFFUL << pixfmt.bsh;
+@@ -2684,18 +2697,91 @@
+ #endif
+ }
+ 
++static boole main_capture_game_screenshot(uint32** pixels,auint* w,auint* h)
++{
++ return main_cfg.screenshot_bypass_filters ? frame_capture_cycle_pixels_ex(pixels,w,h,
++     main_cfg.screenshot_x_width,main_cfg.screenshot_y_scale,main_cfg.screenshot_sampling) :
++     guicore_capture_game_pixels(pixels,w,h);
++}
++
+ static boole main_save_screenshot_to_path(char const* path)
+ {
+  uint32* pixels;
+  auint w, h;
+  boole ok;
+- if (!guicore_capture_pixels(&pixels, &w, &h)){ return FALSE; }
+- ok = main_save_screenshot_pixels(path, pixels, w, w, h);
++ /* Explicit BMP retains the historical rendered-layout export for old tools.
++  * PNG, including automatic screenshots, always uses the game-only path. */
++ char const* ext=path?strrchr(path,'.'):NULL;
++ boole bmp=ext&&!SDL_strcasecmp(ext,".bmp");
++ if(!path||!ext||(!bmp&&SDL_strcasecmp(ext,".png")))return FALSE;
++ if (!(bmp ? guicore_capture_pixels(&pixels,&w,&h) : main_capture_game_screenshot(&pixels,&w,&h)))return FALSE;
++ ok = main_save_screenshot_pixels(path, pixels, w, w, h,FALSE);
+  free(pixels);
+  return ok;
+ }
+ 
+ boole mainui_get_screenshot_include_gui(void){ return main_cfg.screenshot_include_gui; }
++boole mainui_get_screenshot_bypass_filters(void){ return main_cfg.screenshot_bypass_filters; }
++auint mainui_get_screenshot_x_width(void){return main_cfg.screenshot_x_width;}
++auint mainui_get_screenshot_y_scale(void){return main_cfg.screenshot_y_scale;}
++auint mainui_get_screenshot_sampling(void){return main_cfg.screenshot_sampling;}
++boole mainui_set_screenshot_scale(auint w,auint y,auint sampling)
++{
++ if(w<1U||w>2880U||y<1U||y>10U||sampling>2U)return FALSE;
++ main_cfg.screenshot_x_width=w;main_cfg.screenshot_y_scale=y;main_cfg.screenshot_sampling=sampling;
++ main_cfg_mark_dirty();return TRUE;
++}
++
++void mainui_screenshot_metadata(char* json,auint cap,auint width,auint height,boole legacy,boole gui)
++{
++ auint first,rows,fields,pw,ph;boole valid,interlaced;
++ boole cycle=!legacy&&!gui&&main_cfg.screenshot_bypass_filters;
++ frame_capture_geometry(&first,&rows,&valid,&interlaced);fields=interlaced?2U:1U;
++ pw=cycle?main_cfg.screenshot_x_width:width;ph=cycle?rows*main_cfg.screenshot_y_scale:height;
++ snprintf(json,cap,"{\"schema\":\"cuex-shot-1\",\"path\":\"%s\",\"filters_bypassed\":%u,\"scale_applied\":%u,\"source_valid\":%u,\"source_cycle_begin\":%u,\"source_width_cycles\":%u,\"source_row_first\":%u,\"source_rows\":%u,\"source_fields\":%u,\"requested_x_width\":%u,\"requested_y_scale\":%u,\"sampling\":\"%s\",\"x_scale_num\":%u,\"x_scale_den\":%u,\"y_scale_num\":%u,\"y_scale_den\":%u,\"pre_rotation_width\":%u,\"pre_rotation_height\":%u,\"width\":%u,\"height\":%u,\"jamma_flags\":%u,\"cycle_exact_x\":%u}",
++ legacy?"legacy_bmp":gui?"gui":cycle?"cycle":"display",cycle,cycle,cycle&&valid,
++ cycle?299U:0U,cycle?1440U:0U,cycle?first:0U,cycle?rows:0U,cycle?fields:0U,
++ main_cfg.screenshot_x_width,main_cfg.screenshot_y_scale,shot_sampling_name(main_cfg.screenshot_sampling),
++ cycle?pw:0U,cycle?1440U:0U,cycle?main_cfg.screenshot_y_scale:0U,cycle?fields:0U,
++ pw,ph,width,height,(unsigned)guicore_get_jamma(),cycle&&pw==1440U);
++}
++
++boole mainui_screenshot_settings(char const* args,char* json,auint cap)
++{
++ char op[24]="STATUS",key[32]="",value[32]="",extra[2];int n;
++ auint w=main_cfg.screenshot_x_width,y=main_cfg.screenshot_y_scale,s=main_cfg.screenshot_sampling,i,pos;
++ n=sscanf(args?args:"","%23s %31s %31s %1s",op,key,value,extra);
++ if(!SDL_strcasecmp(op,"PRESET")&&n==2){
++  for(i=0U;i<SHOT_PRESET_COUNT;i++)if(!SDL_strcasecmp(key,shot_preset_name(i)))break;
++  if(i==SHOT_PRESET_COUNT)return FALSE;
++  mainui_set_screenshot_scale(shot_preset_width(i),shot_preset_y(i),s);
++ }else if(!SDL_strcasecmp(op,"SET")&&n==3){
++  char* end;unsigned long v=strtoul(value,&end,10);
++  if(!SDL_strcasecmp(key,"SAMPLING")){
++   for(s=0U;s<3U;s++)if(!SDL_strcasecmp(value,shot_sampling_name(s)))break;
++   if(s==3U)return FALSE;
++  }else{
++   if(!value[0]||*end||value[0]=='-'||v>2880UL)return FALSE;
++   if(!SDL_strcasecmp(key,"X_WIDTH"))w=(auint)v;
++   else if(!SDL_strcasecmp(key,"Y_SCALE"))y=(auint)v;
++   else if(!SDL_strcasecmp(key,"BYPASS_FILTERS")&&v<=1UL)mainui_set_screenshot_bypass_filters(v!=0);
++   else if(!SDL_strcasecmp(key,"INCLUDE_GUI")&&v<=1UL)mainui_set_screenshot_include_gui(v!=0);
++   else return FALSE;
++  }
++  if(!mainui_set_screenshot_scale(w,y,s))return FALSE;
++ }else if(SDL_strcasecmp(op,"STATUS")||n>1)return FALSE;
++ w=main_cfg.screenshot_x_width;y=main_cfg.screenshot_y_scale;s=main_cfg.screenshot_sampling;
++ pos=(auint)snprintf(json,cap,"{\"ok\":1,\"x_width\":%u,\"y_scale\":%u,\"sampling\":\"%s\",\"bypass_filters\":%u,\"include_gui\":%u,\"preset\":\"%s\",\"x_min\":1,\"x_max\":2880,\"y_min\":1,\"y_max\":10,\"x_choices\":[",w,y,shot_sampling_name(s),main_cfg.screenshot_bypass_filters,main_cfg.screenshot_include_gui,shot_preset_name(shot_preset_index(w,y)));
++ for(i=0U;i<SHOT_WIDTH_COUNT&&pos<cap;i++)pos+=(auint)snprintf(json+pos,cap-pos,"%s%u",i?",":"",shot_width(i));
++ if(pos<cap)pos+=(auint)snprintf(json+pos,cap-pos,"],\"sampling_choices\":[\"NEAREST\",\"AREA\",\"LINEAR\"],\"presets\":[");
++ for(i=0U;i<SHOT_PRESET_COUNT&&pos<cap;i++)pos+=(auint)snprintf(json+pos,cap-pos,"%s{\"name\":\"%s\",\"x_width\":%u,\"y_scale\":%u}",i?",":"",shot_preset_name(i),shot_preset_width(i),shot_preset_y(i));
++ if(pos<cap)pos+=(auint)snprintf(json+pos,cap-pos,"]}");
++ return pos<cap;
++}
++void mainui_set_screenshot_bypass_filters(boole enable)
++{
++ main_cfg.screenshot_bypass_filters=enable;main_cfg_mark_dirty();
++}
+ void mainui_set_screenshot_include_gui(boole enable)
+ {
+  main_cfg.screenshot_include_gui = enable;
+@@ -2709,12 +2795,12 @@
+  boole ok;
+  if (!main_screenshot_build_path(path, sizeof(path))){ return FALSE; }
+  if (!main_cfg.screenshot_include_gui){
+-  if (!guicore_capture_game_pixels(&game, &width, &height)){ return FALSE; }
++  if (!main_capture_game_screenshot(&game, &width, &height)){ return FALSE; }
+   pixels = game;
+   pitch = width;
+  }
+  if (!pixels || pitch < width || width == 0U || height == 0U){ free(game); return FALSE; }
+- ok = main_save_screenshot_pixels(path, pixels, pitch, width, height);
++ ok = main_save_screenshot_pixels(path, pixels, pitch, width, height,main_cfg.screenshot_include_gui);
+  free(game);
+  if (ok && out_path != NULL && out_size){ main_copy_str(out_path, out_size, path); }
+  return ok; /* GUI reports the result; do not queue a second OSD notification. */
+@@ -2747,6 +2833,21 @@
+ 	}
+ 	main_system_message("SCREENSHOT SAVED: %s", main_path_basename(path));
+ 	return TRUE;
++}
++
++boole mainui_capture_screenshot_png(uint8** out_data,auint* out_size,auint* out_width,auint* out_height)
++{
++ uint32* pixels=NULL;auint w,h;boole ok;guicore_pixfmt_t fmt;
++ if(!out_data||!out_size)return FALSE;
++ *out_data=NULL;*out_size=0U;
++ if(!main_capture_game_screenshot(&pixels,&w,&h))return FALSE;
++ guicore_getpixfmt(&fmt);
++ ok=screenshot_png_encode(pixels,w,w,h,fmt.rsh,fmt.gsh,fmt.bsh,out_data,out_size);
++ if(ok){char meta[1400];mainui_screenshot_metadata(meta,sizeof(meta),w,h,FALSE,FALSE);
++  if(!screenshot_png_annotate(out_data,out_size,meta)){free(*out_data);*out_data=NULL;*out_size=0U;ok=FALSE;}}
++ free(pixels);
++ if(ok){if(out_width)*out_width=w;if(out_height)*out_height=h;}
++ return ok;
+ }
+ 
+ static void main_bmp_put16(uint8* p, auint v)
+diff --git a/mainui.h b/mainui.h
+--- a/mainui.h
++++ b/mainui.h
+@@ -140,6 +140,14 @@
+ char const* mainui_get_rom_path(void);
+ char const* mainui_get_screenshot_path(void);
+ boole mainui_get_screenshot_include_gui(void);
++boole mainui_get_screenshot_bypass_filters(void);
++auint mainui_get_screenshot_x_width(void);
++auint mainui_get_screenshot_y_scale(void);
++auint mainui_get_screenshot_sampling(void);
++boole mainui_set_screenshot_scale(auint x_width,auint y_scale,auint sampling);
++boole mainui_screenshot_settings(char const* args,char* json,auint capacity);
++void mainui_screenshot_metadata(char* json,auint capacity,auint width,auint height,boole legacy,boole gui);
++void mainui_set_screenshot_bypass_filters(boole enable);
+ void mainui_set_screenshot_include_gui(boole enable);
+ boole mainui_save_screenshot_gui(uint32 const* pixels, auint pitch, auint width, auint height, char* out_path, auint out_size);
+ char const* mainui_get_save_path(void);
+@@ -200,6 +208,8 @@
+ /* Capture the current CUzeBox display as a complete 24-bit BMP in memory.
+ ** The caller owns *out_data and must free() it. */
+ boole mainui_capture_screenshot_bmp(uint8** out_data, auint* out_size, auint* out_width, auint* out_height);
++/* Default game-only PNG, using the saved bypass-filters policy. Caller frees. */
++boole mainui_capture_screenshot_png(uint8** out_data, auint* out_size, auint* out_width, auint* out_height);
+ void mainui_get_netplay_runtime(mainui_netplay_runtime_t* out);
+ auint mainui_get_netplay_rollback_window(void);
+ void mainui_set_netplay_rollback_window(auint frames);
+diff --git a/microui/mui_integration.c b/microui/mui_integration.c
+--- a/microui/mui_integration.c
++++ b/microui/mui_integration.c
+@@ -207,7 +207,7 @@
+ 	MUI_WINDOW_DESC("REMOTE ROMS",    show_remote,          16,    MUI_BAR_HEIGHT + 6,  640, 452, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_CHILD),
+ 	MUI_WINDOW_DESC("RECENT ROMS",    show_quick,           0,     MUI_BAR_HEIGHT + 2,  520, 342, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_MENU),
+ 	MUI_WINDOW_DESC("PICK STATE",     show_statepick,       256,   MUI_BAR_HEIGHT + 6,  244, 132, MU_OPT_NORESIZE,                 MUI_WCLASS_CHILD),
+-	MUI_WINDOW_DESC("SCREENSHOT",     show_tool_screenshot, 210,   MUI_BAR_HEIGHT + 18, 330, 148, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
++	MUI_WINDOW_DESC("SCREENSHOT",     show_tool_screenshot, 108,   MUI_BAR_HEIGHT + 18, 424, 330, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("DUMP VIDEO",     show_tool_video,      108,   MUI_BAR_HEIGHT + 18, 396, 284, MU_OPT_NORESIZE,                 MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("ROM VIEW",       show_tool_romview,    52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
+ 	MUI_WINDOW_DESC("SRAM EDIT",      show_tool_sram,       52,    MUI_BAR_HEIGHT + 8,  536, 456, MU_OPT_NORESIZE | MU_OPT_NOSCROLL, MUI_WCLASS_TOOL),
+@@ -7961,14 +7961,40 @@
+ 	mui_window_end(ctx, win_id);
+ }
+ 
++#include "../screenshot_options.h"
+ static void mui_build_tool_screenshot_window(mu_Context* ctx)
+ {
+  int include_gui = mainui_get_screenshot_include_gui() ? 1 : 0;
++ int bypass = mainui_get_screenshot_bypass_filters() ? 1 : 0;
++ auint w=mainui_get_screenshot_x_width(),y=mainui_get_screenshot_y_scale(),s=mainui_get_screenshot_sampling();
++ auint i,choice,preset=shot_preset_index(w,y);
++ char custom[32];
++ char const* widths[SHOT_WIDTH_COUNT];char const* presets[SHOT_PRESET_COUNT];
++ static char const* const ys[]={"1X","2X","3X","4X","5X","6X","7X","8X","9X","10X"};
++ static char const* const samplings[]={"NEAREST","AREA","LINEAR"};
+  if (!mui_window_begin(ctx, MUI_WIN_SCREENSHOT)){ return; }
+  mu_layout_row(ctx, 1, (int[]){ -1 }, 20);
+  if (mu_checkbox(ctx, "INCLUDE GUI", &include_gui)){
+   mainui_set_screenshot_include_gui(include_gui ? TRUE : FALSE);
+  }
++ if(mu_checkbox(ctx,"BYPASS FILTERS",&bypass))mainui_set_screenshot_bypass_filters(bypass?TRUE:FALSE);
++ for(i=0U;i<SHOT_PRESET_COUNT;i++)presets[i]=shot_preset_name(i);
++ if(mui_labeled_choice_popup(ctx,"PRESET","shot_preset",shot_preset_name(preset),presets,SHOT_PRESET_COUNT,&preset,128,244)){
++  w=shot_preset_width(preset);y=shot_preset_y(preset);mainui_set_screenshot_scale(w,y,s);
++ }
++ choice=0U;for(i=0U;i<SHOT_WIDTH_COUNT;i++){widths[i]=shot_width_name(i);if(shot_width(i)==w)choice=i;}
++ snprintf(custom,sizeof(custom),"%u",(unsigned)w);
++ if(mui_labeled_choice_popup(ctx,"X WIDTH","shot_x",shot_width(choice)==w?widths[choice]:custom,widths,SHOT_WIDTH_COUNT,&choice,128,244)){
++  w=shot_width(choice);mainui_set_screenshot_scale(w,y,s);
++ }
++ choice=y-1U;
++ if(mui_labeled_choice_popup(ctx,"Y SCALE","shot_y",ys[choice],ys,10U,&choice,128,244)){
++  y=choice+1U;mainui_set_screenshot_scale(w,y,s);
++ }
++ if(mui_labeled_choice_popup(ctx,"SAMPLE X","shot_sampling",samplings[s],samplings,3U,&s,128,244))mainui_set_screenshot_scale(w,y,s);
++ mu_layout_row(ctx,1,(int[]){-1},20);
++ if(include_gui||!bypass)mu_label(ctx,"Scale: bypass only");
++ else mu_label(ctx,"Full cycle window");
+  if (mu_button(ctx, "SAVE NOW")){
+   mui_screenshot_pending = TRUE;
+  }
+diff --git a/readme.md b/readme.md
+--- a/readme.md
++++ b/readme.md
+@@ -319,10 +319,37 @@
+ and file writes are summarized on close/flush rather than logged per sector.
+ See [Messages and debugging output](documentation/logging.md) for details.
+ 
+-**Tools > Screenshot > Include GUI** is a saved checkbox. Unchecked captures
+-the game area; checked captures the complete rendered GUI after drawing.
+-The tool shows the last saved filename. GUI-time notices do not queue an OSD
++**Tools > Screenshot** saves PNG by default, without the emulator HUD or frame.
++**BYPASS FILTERS** is enabled by default and saved: capture the latest completed
++field before horizontal sampling, CRT/display filters and frame blending.
++At the default X=1440 and Y=5, each active CPU-cycle sample becomes one column; every scanline
++is repeated five times without interpolation. A 224-line capture is 1440x1120;
++the current renderer's complete 225-line window yields 1440x1125. Black rows
++drawn by the game are retained. Interlaced fields are woven with nearest-neighbor
++5/2 vertical scaling (alternating three/two rows), preserving the same aspect;
++JAMMA rotation
++rotates the image canvas without letterboxing. Pausing does not advance the
++game to take a screenshot. After reset/state load, the cleared capture remains
++black until a new field completes.
++
++Screenshot **X WIDTH** and **Y SCALE** dropdowns can be changed independently.
++Presets set both axes (default CYCLE=1440/5); manual changes remain available.
++X includes 256, 240, 192 and 160 widths, with NEAREST, AREA averaging or LINEAR
++interpolation across the full cycle window. Y offers 1X–10X. The web Controls
++page and `SCREENSHOT_SETTINGS` API expose the same saved preferences. PNGs
++embed capture/scaling metadata (`CUEX.Capture`) so image tools and AI agents can
++interpret dimensions and distinguish exact cycles from resampled output.
++
++Disable **BYPASS FILTERS** to capture the filtered game image instead.
++**INCLUDE GUI** is off by default; enabling it captures the tool's complete
++rendered GUI using display settings instead of cycle capture. The screenshot
++shortcut and default API capture use the same game-only PNG path.
++Files are named `screenshots/Game_shot_0000.png`. Explicit `.bmp` paths and
++`SCREENSHOT_CAPTURE BMP` retain the old rendered-layout BMP export for tools
++that require it. File-writing screenshots remain disabled in the gameplay-only
++Emscripten build. The tool shows the last saved filename. GUI-time notices do not queue an OSD
+ backlog, and keyboard presses belong to the GUI while its windows are open.
++See [screenshot details and verification](documentation/screenshots.md).
+ 
+ **Tools > Input Files** selects and plays `.cic` captures, with **Reset Before
+ Recording** enabled by default and an optional **Record Video** checkbox. Playback
+diff --git a/savestate.c b/savestate.c
+--- a/savestate.c
++++ b/savestate.c
+@@ -1,4 +1,5 @@
+ #include "savestate.h"
++#include "frame.h"
+ #include "cu_hw_features.h"
+ #include "diagnostics.h"
+ #ifdef ENABLE_ICAP
+@@ -642,6 +643,7 @@
+ 	    hardware.features==CU_HW_FEATURES&&hardware.phase<1024U)
+ 	  cu_avr_hardware_restore(hardware.phase,hardware.drive_mask,hardware.drive_value);
+ 	}
++	frame_capture_reset(); /* Never export pixels from a different machine state. */
+ 
+ 	return TRUE;
+ }
+diff --git a/screenshot_options.h b/screenshot_options.h
+new file mode 100644
+--- /dev/null
++++ b/screenshot_options.h
+@@ -0,0 +1,37 @@
++/* Shared screenshot choices. Widths refer to the complete 1440-cycle window. */
++#ifndef SCREENSHOT_OPTIONS_H
++#define SCREENSHOT_OPTIONS_H
++#define SHOT_WIDTH_COUNT 15U
++#define SHOT_PRESET_COUNT 7U
++static inline unsigned shot_width(unsigned i)
++{
++ static unsigned const v[]={1440,2880,720,480,384,376,360,352,320,288,256,240,224,192,160};
++ return v[i<SHOT_WIDTH_COUNT?i:0];
++}
++static inline char const* shot_width_name(unsigned i)
++{
++ static char const* const v[]={"1440 (1X)","2880 (2X)","720","480","384","376","360","352","320","288","256","240","224","192","160"};
++ return i<SHOT_WIDTH_COUNT?v[i]:"CUSTOM";
++}
++static inline char const* shot_sampling_name(unsigned i)
++{
++ static char const* const v[]={"NEAREST","AREA","LINEAR"};
++ return v[i<3U?i:0U];
++}
++static inline char const* shot_preset_name(unsigned i)
++{
++ static char const* const v[]={"CYCLE","RAW","WIDTH320","WIDTH256","WIDTH240","WIDTH192","WIDTH160"};
++ return i<SHOT_PRESET_COUNT?v[i]:"CUSTOM";
++}
++static inline unsigned shot_preset_width(unsigned i)
++{
++ static unsigned const v[]={1440,1440,320,256,240,192,160};
++ return v[i<SHOT_PRESET_COUNT?i:0];
++}
++static inline unsigned shot_preset_y(unsigned i){return i==0U?5U:1U;}
++static inline unsigned shot_preset_index(unsigned w,unsigned y)
++{
++ unsigned i;for(i=0;i<SHOT_PRESET_COUNT;i++)if(w==shot_preset_width(i)&&y==shot_preset_y(i))break;
++ return i;
++}
++#endif
+diff --git a/screenshot_png.h b/screenshot_png.h
+new file mode 100644
+--- /dev/null
++++ b/screenshot_png.h
+@@ -0,0 +1,119 @@
++/* Small dependency-free RGB PNG encoder. PNG Up filtering and fixed-Huffman
++ * DEFLATE with short-distance runs keep duplicated scanlines compact. This
++ * runs only on screenshot requests, never in the emulation hot path. */
++#ifndef SCREENSHOT_PNG_H
++#define SCREENSHOT_PNG_H
++#include "types.h"
++#include "cu_ufile.h"
++#include <stdlib.h>
++#include <string.h>
++
++static void shot_be32(uint8* p, uint32 n)
++{ p[0]=n>>24;p[1]=n>>16;p[2]=n>>8;p[3]=n; }
++
++typedef struct { uint8* data; auint size; uint32 bits; unsigned count; } shot_bits_t;
++static void shot_bits(shot_bits_t* s, unsigned value, unsigned count)
++{
++ s->bits|=(uint32)value<<s->count;s->count+=count;
++ while(s->count>=8U){s->data[s->size++]=(uint8)s->bits;s->bits>>=8;s->count-=8U;}
++}
++static unsigned shot_reverse(unsigned value, unsigned count)
++{
++ unsigned result=0U;
++ while(count--){result=(result<<1)|(value&1U);value>>=1;}
++ return result;
++}
++static void shot_symbol(shot_bits_t* s,unsigned symbol)
++{
++ unsigned code,count;
++ if(symbol<144U){code=0x30U+symbol;count=8U;}
++ else if(symbol<256U){code=0x190U+symbol-144U;count=9U;}
++ else if(symbol<280U){code=symbol-256U;count=7U;}
++ else{code=0xC0U+symbol-280U;count=8U;}
++ shot_bits(s,shot_reverse(code,count),count);
++}
++static void shot_chunk(uint8* dst,char const* type,uint8 const* data,auint len)
++{
++ shot_be32(dst,len);memcpy(dst+4,type,4U);
++ if(len&&dst+8!=data)memcpy(dst+8,data,len);
++ shot_be32(dst+8U+len,cu_ufile_crc32(dst+4U,len+4U));
++}
++
++static boole screenshot_png_encode(uint32 const* pixels,auint pitch,auint w,auint h,
++                                  unsigned rsh,unsigned gsh,unsigned bsh,
++                                  uint8** result,auint* result_size)
++{
++ static unsigned const bases[]={3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258};
++ static unsigned const extra[]={0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0};
++ uint8 *raw=NULL,*z=NULL,*png=NULL;
++ auint row,n,x,y,i,zlen,total;
++ uint32 a=1U,b=0U;
++ shot_bits_t s;
++ if(!result||!result_size)return FALSE;
++ *result=NULL;*result_size=0U;
++ if(!pixels||!w||!h||pitch<w||w>8192U||h>8192U||rsh>24U||gsh>24U||bsh>24U)return FALSE;
++ row=w*3U+1U;
++ if(h>128U*1024U*1024U/row)return FALSE;
++ n=row*h;
++ raw=(uint8*)malloc(n);z=(uint8*)malloc((size_t)n+n/8U+64U);
++ if(!raw||!z)goto fail;
++ for(y=0U;y<h;y++){
++  uint8* dst=raw+y*row;*dst++=2U; /* PNG Up: preserves RGB exactly. */
++  for(x=0U;x<w;x++){
++   uint32 c=pixels[y*pitch+x],prev=y?pixels[(y-1U)*pitch+x]:0U;
++   *dst++=(uint8)((c>>rsh)-(prev>>rsh));
++   *dst++=(uint8)((c>>gsh)-(prev>>gsh));
++   *dst++=(uint8)((c>>bsh)-(prev>>bsh));
++  }
++ }
++ z[0]=0x78U;z[1]=0x01U;
++ s=(shot_bits_t){z,2U,0U,0U};shot_bits(&s,3U,3U); /* final fixed-Huffman block */
++ for(i=0U;i<n;){
++  unsigned best=0U,distance=0U,d;
++  for(d=1U;d<=3U;d+=2U){
++   unsigned length=0U;
++   if(i<d)continue;
++   while(length<258U&&i+length<n&&raw[i+length]==raw[i+length-d])length++;
++   if(length>best){best=length;distance=d;}
++  }
++  if(best>=3U){
++   unsigned code=0U;
++   while(code<28U&&bases[code+1U]<=best)code++;
++   shot_symbol(&s,257U+code);shot_bits(&s,best-bases[code],extra[code]);
++   shot_bits(&s,shot_reverse(distance==1U?0U:2U,5U),5U);
++  }else{best=1U;shot_symbol(&s,raw[i]);}
++  for(x=0U;x<best;x++){
++   a+=raw[i+x];if(a>=65521U)a-=65521U;
++   b+=a;if(b>=65521U)b-=65521U;
++  }
++  i+=best;
++ }
++ shot_symbol(&s,256U);
++ if(s.count)shot_bits(&s,0U,8U-s.count);
++ shot_be32(z+s.size,(b<<16)|a);zlen=s.size+4U;
++ total=zlen+57U;png=(uint8*)malloc(total);
++ if(!png)goto fail;
++ memcpy(png,"\211PNG\r\n\032\n",8U);
++ {
++  uint8 header[13]={0};shot_be32(header,w);shot_be32(header+4,h);header[8]=8U;header[9]=2U;
++  shot_chunk(png+8,"IHDR",header,13U);
++ }
++ shot_chunk(png+33,"IDAT",z,zlen);shot_chunk(png+45U+zlen,"IEND",NULL,0U);
++ free(raw);free(z);*result=png;*result_size=total;return TRUE;
++fail:
++ free(raw);free(z);free(png);return FALSE;
++}
++/* Store the same JSON geometry contract returned by SCREENSHOT_CAPTURE. */
++static boole screenshot_png_annotate(uint8** png,auint* size,char const* json)
++{
++ static char const key[]="CUEX.Capture";
++ auint len=(auint)strlen(json)+(auint)sizeof(key),extra=len+12U;
++ uint8 *out=(uint8*)malloc(*size+extra),*data;
++ if(!out)return FALSE;
++ memcpy(out,*png,33U);data=out+41U;
++ memcpy(data,key,sizeof(key));memcpy(data+sizeof(key),json,strlen(json));
++ shot_chunk(out+33U,"tEXt",data,len);
++ memcpy(out+33U+extra,*png+33U,*size-33U);
++ free(*png);*png=out;*size+=extra;return TRUE;
++}
++#endif
+diff --git a/tests/gui/cycle_screenshot_regression.c b/tests/gui/cycle_screenshot_regression.c
+new file mode 100644
+--- /dev/null
++++ b/tests/gui/cycle_screenshot_regression.c
+@@ -0,0 +1,134 @@
++#define SDL_MAIN_HANDLED
++#undef main
++#define main cycle_shot_emulator_main
++#include "../../main.c"
++#undef main
++#include "../../frame.c"
++#define CHECK(c,msg) do{if(!(c)){fprintf(stderr,"FAIL: %s (%d)\n",msg,__LINE__);return 1;}}while(0)
++
++static cu_row_t fixture_row;
++static uint8 color_at(auint x,auint y)
++{return (y==0U||y==223U)?0U:(uint8)(x^(y*3U));}
++static void fill_field(auint rows)
++{
++ auint x,y;
++ for(y=0U;y<rows;y++){
++  fixture_row.pno=RPULSE_START+y;
++  memset(fixture_row.pixels,0xFF,sizeof(fixture_row.pixels));
++  for(x=0U;x<ROW_ACTIVE_CYCLES;x++)fixture_row.pixels[ROW_BEGINCY+x]=color_at(x,y);
++  frame_capture_row(&fixture_row);
++ }
++}
++int main(void)
++{
++ uint32 *pixels,*again;auint w,h,x,y,rot,flip;
++ uint32 const* pal;guicore_pixfmt_t fmt;
++ uint8* png;auint size;FILE* file;
++ static auint const rotations[]={0U,JAMMA_ROTATE_90,JAMMA_ROTATE_180,JAMMA_ROTATE_270};
++ appcfg_defaults(&main_cfg);main_headless=TRUE;
++ CHECK(guicore_init(GUICORE_HEADLESS,"Cycle screenshot"),"offscreen palette");
++ guicore_getpixfmt(&fmt);pal=guicore_getpalette();frame_capture_reset();
++ fill_field(224U);frame_capture_commit(FALSE,0U);
++ CHECK(frame_capture_cycle_pixels(&pixels,&w,&h)&&w==1440U&&h==1120U,"224 captured lines become 1120 PNG rows");
++ for(y=0U;y<h;y++)for(x=0U;x<w;x++)
++  CHECK(pixels[y*w+x]==pal[color_at(x,y/5U)],"all 1440 cycles preserved; five identical rows; black game rows retained");
++ file=fopen("cycles.rgb","wb");CHECK(file,"RGB reference");
++ for(y=0U;y<h;y++)for(x=0U;x<w;x++){
++  uint32 c=pixels[y*w+x];uint8 rgb[3]={c>>fmt.rsh,c>>fmt.gsh,c>>fmt.bsh};
++  CHECK(fwrite(rgb,1U,3U,file)==3U,"RGB reference write");
++ }
++ fclose(file);
++ CHECK(main_save_screenshot_to_path("cycles.png"),"cycle PNG export");
++ {
++  char automatic[512];
++  CHECK(mainui_save_screenshot_auto(automatic,sizeof(automatic)),"shortcut automatic capture");
++  CHECK(strrchr(automatic,'.')&&!strcmp(strrchr(automatic,'.'),".png"),"automatic filename defaults to PNG");
++ }
++ CHECK(mainui_capture_screenshot_png(&png,&size,NULL,NULL),"PNG API capture");
++ file=fopen("cycles.png","rb");CHECK(file,"PNG file open");
++ for(x=0U;x<size;x++)CHECK(fgetc(file)==png[x],"PNG file and API bytes agree");
++ CHECK(fgetc(file)==EOF,"PNG file exact length");fclose(file);free(png);
++ /* A partial next field must not leak into a screenshot while paused. */
++ fixture_row.pno=RPULSE_START;memset(fixture_row.pixels,7U,sizeof(fixture_row.pixels));frame_capture_row(&fixture_row);
++ frame_set_area_weighted(TRUE);guicore_set_filter_pre_mode(1U);guicore_set_filter_crt_mode(1U);
++ CHECK(frame_capture_cycle_pixels(&again,&w,&h),"paused capture with filters enabled");
++ CHECK(!memcmp(pixels,again,(size_t)w*h*sizeof(*pixels)),"partial frame and display filters do not change cycle screenshot");free(again);
++ for(rot=0U;rot<4U;rot++)for(flip=0U;flip<4U;flip++){
++  guicore_set_jamma(rotations[rot]|((flip&1U)?JAMMA_FLIP_H:0U)|((flip&2U)?JAMMA_FLIP_V:0U));
++  CHECK(frame_capture_cycle_pixels(&again,&w,&h),"JAMMA capture");
++  CHECK(w==((rot&1U)?1120U:1440U)&&h==((rot&1U)?1440U:1120U),"portrait screenshot rotates canvas without letterboxing");
++  for(y=0U;y<1120U;y+=37U)for(x=0U;x<1440U;x+=31U){
++   auint dx=x,dy=y;
++   if(rot==1U){dx=1119U-y;dy=x;}else if(rot==2U){dx=1439U-x;dy=1119U-y;}else if(rot==3U){dx=y;dy=1439U-x;}
++   if(flip&1U)dx=w-1U-dx;
++   if(flip&2U)dy=h-1U-dy;
++   CHECK(again[dy*w+dx]==pixels[y*1440U+x],"rotation/mirror preserves exact samples");
++  }
++  free(again);
++ }
++ free(pixels);
++ /* Width conversion samples the whole cycle window, with independent Y. */
++ guicore_set_jamma(0U);
++ {
++  auint widths[]={256U,240U,192U,160U,2880U},i;char settings[4096];
++  for(i=0U;i<5U;i++){
++   CHECK(frame_capture_cycle_pixels_ex(&pixels,&w,&h,widths[i],2U,0U),"resized cycle capture");
++   CHECK(w==widths[i]&&h==448U,"independent dimensions");
++   for(y=0U;y<h;y+=17U)for(x=0U;x<w;x++)CHECK(pixels[y*w+x]==pal[color_at(x*1440U/w,y/2U)],"nearest maps full width");
++   free(pixels);
++  }
++  CHECK(!frame_capture_cycle_pixels_ex(&pixels,&w,&h,0U,5U,0U),"reject zero width");
++  CHECK(!mainui_set_screenshot_scale(1440U,11U,0U),"reject invalid Y scale");
++  CHECK(mainui_screenshot_settings("PRESET WIDTH256",settings,sizeof(settings))&&main_cfg.screenshot_x_width==256U&&main_cfg.screenshot_y_scale==1U,"API preset sets both axes");
++  CHECK(mainui_screenshot_settings("SET Y_SCALE 3",settings,sizeof(settings))&&strstr(settings,"\"preset\":\"CUSTOM\""),"manual override leaves preset editable");
++  CHECK(!mainui_screenshot_settings("SET X_WIDTH -1",settings,sizeof(settings))&&!mainui_screenshot_settings("SET Y_SCALE 3bad",settings,sizeof(settings)),"strict settings parsing");
++  CHECK(mainui_screenshot_settings("PRESET CYCLE",settings,sizeof(settings)),"restore default preset");
++  /* A two-color transition: box average is exact, while linear uses centers. */
++  {
++   uint8 samples[1440];auint c;uint32 a,b;
++   memset(samples,0,sizeof(samples));memset(samples+720,255,720);
++   a=frame_shot_sample(samples,0U,1U,1U,pal,&fmt);
++   b=frame_shot_sample(samples,0U,1U,2U,pal,&fmt);
++   for(c=0U;c<3U;c++){
++    auint sh=c==0U?fmt.rsh:c==1U?fmt.gsh:fmt.bsh;
++    auint expected=(((pal[0]>>sh)&255U)+((pal[255]>>sh)&255U)+1U)/2U;
++    CHECK(((a>>sh)&255U)==expected&&((b>>sh)&255U)==expected,"area/linear independently expected midpoint");
++   }
++  }
++ }
++ mainui_set_screenshot_bypass_filters(FALSE);guicore_set_jamma(JAMMA_ROTATE_90);
++ CHECK(main_capture_game_screenshot(&pixels,&w,&h)&&w<h&&h==456U,"filtered opt-in uses tight portrait content, not landscape letterboxing");free(pixels);
++ CHECK(main_save_screenshot_to_path("filtered.png"),"filtered PNG export");
++ mainui_set_screenshot_bypass_filters(TRUE);guicore_set_jamma(0U);frame_capture_reset();
++ fill_field(160U);frame_capture_commit(FALSE,0U);
++ CHECK(frame_capture_cycle_pixels(&pixels,&w,&h)&&h==800U,"height follows captured range instead of fixed 224");free(pixels);
++ frame_capture_reset();
++ memset(fixture_row.pixels,1U,sizeof(fixture_row.pixels));fixture_row.pno=RPULSE_START;frame_capture_row(&fixture_row);frame_capture_commit(TRUE,0U);
++ memset(fixture_row.pixels,2U,sizeof(fixture_row.pixels));fixture_row.pno=RPULSE_START;frame_capture_row(&fixture_row);frame_capture_commit(TRUE,1U);
++ CHECK(frame_capture_cycle_pixels(&pixels,&w,&h)&&h==5U,"woven fields retain progressive aspect instead of doubled height");
++ CHECK(pixels[0]==pal[1]&&pixels[3U*w]==pal[2],"opposite fields use nearest-neighbor rows without blending");free(pixels);
++ frame_capture_reset();CHECK(frame_capture_cycle_pixels(&pixels,&w,&h),"reset capture");
++ CHECK(pixels[0]==pal[0],"reset never exports stale game pixels");free(pixels);
++ /* Exercise Huffman literals, long runs, very short scanlines and arbitrary
++  * native channel shifts. Independent Python/zlib decoding checks the files. */
++ for(rot=0U;rot<8U;rot++){
++  auint cw=rot<3U?rot+1U:(rot==3U?257U:1440U),ch=rot+1U;
++  char name[48];uint32 seed=0x12345678U;
++  pixels=malloc((size_t)cw*ch*sizeof(*pixels));CHECK(pixels,"codec test allocation");
++  for(x=0U;x<cw*ch;x++){
++   seed=seed*1664525U+1013904223U;
++   pixels[x]=rot==4U?0U:rot==5U?0xFFFFFFU:rot==6U?0x123456U:seed&0xFFFFFFU;
++  }
++  CHECK(screenshot_png_encode(pixels,cw,cw,ch,0U,16U,8U,&png,&size),"PNG codec edge case");
++  snprintf(name,sizeof(name),"codec-%u.png",(unsigned)rot);file=fopen(name,"wb");CHECK(file,"codec PNG file");
++  CHECK(fwrite(png,1U,size,file)==size,"codec PNG write");fclose(file);free(png);
++  snprintf(name,sizeof(name),"codec-%u.rgb",(unsigned)rot);file=fopen(name,"wb");CHECK(file,"codec RGB file");
++  for(x=0U;x<cw*ch;x++){
++   uint8 rgb[3]={pixels[x],pixels[x]>>16,pixels[x]>>8};
++   CHECK(fwrite(rgb,1U,3U,file)==3U,"codec reference write");
++  }
++  fclose(file);free(pixels);
++ }
++ guicore_quit();
++ puts("PASS: cycle screenshots, one-clock pixels, vertical duplication, filters, partial fields, JAMMA, interlace and reset");return 0;
++}
+diff --git a/tests/gui/screenshot_tool_regression.c b/tests/gui/screenshot_tool_regression.c
+--- a/tests/gui/screenshot_tool_regression.c
++++ b/tests/gui/screenshot_tool_regression.c
+@@ -7,6 +7,15 @@
+ #include "../../textgui.c"
+ #define CHECK(c, msg) do { if (!(c)) { fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); return 1; } } while (0)
+ static uint32 canvas[640U * 560U];
++static int png_size(char const* path,unsigned w,unsigned h)
++{
++ unsigned char hdr[24];FILE* f=fopen(path,"rb");size_t n;
++ if(!f)return 0;
++ n=fread(hdr,1U,sizeof(hdr),f);fclose(f);
++ return n==sizeof(hdr)&&!memcmp(hdr,"\211PNG\r\n\032\n",8U)&&
++  (((unsigned)hdr[16]<<24)|((unsigned)hdr[17]<<16)|((unsigned)hdr[18]<<8)|hdr[19])==w&&
++  (((unsigned)hdr[20]<<24)|((unsigned)hdr[21]<<16)|((unsigned)hdr[22]<<8)|hdr[23])==h;
++}
+ static int width(mu_Font font, char const* str, int len){ (void)font; return (len < 0 ? (int)strlen(str) : len) * 8; }
+ static int height(mu_Font font){ (void)font; return 16; }
+ static void draw(void){ memset(canvas, 0, sizeof(canvas)); mui_render_overlay(canvas, 640U, 640U, 560U); }
+@@ -27,7 +36,7 @@
+ int main(void)
+ {
+  char path[512];
+- SDL_Surface* bmp;
++ FILE* fixtures;
+  SDL_Event event = {0};
+  auint log_count;
+  appcfg_defaults(&main_cfg);
+@@ -39,34 +48,36 @@
+  mui_filedialog_init(&mui_rom_dialog); mui_filedialog_init(&mui_dir_dialog); mui_filedialog_init(&mui_cfg_file_dialog);
+  mui_window_open(mui_state.ctx, MUI_WIN_SCREENSHOT); mui_refresh_visibility();
+  CHECK(!mainui_get_screenshot_include_gui(), "game-only default");
++ CHECK(mainui_get_screenshot_bypass_filters(),"bypass filters defaults on");
++ CHECK(click("CYCLE")==0&&click("WIDTH256")==0,"preset dropdown selection");
++ CHECK(mainui_get_screenshot_x_width()==256U&&mainui_get_screenshot_y_scale()==1U,"preset applies both axes");
++ CHECK(click("1X")==0&&click("3X")==0&&mainui_get_screenshot_y_scale()==3U,"Y dropdown can override preset");
++ CHECK(click("256")==0&&click("720")==0&&mainui_get_screenshot_x_width()==720U,"X dropdown can override preset");
++ CHECK(click("NEAREST")==0&&click("AREA")==0&&mainui_get_screenshot_sampling()==1U,"sampling dropdown selects area");
++ CHECK(click("CUSTOM")==0&&click("CYCLE")==0,"restore default preset through dropdown");
++ CHECK(mainui_get_screenshot_sampling()==1U,"preset retains independent sampling");
++ CHECK(click("BYPASS FILTERS")==0&&!mainui_get_screenshot_bypass_filters(),"real bypass checkbox toggles");
+  CHECK(click("INCLUDE GUI") == 0 && mainui_get_screenshot_include_gui(), "real checkbox toggles");
+  CHECK(appcfg_save(&main_cfg, "screenshot.cfg"), "save checkbox preference");
+  main_cfg.screenshot_include_gui = FALSE;
++ main_cfg.screenshot_bypass_filters = TRUE;
+  CHECK(appcfg_load_or_create(&main_cfg, "screenshot.cfg") && main_cfg.screenshot_include_gui, "checkbox preference reloads");
++ CHECK(!mainui_get_screenshot_bypass_filters(),"bypass preference reloads");
++ CHECK(click("BYPASS FILTERS")==0&&mainui_get_screenshot_bypass_filters(),"enable cycle-domain capture");
+  log_count = textgui_logcount;
+  textgui_log_add("MENU NOTICE");
+  CHECK(textgui_logcount == log_count, "GUI-time notices are not queued for later OSD");
+  CHECK(click("SAVE NOW") == 0 && !mui_screenshot_pending, "GUI save finishes after overlay draw");
+  CHECK(strncmp(mui_toolshot_status, "Saved: ", 7U) == 0, "GUI reports saved filename");
+  snprintf(path, sizeof(path), "screenshots/%s", mui_toolshot_status + 7);
+- bmp = SDL_LoadBMP(path); CHECK(bmp && bmp->w == 640 && bmp->h == 560, "include-GUI capture uses completed rendered surface");
+- {
+-  SDL_Surface* rgb = SDL_ConvertSurfaceFormat(bmp, SDL_PIXELFORMAT_ARGB8888, 0U);
+-  boole painted = FALSE;
+-  int x, y;
+-  CHECK(rgb != NULL, "decode GUI screenshot");
+-  for (y = 0; y < rgb->h; ++y){
+-   uint32 const* row = (uint32 const*)((uint8 const*)rgb->pixels + y * rgb->pitch);
+-   for (x = 0; x < rgb->w; ++x){ if (row[x] & 0xFFFFFFU){ painted = TRUE; } }
+-  }
+-  CHECK(painted, "GUI pixels are present over a blank game frame");
+-  SDL_FreeSurface(rgb);
+- }
+- SDL_FreeSurface(bmp);
++ CHECK(png_size(path,640U,560U),"include-GUI PNG uses completed rendered surface");
++ fixtures=fopen("png-fixtures.txt","w");CHECK(fixtures,"PNG fixture index");
++ fprintf(fixtures,"GUI %s\n",path);
+  CHECK(textgui_logcount == log_count, "screenshot does not duplicate GUI status in OSD");
+  mainui_set_screenshot_include_gui(FALSE);
+  CHECK(mainui_save_screenshot_gui(NULL, 0U, 0U, 0U, path, sizeof(path)), "game-only screenshot without GUI buffer");
+- bmp = SDL_LoadBMP(path); CHECK(bmp && bmp->w == 620 && bmp->h == 456, "game-only crop has correct scaled dimensions"); SDL_FreeSurface(bmp);
++ CHECK(png_size(path,1440U,1125U),"cycle PNG has no GUI border and fivefold scanlines");
++ fprintf(fixtures,"RAW %s\n",path);fclose(fixtures);
+  event.type = SDL_KEYDOWN; event.key.keysym.sym = SDLK_a;
+  cu_kbd_enabled = 1U;
+  CHECK(mui_handle_event(&event) == 1, "GUI owns ordinary keys even with guest keyboard enabled");
+diff --git a/tests/preferences/Makefile b/tests/preferences/Makefile
+--- a/tests/preferences/Makefile
++++ b/tests/preferences/Makefile
+@@ -44,7 +44,14 @@
+ $(OBD)/headless_regression.exe: tests/gui/headless_regression.c guicore.c audio.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
+ 	$(CC) -o $@ $< $(filter-out $(OBD)/guicore.o $(OBD)/audio.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+ 
+-.PHONY: screenshot-test
++.PHONY: screenshot-test cycle-screenshot-test
++cycle-screenshot-test: $(OBD)/cycle_screenshot_regression.exe
++	mkdir -p $(OBD)/cycle-screenshot-run
++	cd $(OBD)/cycle-screenshot-run && ../cycle_screenshot_regression.exe
++
++$(OBD)/cycle_screenshot_regression.exe: tests/gui/cycle_screenshot_regression.c main.c frame.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
++	$(CC) -I. -o $@ $< $(filter-out $(OBD)/frame.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSIZ)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
++
+ screenshot-test: $(OBD)/screenshot_regression.exe
+ 	mkdir -p $(OBD)/screenshot-run
+ 	cd $(OBD)/screenshot-run && ../screenshot_regression.exe
+diff --git a/tests/preferences/preferences_regression.c b/tests/preferences/preferences_regression.c
+--- a/tests/preferences/preferences_regression.c
++++ b/tests/preferences/preferences_regression.c
+@@ -93,6 +93,8 @@
+ 	snprintf(expected.rom_path, sizeof(expected.rom_path), "test=value # spaces");
+ 	snprintf(expected.screenshot_path, sizeof(expected.screenshot_path), "test=value # spaces");
+ 	expected.screenshot_include_gui = TRUE;
++	expected.screenshot_bypass_filters = FALSE;
++	expected.screenshot_x_width=256U;expected.screenshot_y_scale=3U;expected.screenshot_sampling=2U;
+ 	snprintf(expected.save_path, sizeof(expected.save_path), "test=value # spaces");
+ 	snprintf(expected.controllerdb_path, sizeof(expected.controllerdb_path), "test=value # spaces");
+ 	snprintf(expected.resident_bootloader_file, sizeof(expected.resident_bootloader_file), "test=value # spaces");
+@@ -199,6 +201,8 @@
+ 	CHECK(strcmp(expected.screenshot_path, loaded.screenshot_path) == 0, "screenshot_path round trip");
+ 	CHECK(!loaded.input_movie_compact, "Full Debug recording preference round trip");
+ 	CHECK(loaded.screenshot_include_gui, "screenshot_include_gui round trip");
++	CHECK(!loaded.screenshot_bypass_filters, "screenshot_bypass_filters round trip");
++	CHECK(loaded.screenshot_x_width==256U&&loaded.screenshot_y_scale==3U&&loaded.screenshot_sampling==2U,"screenshot scales and sampling round trip");
+ 	CHECK(strcmp(expected.save_path, loaded.save_path) == 0, "save_path round trip");
+ 	CHECK(strcmp(expected.controllerdb_path, loaded.controllerdb_path) == 0, "controllerdb_path round trip");
+ 	CHECK(memcmp(&expected.resident_bootloader_enable, &loaded.resident_bootloader_enable, sizeof(expected.resident_bootloader_enable)) == 0, "resident_bootloader_enable round trip");
+@@ -311,37 +315,37 @@
+   CHECK(cpu->crom[0x200U] == (mode == 2U ? 0xFFU : 0x5AU), "SPM changed target page");
+   for (i = 0U; i < 100U && cpu->spm_prge; i++){ (void)cu_avr_run(); }
+   CHECK(!cpu->spm_prge && cu_avr_flash_active(FALSE), "completed operation remains latched across a frame");
+-  main_fast_flash_tick(100U);
+-  CHECK(main_fast_flash_active, "flash enables acceleration");
+-  main_fast_flash_tick(101U);
+-  CHECK(!main_fast_flash_active, "idle frame stops acceleration");
++  main_acceleration_tick(100U);
++  CHECK(main_acceleration_active, "flash enables acceleration");
++  main_acceleration_tick(101U);
++  CHECK(!main_acceleration_active, "idle frame stops acceleration");
+  }
+  cpu->spm_prge = TRUE;
+  mainui_set_fast_flash(FALSE);
+- main_fast_flash_tick(102U);
+- CHECK(!main_fast_flash_active && main_cfg_dirty, "checkbox disables acceleration and marks preference modified");
++ main_acceleration_tick(102U);
++ CHECK(!main_acceleration_active && main_cfg_dirty, "checkbox disables acceleration and marks preference modified");
+  mainui_set_fast_flash(TRUE);
+  main_ispause = TRUE;
+- main_fast_flash_tick(103U);
+- CHECK(!main_fast_flash_active, "pause prevents acceleration");
++ main_acceleration_tick(103U);
++ CHECK(!main_acceleration_active, "pause prevents acceleration");
+  main_ispause = FALSE;
+  main_np_session_active = TRUE;
+- main_fast_flash_tick(104U);
+- CHECK(!main_fast_flash_active, "netplay session prevents acceleration");
++ main_acceleration_tick(104U);
++ CHECK(!main_acceleration_active, "netplay session prevents acceleration");
+  main_np_session_active = FALSE;
+  mainui_set_serial_route(CU_ESP_SERIAL_HOST_SERIAL);
+- main_fast_flash_tick(104U);
+- CHECK(!main_fast_flash_active, "external serial prevents acceleration");
++ main_acceleration_tick(104U);
++ CHECK(!main_acceleration_active, "external serial prevents acceleration");
+  mainui_set_serial_route(CU_ESP_SERIAL_DISCONNECTED);
+ #ifdef ENABLE_VCAP
+  main_isvcap = TRUE;
+- main_fast_flash_tick(105U);
+- CHECK(!main_fast_flash_active, "video recording prevents acceleration");
++ main_acceleration_tick(105U);
++ CHECK(!main_acceleration_active, "video recording prevents acceleration");
+  main_isvcap = FALSE;
+ #endif
+  cu_avr_reset();
+- main_fast_flash_tick(106U);
+- CHECK(!main_fast_flash_active && !cu_avr_flash_active(FALSE), "reset clears flash activity");
++ main_acceleration_tick(106U);
++ CHECK(!main_acceleration_active && !cu_avr_flash_active(FALSE), "reset clears flash activity");
+  mainui_set_fast_flash(FALSE);
+  mainui_config_save_now();
+  mainui_set_fast_flash(TRUE);
+diff --git a/tools/cuzebox_web_debugger.py b/tools/cuzebox_web_debugger.py
+--- a/tools/cuzebox_web_debugger.py
++++ b/tools/cuzebox_web_debugger.py
+@@ -188,12 +188,13 @@
+             self.wfile.write(bytes(int(v) & 0xFF for v in vals)); off += n
+ 
+     def _screenshot_download(self, parsed: urllib.parse.ParseResult) -> None:
+-        qs = urllib.parse.parse_qs(parsed.query); name = self._safe_name(qs.get("name", ["cuzebox-screenshot.bmp"])[0], "cuzebox-screenshot.bmp")
+-        info = self.bridge.command("SCREENSHOT_CAPTURE")
++        qs = urllib.parse.parse_qs(parsed.query); name = self._safe_name(qs.get("name", ["cuzebox-screenshot.png"])[0], "cuzebox-screenshot.png")
++        bmp = name.lower().endswith('.bmp')
++        info = self.bridge.command("SCREENSHOT_CAPTURE BMP" if bmp else "SCREENSHOT_CAPTURE")
+         if not info.get("ok") or int(info.get("size", 0)) <= 0:
+             self._json({"ok": 0, "error": "screenshot capture failed"}, HTTPStatus.BAD_REQUEST); return
+         size = int(info["size"]); width = int(info.get("width", 0)); height = int(info.get("height", 0))
+-        self.send_response(HTTPStatus.OK); self.send_header("Content-Type", "image/bmp"); self.send_header("Content-Length", str(size)); self.send_header("Content-Disposition", f'attachment; filename="{name}"'); self.send_header("Cache-Control", "no-store"); self.send_header("X-CUzeBox-Image-Size", f"{width}x{height}"); self.end_headers()
++        self.send_response(HTTPStatus.OK); self.send_header("Content-Type", "image/bmp" if bmp else "image/png"); self.send_header("Content-Length", str(size)); self.send_header("Content-Disposition", f'attachment; filename="{name}"'); self.send_header("Cache-Control", "no-store"); self.send_header("X-CUzeBox-Image-Size", f"{width}x{height}"); self.send_header("X-CUEX-Capture-Metadata", json.dumps(info.get("capture", {}), separators=(",", ":"))); self.end_headers()
+         try:
+             off = 0
+             while off < size:
+diff --git a/tools/test_api_multiclient.py b/tools/test_api_multiclient.py
+--- a/tools/test_api_multiclient.py
++++ b/tools/test_api_multiclient.py
+@@ -116,6 +116,8 @@
+ cu_row_t const* cu_avr_get_row(void){ auint i; for(i=0U;i<1820U;i++)g_row.pixels[i]=(uint8)(i&0xFFU); g_row.pno=40U; return &g_row; }
+ auint cu_avr_get_video_cycle(void){ return 321U; }
+ auint cu_avr_getcycle(void){ return 100000U; }
++boole cu_avr_interlace_field(auint* parity){if(parity)*parity=0U;return FALSE;}
++void cu_avr_watchpoint_timing(auint* cycle,auint* row,auint* beam){if(cycle)*cycle=100000U;if(row)*row=40U;if(beam)*beam=321U;}
+ cu_state_cpu_t* cu_avr_get_state(void){ g_cpu_state.cycle=100000U; g_cpu_state.spi_tran=TRUE; g_cpu_state.spi_end=100016U; g_cpu_state.spi_tx=0xA5U; g_cpu_state.spi_rx=0x5AU; g_cpu_state.iors[CU_IO_SPDR]=0x3CU; g_cpu_state.iors[CU_IO_SPCR]=0x50U; g_cpu_state.iors[CU_IO_SPSR]=0x01U; return &g_cpu_state; }
+ auint cu_avr_get_video_pulse(void){ return 41U; }
+ auint cu_avr_get_video_beam_cycle(void){ return 321U; }
+@@ -138,6 +140,11 @@
+ boole mainui_save_screenshot_auto(char* out, auint n){ if(n>0){ snprintf(out,n,"test.bmp"); } return TRUE; }
+ boole mainui_save_screenshot_file(char const* p){ (void)p; return TRUE; }
+ boole mainui_capture_screenshot_bmp(uint8** out, auint* n, auint* w, auint* h){ auint i; if(!out||!n)return FALSE; *n=66U; *out=(uint8*)malloc(*n); if(!*out)return FALSE; (*out)[0]='B';(*out)[1]='M';for(i=2U;i<*n;i++)(*out)[i]=(uint8)(i-2U); if(w)*w=4U;if(h)*h=4U;return TRUE; }
++boole mainui_capture_screenshot_png(uint8** out,auint* n,auint* w,auint* h){if(!mainui_capture_screenshot_bmp(out,n,w,h))return FALSE;memcpy(*out,"\211PNG\r\n\032\n",8U);return TRUE;}
++void mainui_screenshot_metadata(char* out,auint cap,auint w,auint h,boole bmp,boole gui){(void)w;(void)h;(void)bmp;(void)gui;snprintf(out,cap,"{\"schema\":\"cuex-shot-1\"}");}
++boole mainui_screenshot_settings(char const* args,char* out,auint cap){(void)args;snprintf(out,cap,"{\"ok\":1,\"x_width\":1440}");return TRUE;}
++void diagnostics_command(char* args,char* reply,unsigned capacity){(void)args;snprintf(reply,capacity,"{\"ok\":0}");}
++void logical_test_command(char* args,char* reply,size_t capacity){(void)args;snprintf(reply,capacity,"{\"ok\":0}");}
+ 
+ boole mainui_debug_is_paused(void){ return g_paused; }
+ void mainui_debug_set_paused(boole p){ g_paused=p; }
+@@ -193,6 +200,8 @@
+ #define UGET(n) auint n(void){return 0U;}
+ #define BSET(n) void n(boole v){(void)v;}
+ #define USET(n) void n(auint v){(void)v;}
++BGET(mainui_get_area_weighted) UGET(mainui_get_area_weighted_mode) UGET(mainui_get_interlace_mode) UGET(mainui_get_interlace_presentation) BGET(mainui_get_tv_sync_pll) UGET(mainui_get_tv_sync_recovery) UGET(mainui_get_tv_sync_strength)
++BSET(mainui_set_area_weighted) USET(mainui_set_area_weighted_mode) USET(mainui_set_interlace_mode) USET(mainui_set_interlace_presentation) BSET(mainui_set_tv_sync_pll) USET(mainui_set_tv_sync_recovery) USET(mainui_set_tv_sync_strength)
+ #define SGET(n) char const* n(void){return "";}
+ #define SSET(n) void n(char const* v){(void)v;}
+ BGET(mainui_get_display_gameonly) BGET(mainui_get_display_fullscreen) BGET(mainui_get_system_messages) BGET(mainui_get_gui_gamepad_enable) UGET(mainui_get_gui_gamepad_speed_pct) BGET(mainui_get_gui_pause_while_open) BGET(mainui_get_gui_virtual_keyboard)
+@@ -412,10 +421,14 @@
+             assert recv_json(c3)["ok"] == 1
+             send(c3, "SCREENSHOT_CAPTURE")
+             sc = recv_json(c3)
+-            assert sc["ok"] == 1 and sc["size"] == 66 and sc["format"] == "bmp24"
++            assert sc["ok"] == 1 and sc["size"] == 66 and sc["format"] == "png"
+             send(c3, "SCREENSHOT_READ 0 66")
+             sr = recv_json(c3)
+-            assert sr["values"][:4] == [66, 77, 0, 1]
++            assert sr["values"][:8] == [137,80,78,71,13,10,26,10]
++            send(c3, "SCREENSHOT_CAPTURE BMP")
++            assert recv_json(c3)["format"] == "bmp24"
++            send(c3,"SCREENSHOT_READ 0 4")
++            assert recv_json(c3)["values"] == [66,77,0,1]
+             send(c3, "SCREENSHOT_CLEAR")
+             assert recv_json(c3)["ok"] == 1
+ 
+diff --git a/tools/test_embedded_web_server.py b/tools/test_embedded_web_server.py
+--- a/tools/test_embedded_web_server.py
++++ b/tools/test_embedded_web_server.py
+@@ -7,6 +7,8 @@
+ #include <pthread.h>
+ #include <stdlib.h>
+ #include <unistd.h>
++#include <strings.h>
++#define SDL_strcasecmp strcasecmp
+ typedef struct SDL_Thread { pthread_t t; int (*fn)(void*); void* data; int rc; } SDL_Thread;
+ static void* sdl_tramp(void* p){ SDL_Thread* t=(SDL_Thread*)p; t->rc=t->fn(t->data); return 0; }
+ static inline SDL_Thread* SDL_CreateThread(int (*fn)(void*),const char* name,void* data){(void)name;SDL_Thread*t=calloc(1,sizeof(*t));if(!t)return 0;t->fn=fn;t->data=data;if(pthread_create(&t->t,0,sdl_tramp,t)){free(t);return 0;}return t;}
+@@ -41,6 +43,7 @@
+     elif cmd=='GET_STATE': c.sendall(b'{"ok":1,"frame":123,"paused":0}\n')
+     elif cmd=='PING': c.sendall(b'{"ok":1,"reply":"PONG"}\n')
+     elif cmd=='EMU_STATUS': c.sendall((json.dumps({'ok':1,'rom_dir':self.rom_dir},separators=(',',':'))+'\n').encode())
++    elif cmd.startswith('SCREENSHOT_SETTINGS'): c.sendall(b'{"ok":1,"x_width":256,"y_scale":3,"sampling":"AREA"}\n')
+     elif cmd.startswith('MEM_SIZE '):
+      reg=cmd.split()[1].upper();sizes={'SRAM':4096,'IO':256,'FLASH':65536,'EEPROM':2048,'SPIRAM':8192};c.sendall((json.dumps({'ok':1,'region':reg,'size':sizes.get(reg,0)},separators=(',',':'))+'\n').encode())
+     elif cmd.startswith('READ_MEM '):
+@@ -49,7 +52,9 @@
+      parts=cmd.split(' ',2);path=parts[2];self.loaded_path=path
+      try:self.loaded_bytes=pathlib.Path(path).read_bytes();c.sendall(b'{"ok":1,"loaded":1}\n')
+      except OSError:c.sendall(b'{"ok":0,"error":"missing upload"}\n')
+-    elif cmd=='SCREENSHOT_CAPTURE': c.sendall((json.dumps({'ok':1,'size':len(self.screenshot),'width':4,'height':4,'format':'bmp24'},separators=(',',':'))+'\n').encode())
++    elif cmd in ('SCREENSHOT_CAPTURE','SCREENSHOT_CAPTURE BMP'):
++     self.screenshot=(b'BM'+bytes(range(64))) if cmd.endswith(' BMP') else (b'\x89PNG\r\n\x1a\n'+bytes(range(58)))
++     c.sendall((json.dumps({'ok':1,'size':len(self.screenshot),'width':4,'height':4,'format':'bmp24' if cmd.endswith(' BMP') else 'png','capture':{'schema':'cuex-shot-1','path':'cycle','width':4,'height':4}},separators=(',',':'))+'\n').encode())
+     elif cmd.startswith('SCREENSHOT_READ '):
+      _,a,n=cmd.split();a=int(a,0);n=int(n,0);vals=list(self.screenshot[a:a+n]);c.sendall((json.dumps({'ok':1,'offset':a,'len':len(vals),'values':vals},separators=(',',':'))+'\n').encode())
+     elif cmd=='SCREENSHOT_CLEAR': c.sendall(b'{"ok":1}\n')
+@@ -76,7 +81,9 @@
+   exe=d/'webtest';subprocess.run([cc,'-std=gnu99','-DENABLE_API_SERVER=1','-I',str(d),'-I',str(ROOT),str(ROOT/'web_server.c'),str(d/'h.c'),'-pthread','-o',str(exe)],check=True)
+   hp,ap=free_port(),free_port();api=FakeAPI(ap);api.rom_dir=td;api.start();proc=subprocess.Popen([str(exe),str(hp),str(ap)])
+   try:
+-   home=wait_http(hp);assert b'CUzeBox Web Tools' in home
++   home=wait_http(hp);assert b'CUzeboxEX Web Tools' in home
++   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/controls');r=c.getresponse();controls=r.read();c.close();assert b'SCREENSHOT_SETTINGS' in controls and b'Y scale' in controls and b'X sampling' in controls and b'Preset' in controls
++   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('POST','/api/command',json.dumps({'command':'SCREENSHOT_SETTINGS SET X_WIDTH 256'}),{'Content-Type':'application/json'});r=c.getresponse();settings=json.loads(r.read());c.close();assert settings['x_width']==256 and settings['sampling']=='AREA'
+    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/debugger');r=c.getresponse();dbg=r.read();c.close();assert r.status==200 and b'Cycle-domain scanline beam' in dbg and b'VIDEO_BEAM' in dbg
+    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/sd');r=c.getresponse();sd=r.read();c.close();assert r.status==200 and b'SLOW' in sd and b'NORMAL' in sd and b'FAST' in sd and b'CUSTOM' in sd and b'inter-sector' in sd
+    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=2);c.request('GET','/audio');r=c.getresponse();aud=r.read();c.close();assert r.status==200 and b'Audio Scope' in aud and b'AUDIO_SCOPE' in aud and b'zero scope hot-path overhead' in aud
+@@ -85,6 +92,8 @@
+    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/memory-dump?region=SRAM&addr=17&len=700&name=test.bin');r=c.getresponse();dump=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and dump==api.mem[17:717] and 'test.bin' in (hdr or '')
+ 
+    c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/screenshot-download?name=shot.bmp');r=c.getresponse();shot=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and shot==b'BM'+bytes(range(64)) and 'shot.bmp' in (hdr or '') and r.getheader('Content-Type')=='image/bmp'
++   c=http.client.HTTPConnection('127.0.0.1',hp,timeout=4);c.request('GET','/api/screenshot-download');r=c.getresponse();shot=r.read();hdr=r.getheader('Content-Disposition');c.close();assert r.status==200 and shot.startswith(b'\x89PNG\r\n\x1a\n') and 'screenshot.png' in (hdr or '') and r.getheader('Content-Type')=='image/png'
++   assert json.loads(r.getheader('X-CUEX-Capture-Metadata'))=={'schema':'cuex-shot-1','path':'cycle','width':4,'height':4}
+ 
+    # Browser ROM upload accepts binary bodies (including NULs), stores a persistent
+    # copy, then asks the ordinary API to load the resulting path.
+diff --git a/tools/test_headless_api.py b/tools/test_headless_api.py
+--- a/tools/test_headless_api.py
++++ b/tools/test_headless_api.py
+@@ -71,7 +71,7 @@
+             info = command("SCREENSHOT_CAPTURE")
+             assert info["width"] > 0 and info["height"] > 0 and info["size"] > 54
+             screenshot = command("SCREENSHOT_READ 0 54")
+-            assert screenshot, "in-memory BMP inaccessible"
++            assert info["format"] == "png" and screenshot["values"][:8] == [137,80,78,71,13,10,26,10], "in-memory PNG inaccessible"
+             assert command("READ_REGS")
+             before = command("AUDIO_SCOPE SOURCE 262")["samples"]
+             time.sleep(.1)
+diff --git a/tools/test_screenshot_api.py b/tools/test_screenshot_api.py
+new file mode 100644
+--- /dev/null
++++ b/tools/test_screenshot_api.py
+@@ -0,0 +1,80 @@
++"""Exercise real file/API PNG capture while paused, optionally with a game ROM.
++Usage: python3 tools/test_screenshot_api.py /path/to/cuzebox [--rom game.uze]
++"""
++import argparse
++import json
++import os
++from pathlib import Path
++import socket
++import subprocess
++import tempfile
++
++from cuzebox_api import CUzeBoxApi
++from test_screenshot_png import decode,metadata
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('emulator',type=Path)
++    parser.add_argument('--rom',type=Path)
++    parser.add_argument('--output',type=Path)
++    args=parser.parse_args()
++    root=Path(__file__).resolve().parents[1]
++    out=(args.output or root/'_obj_/screenshot-api').resolve();out.mkdir(parents=True,exist_ok=True)
++    with socket.socket() as probe:
++        probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
++    with tempfile.TemporaryDirectory(prefix='runtime-',dir=out) as temp:
++        work=Path(temp)
++        (work/'config.cfg').write_text('ApiServer=0\nScreenshotBypassFilters=1\nScreenshotIncludeGui=0\n')
++        with (out/'emulator.log').open('w') as log:
++            proc=subprocess.Popen([str(args.emulator.resolve()),'--headless','--paused','--unthrottled','--api-port',str(port)],cwd=work,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
++            api=CUzeBoxApi(port=port)
++            try:
++                api.wait_ready(15)
++                def command(text):
++                    result=api.command(text);assert result.get('ok'),(text,result);return result
++                if args.rom:command('LOAD_ROM WAIT '+args.rom.resolve().as_posix())
++                command('RUN_FRAMES 120');api.wait_run_complete(timeout=30)
++                before=command('GET_STATE')['frame']
++                image=out/'cycle.png';command('SCREENSHOT '+image.as_posix())
++                info=command('SCREENSHOT_CAPTURE');assert info['format']=='png'
++                payload=bytearray()
++                for offset in range(0,info['size'],4096):
++                    payload.extend(command(f'SCREENSHOT_READ {offset} {min(4096,info["size"]-offset)}')['values'])
++                assert image.read_bytes()==payload,'file/API PNG disagreement'
++                assert metadata(image)==info['capture'],'PNG/API metadata disagreement'
++                assert command('GET_STATE')['frame']==before,'capture advanced paused emulation'
++                dims,rgb=decode(image)
++                assert dims[0]==1440 and dims[1]%5==0
++                if args.rom:assert any(rgb),'game produced no visible cycle samples'
++                source_rows=info['capture']['source_rows'];settings=command('SCREENSHOT_SETTINGS')
++                assert settings['preset']=='CYCLE' and settings['y_scale']==5
++                resized=[]
++                for width,sampling in [(256,'NEAREST'),(240,'AREA'),(192,'LINEAR'),(160,'AREA')]:
++                    settings=command(f'SCREENSHOT_SETTINGS PRESET WIDTH{width}')
++                    assert settings['x_width']==width and settings['y_scale']==1
++                    command('SCREENSHOT_SETTINGS SET SAMPLING '+sampling)
++                    command('SCREENSHOT_SETTINGS SET Y_SCALE 3')
++                    assert command('SCREENSHOT_SETTINGS')['preset']=='CUSTOM'
++                    scaled=out/f'width-{width}.png';command('SCREENSHOT '+scaled.as_posix())
++                    si=command('SCREENSHOT_CAPTURE');sm=metadata(scaled)
++                    assert sm==si['capture'] and sm['sampling']==sampling and not sm['cycle_exact_x']
++                    sd,_=decode(scaled);assert sd==(width,source_rows*3),(sd,width)
++                    assert (si['width'],si['height'])==sd
++                    resized.append({'width':width,'height':sd[1],'sampling':sampling})
++                for invalid in ['SET X_WIDTH 0','SET Y_SCALE 11','SET SAMPLING CUBIC','SET X_WIDTH 240garbage','PRESET UNKNOWN']:
++                    assert not api.command('SCREENSHOT_SETTINGS '+invalid)['ok'],invalid
++                command('SCREENSHOT_SETTINGS PRESET CYCLE')
++                assert command('GET_STATE')['frame']==before,'settings/capture advanced paused emulation'
++                assert command('SCREENSHOT_CAPTURE BMP')['format']=='bmp24'
++                assert command('SCREENSHOT_READ 0 2')['values']==[66,77]
++                result={'width':dims[0],'height':dims[1],'bytes':len(payload),'paused_frame':before,'file_api_equal':True,'capture_did_not_advance':True,'legacy_bmp':True,'resized':resized,'metadata_matches':True}
++                (out/'result.json').write_text(json.dumps(result,indent=2));print(json.dumps(result))
++            finally:
++                try:api.command('QUIT')
++                except Exception:pass
++                try:api.close()
++                except Exception:pass
++                try:proc.wait(timeout=5)
++                except subprocess.TimeoutExpired:proc.terminate();proc.wait(timeout=5)
++
++if __name__=='__main__':main()
+diff --git a/tools/test_screenshot_png.py b/tools/test_screenshot_png.py
+new file mode 100644
+--- /dev/null
++++ b/tools/test_screenshot_png.py
+@@ -0,0 +1,77 @@
++"""Independently verify PNG chunks, CRCs, DEFLATE, pixels and screenshot defaults.
++Run after cycle-screenshot-test and screenshot-tool-test, passing their OBD.
++Only Python's standard library is required; Pillow is an optional second decoder.
++"""
++from pathlib import Path
++import struct
++import sys
++import zlib
++import json
++
++def metadata(path):
++    data=path.read_bytes();pos=8
++    while pos<len(data):
++        n=struct.unpack_from('>I',data,pos)[0]
++        if data[pos+4:pos+8]==b'tEXt':
++            key,_,value=data[pos+8:pos+8+n].partition(b'\0')
++            if key==b'CUEX.Capture':return json.loads(value)
++        pos+=12+n
++    raise AssertionError(('missing capture metadata',path))
++
++def decode(path):
++    data=path.read_bytes()
++    assert data[:8]==b'\x89PNG\r\n\x1a\n',path
++    pos=8;stream=bytearray();dims=None;ended=False
++    while pos<len(data):
++        n=struct.unpack_from('>I',data,pos)[0]
++        kind=data[pos+4:pos+8];payload=data[pos+8:pos+8+n]
++        assert len(payload)==n and pos+12+n<=len(data),path
++        crc=struct.unpack_from('>I',data,pos+8+n)[0]
++        assert zlib.crc32(kind+payload)&0xffffffff==crc,(path,kind)
++        if kind==b'IHDR':
++            w,h,depth,color,compression,filtering,interlace=struct.unpack('>IIBBBBB',payload)
++            assert (depth,color,compression,filtering,interlace)==(8,2,0,0,0)
++            dims=(w,h)
++        elif kind==b'IDAT':stream.extend(payload)
++        elif kind==b'IEND':assert n==0;ended=True
++        pos+=12+n
++    assert ended and pos==len(data) and dims
++    w,h=dims;inflater=zlib.decompressobj();raw=inflater.decompress(stream)+inflater.flush()
++    assert inflater.eof and not inflater.unused_data and len(raw)==(w*3+1)*h,path
++    rgb=bytearray();previous=bytes(w*3)
++    for y in range(h):
++        off=y*(w*3+1)
++        assert raw[off]==2,(path,'expected PNG Up filter')
++        previous=bytes((a+b)&255 for a,b in zip(raw[off+1:off+1+w*3],previous))
++        rgb.extend(previous)
++    try:
++        from PIL import Image
++    except ImportError:
++        pass
++    else:
++        with Image.open(path) as image:
++            image.load();assert image.size==dims and image.convert('RGB').tobytes()==rgb
++    return dims,bytes(rgb)
++
++def main():
++    base=Path(sys.argv[1]).resolve()
++    case=base/'cycle-screenshot-run'
++    dims,rgb=decode(case/'cycles.png')
++    meta=metadata(case/'cycles.png')
++    assert meta['path']=='cycle' and meta['cycle_exact_x'] and meta['source_valid']
++    assert (meta['width'],meta['height'])==dims and meta['y_scale_num']==5
++    assert dims==(1440,1120) and rgb==(case/'cycles.rgb').read_bytes()
++    # Opaque black rows in the game are legitimate content, never crop them.
++    assert not any(rgb[:1440*3*5]) and not any(rgb[-1440*3*5:])
++    codec_files=list(case.glob('codec-*.png'));assert len(codec_files)==8
++    for path in codec_files:
++        _,decoded=decode(path);assert decoded==path.with_suffix('.rgb').read_bytes(),path
++    dims,_=decode(case/'filtered.png');assert dims[0]<dims[1] and dims[1]==456
++    tool=base/'screenshot-tool-run'
++    for entry in (tool/'png-fixtures.txt').read_text().splitlines():
++        kind,name=entry.split(' ',1);dims,rgb=decode(tool/name)
++        if kind=='GUI':assert dims==(640,560) and any(rgb),'missing rendered GUI'
++        else:assert dims==(1440,1125) and not any(rgb),'default screenshot added GUI/borders'
++    print('PNG verification passed: independent zlib/CRC decode, RGB equality, GUI opt-in and cycle-only defaults.')
++
++if __name__=='__main__':main()
+diff --git a/tools/test_screenshot_web_controls.js b/tools/test_screenshot_web_controls.js
+new file mode 100644
+--- /dev/null
++++ b/tools/test_screenshot_web_controls.js
+@@ -0,0 +1,34 @@
++/* Execute the shipped controls-page script with a small DOM/API fixture.
++ * No browser or npm packages required: node tools/test_screenshot_web_controls.js */
++const fs=require('fs'),vm=require('vm'),assert=require('assert');
++const html=fs.readFileSync(require('path').join(__dirname,'web_debugger/controls.html'),'utf8');
++const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
++const presets=[['CYCLE',1440,5],['RAW',1440,1],['WIDTH256',256,1]].map(([name,x_width,y_scale])=>({name,x_width,y_scale}));
++const state={ok:1,x_width:1440,y_scale:5,sampling:'NEAREST',bypass_filters:1,include_gui:0,preset:'CYCLE',x_choices:[1440,2880,256,240,192,160],sampling_choices:['NEAREST','AREA','LINEAR'],presets};
++const nodes={},commands=[];
++const context={
++ $:id=>nodes[id]||(nodes[id]={innerHTML:''}),esc:s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;'),
++ command:async cmd=>{
++  commands.push(cmd);const parts=cmd.split(' ');
++  if(parts[1]==='PRESET'){const p=presets.find(p=>p.name===parts[2]);Object.assign(state,{x_width:p.x_width,y_scale:p.y_scale});}
++  else if(parts[1]==='SET'){const key=parts[2].toLowerCase();state[key]=key==='sampling'?parts[3]:Number(parts[3]);}
++  state.preset=presets.find(p=>p.x_width===state.x_width&&p.y_scale===state.y_scale)?.name||'CUSTOM';
++  return state;
++ }
++};
++vm.createContext(context);
++vm.runInContext(script.replace('bridgeStatus();refresh();setInterval(refresh,3000);',''),context);
++(async()=>{
++ context.renderShot(state);
++ assert(nodes.screenshotControls.innerHTML.includes('value="5" selected'));
++ await context.shotSet('PRESET','WIDTH256');
++ assert(state.x_width===256&&state.y_scale===1);
++ await context.shotSet('Y_SCALE','3');
++ assert(state.preset==='CUSTOM'&&nodes.screenshotControls.innerHTML.includes('Custom'));
++ await context.shotSet('X_WIDTH','240');await context.shotSet('SAMPLING','AREA');
++ assert(commands.includes('SCREENSHOT_SETTINGS SET X_WIDTH 240'));
++ assert(nodes.screenshotControls.innerHTML.includes('value="AREA" selected'));
++ await context.shotSet('PRESET','CYCLE');
++ assert(state.x_width===1440&&state.y_scale===5&&state.sampling==='AREA');
++ console.log('Screenshot web controls: PASS (preset, independent axes, custom state, sampling, command routing)');
++})().catch(e=>{console.error(e);process.exitCode=1;});
+diff --git a/tools/web_debugger/controls.html b/tools/web_debugger/controls.html
+--- a/tools/web_debugger/controls.html
++++ b/tools/web_debugger/controls.html
+@@ -4,6 +4,7 @@
+ <div class="grid">
+ <section><h2>ROM / state</h2><label>ROM path <input id="romPath" size="58"></label><button onclick="loadRom(false)">Load paused</button><button onclick="loadRom(true)">Load & run</button><div class="row"><input id="romFile" type="file"><button onclick="uploadRom(false)">Upload paused</button><button onclick="uploadRom(true)">Upload & run</button></div><div class="row"><progress id="uploadProgress" value="0" max="1" style="width:260px"></progress><span id="uploadStatus" class="muted">Browser upload copies the ROM into the configured ROM directory.</span></div><button onclick="command('RESET').then(refresh)">Reset</button><button onclick="command('SCREENSHOT')">Screenshot to host</button><button onclick="downloadScreenshot()">Download screenshot</button><div id="recent"></div><h3>Save states</h3><div id="slots"></div></section>
+ <section><h2>Display / timing</h2><div id="displayControls"></div></section>
++<section><h2>Screenshots</h2><div id="screenshotControls"></div><p class="muted">X width resamples the complete 1440-cycle window. Scale controls apply with Bypass filters on. Presets set X and Y; both remain editable. Include GUI applies to native GUI saves only.</p><button onclick="command('SCREENSHOT')">Save PNG to host</button><button onclick="downloadScreenshot()">Download PNG</button></section>
+ <section><h2>Hardware diagnostics / failure capture</h2>
+ <button onclick="diagCommand('ENABLE')">Enable warnings</button><button onclick="diagCommand('DISABLE')">Disable warnings</button>
+ <label>Output directory <input id="failureDir" value="failures"></label>
+@@ -27,12 +28,20 @@
+ function num(k,l,min=0,max=999){return `<label>${esc(l)} <input type=number min=${min} max=${max} value="${st[k]??0}" onchange="setv('${k}',this.value)"></label>`}
+ function txt(k,l){return `<label>${esc(l)} <input size=42 value="${esc(st[k]??'')}" onchange="setv('${k}',this.value)"></label>`}
+ async function setv(k,v){await command(`EMU_SET ${k} ${v}`);refresh()}
++function shotSelect(label,key,choices,current){return `<label>${esc(label)} <select onchange="shotSet('${key}',this.value)">${choices.map(([v,t])=>`<option value="${esc(String(v))}" ${String(v)===String(current)?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`}
++async function shotSet(key,value){const r=await command(`SCREENSHOT_SETTINGS ${key==='PRESET'?'PRESET':'SET '+key} ${value}`);if(r.ok)renderShot(r)}
++function renderShot(r){
++ const presets=r.presets.map(p=>[p.name,`${p.name}: ${p.x_width} × ${p.y_scale}X`]);if(r.preset==='CUSTOM')presets.unshift(['CUSTOM','Custom']);
++ const widths=r.x_choices.map(w=>[w,`${w}${w===1440?' (1X)':w===2880?' (2X)':''}`]);if(!r.x_choices.includes(r.x_width))widths.unshift([r.x_width,String(r.x_width)]);
++ $('screenshotControls').innerHTML=shotSelect('Preset','PRESET',presets,r.preset)+shotSelect('X width','X_WIDTH',widths,r.x_width)+shotSelect('Y scale','Y_SCALE',Array.from({length:10},(_,i)=>[i+1,`${i+1}X`]),r.y_scale)+shotSelect('X sampling','SAMPLING',r.sampling_choices.map(s=>[s,s]),r.sampling)+`<label><input type=checkbox ${r.bypass_filters?'checked':''} onchange="shotSet('BYPASS_FILTERS',this.checked?1:0)"> Bypass filters</label><label><input type=checkbox ${r.include_gui?'checked':''} onchange="shotSet('INCLUDE_GUI',this.checked?1:0)"> Include GUI (native GUI save)</label>`;
++}
+ async function loadRom(run){const p=$('romPath').value.trim();if(p)await command(`LOAD_ROM ${run?'RUN':'WAIT'} ${p}`);refresh()}
+-function downloadScreenshot(){const a=document.createElement('a');a.href='/api/screenshot-download?name=cuzebox-screenshot.bmp';a.download='cuzebox-screenshot.bmp';document.body.appendChild(a);a.click();a.remove()}
++function downloadScreenshot(){const a=document.createElement('a');a.href='/api/screenshot-download?name=cuzebox-screenshot.png';a.download='cuzebox-screenshot.png';document.body.appendChild(a);a.click();a.remove()}
+ async function uploadRom(run){const f=$('romFile').files&&$('romFile').files[0];if(!f){$('uploadStatus').textContent='Choose a ROM file first.';return}const prog=$('uploadProgress'),status=$('uploadStatus');prog.value=0;prog.max=f.size||1;let id=null;try{const qs=new URLSearchParams({name:f.name,mode:run?'RUN':'WAIT'});let r=await fetch('/api/upload-rom/start?'+qs,{method:'POST'});let j=await r.json();if(!j.ok)throw new Error(j.error||'Upload start failed');id=j.id;if(f.size>Number(j.max_bytes||0))throw new Error(`ROM exceeds ${j.max_bytes} byte web-upload limit`);const chunk=48*1024;for(let off=0;off<f.size;off+=chunk){const part=f.slice(off,Math.min(f.size,off+chunk));r=await fetch(`/api/upload-rom/chunk?id=${id}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:part});j=await r.json();if(!j.ok)throw new Error(j.error||'Upload failed');prog.value=Math.min(f.size,off+part.size);status.textContent=`Uploading ${f.name}: ${prog.value.toLocaleString()} / ${f.size.toLocaleString()} bytes`;}r=await fetch(`/api/upload-rom/finish?id=${id}`,{method:'POST'});j=await r.json();if(!j.ok)throw new Error(j.error||'ROM load failed');status.textContent=`Loaded ${f.name}${run?' and running':' paused'}.`;await refresh()}catch(e){status.textContent=String(e.message||e);if(id!==null)try{await fetch(`/api/upload-rom/cancel?id=${id}`,{method:'POST'})}catch(_){}}}
+ async function slot(op,n){await command(`SAVESTATE ${op} ${n}`);refresh()}
+ async function recent(i){await command(`RECENT_ROMS LOAD ${i}`);refresh()}
+ async function refresh(){const r=await command('EMU_STATUS');if(!r.ok)return;st=r;$('romPath').value=st.rom_path||'';
++ const shot=await command('SCREENSHOT_SETTINGS');if(shot.ok)renderShot(shot);
+  $('displayControls').innerHTML=bools.map(x=>cb(...x)).join('')+num('gui_gamepad_speed','GUI gamepad speed %',1,400)+num('interlace_mode','Interlace: 0=ROM hint, 1=off, 2=on, 3=detect',0,3)+num('interlace_presentation','Interlace presentation: 0=ROM hint, 1=field, 2=weave',0,2)+num('tv_sync_strength','PLL skew strength %',0,100)+num('tv_sync_recovery','PLL recovery % (higher = less skew)',25,800)+num('render_path','Render path',0,10)+num('filter_pre','Pre filter',0,20)+num('filter_scale','Scale filter',0,20)+num('filter_crt','CRT mode',0,20);
+  $('audioControls').innerHTML=audbool.map(x=>cb(...x)).join('')+num('audio_rate','Output-rate mode',0,20)+num('audio_latency','Latency mode',0,20)+num('audio_resampler','Resampler',0,20)+num('audio_lowpass','Low-pass',0,20)+num('audio_lowpass_quality','Low-pass quality',0,20)+num('audio_monitor','Monitor mode',0,20)+num('audio_monitor_width','Monitor width %',0,100)+num('audio_reverb','Reverb',0,20)+num('audio_volume','Master volume %',0,100);
+  $('inputControls').innerHTML=inputbool.map(x=>cb(...x)).join('')+num('mouse_scale','Mouse scale',1,32)+num('spiram_pages','SPI RAM pages mode',0,20);
+diff --git a/web_server.c b/web_server.c
+--- a/web_server.c
++++ b/web_server.c
+@@ -422,16 +422,19 @@
+ 
+ static void start_screenshot_download(web_client_t* c,char const* query)
+ {
+-	char name_in[256],name[256],reply[WEB_API_REPLY_CAP],h[1024];
++	char name_in[256],name[256],reply[WEB_API_REPLY_CAP],h[4096],metadata[1400]="{}";
+ 	auint size=0U,width=0U,height=0U;
+ 	wsock_t s;
+-	if(!query_value(query,"name",name_in,sizeof(name_in)))snprintf(name_in,sizeof(name_in),"screenshot.bmp");
+-	sanitize_filename(name,sizeof(name),name_in,"screenshot.bmp");
++	if(!query_value(query,"name",name_in,sizeof(name_in)))snprintf(name_in,sizeof(name_in),"screenshot.png");
++	sanitize_filename(name,sizeof(name),name_in,"screenshot.png");
++	boole bmp=strrchr(name,'.')&&!SDL_strcasecmp(strrchr(name,'.'),".bmp");
+ 	s=api_open_socket();
+ 	if(s==WSOCK_INVALID){static const unsigned char e[]="{\"ok\":0,\"error\":\"CUzeBox API unavailable\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
+-	if(!api_socket_command(s,"SCREENSHOT_CAPTURE",reply,sizeof(reply))||strstr(reply,"\"ok\":1")==NULL||!json_uint(reply,"size",&size)||size==0U){WSOCK_CLOSE(s);static const unsigned char e[]="{\"ok\":0,\"error\":\"screenshot capture failed\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
++	if(!api_socket_command(s,bmp?"SCREENSHOT_CAPTURE BMP":"SCREENSHOT_CAPTURE",reply,sizeof(reply))||strstr(reply,"\"ok\":1")==NULL||!json_uint(reply,"size",&size)||size==0U){WSOCK_CLOSE(s);static const unsigned char e[]="{\"ok\":0,\"error\":\"screenshot capture failed\"}";http_reply(c,400,"application/json",e,sizeof(e)-1);return;}
+ 	json_uint(reply,"width",&width);json_uint(reply,"height",&height);
+-	snprintf(h,sizeof(h),"HTTP/1.1 200 OK\r\nContent-Type: image/bmp\r\nContent-Length: %u\r\nContent-Disposition: attachment; filename=\"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-CUzeBox-Image-Size: %ux%u\r\nConnection: close\r\n\r\n",(unsigned)size,name,(unsigned)width,(unsigned)height);
++	{char const* p=strstr(reply,"\"capture\":{");if(p){char const* end;p+=10;end=strchr(p,'}');
++	 if(end&&(auint)(end-p+1)<sizeof(metadata)&&!memchr(p,'\r',(size_t)(end-p+1))&&!memchr(p,'\n',(size_t)(end-p+1))){memcpy(metadata,p,(size_t)(end-p+1));metadata[end-p+1]=0;}}}
++	snprintf(h,sizeof(h),"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %u\r\nContent-Disposition: attachment; filename=\"%s\"\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-CUzeBox-Image-Size: %ux%u\r\nX-CUEX-Capture-Metadata: %s\r\nConnection: close\r\n\r\n",bmp?"image/bmp":"image/png",(unsigned)size,name,(unsigned)width,(unsigned)height,metadata);
+ 	queue_raw(c,h,(auint)strlen(h));
+ 	c->dump_sock=s;c->dump_active=TRUE;c->dump_kind=WEB_DUMP_SCREENSHOT;c->keep_open=TRUE;c->dump_addr=0U;c->dump_remaining=size;c->dump_region[0]=0;
+ }

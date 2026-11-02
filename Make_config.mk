@@ -330,6 +330,11 @@ FLAG_HEADLESS=0
 # Native ESP TLS and Uzenet authentication; needs target OpenSSL development libraries.
 FLAG_OPENSSL=0
 
-# Optional AVR clock and GPIO models. Legacy release behavior is the default.
-FLAG_AVR_TIMER1_CLOCK=0
-FLAG_AVR_GPIO=0
+# Native AVR clock and GPIO behavior used by verified ESP8266/UzeNet clients.
+# Emscripten retains its separate browser-overlay defaults in Make_defines.mk.
+FLAG_AVR_TIMER1_CLOCK=1
+FLAG_AVR_GPIO=1
+
+# Replay measured ESP8266 AT readiness, UART pacing and internal reply pauses.
+# The semantic AT fixes apply independently; 0 selects uncalibrated timing.
+FLAG_ESP_AT_HARDWARE_TIMING=1

@@ -118,6 +118,31 @@ class PlatformTests(unittest.TestCase):
             self.assertNotIn("--preload-file", output)
 
 
+    def test_esp_hardware_defaults_and_explicit_legacy_builds(self):
+        fixture = self.directory / "esp-timing.mk"
+        fixture.write_text(
+            "include Make_defines.mk\nall:\n"
+            "\t@echo HARDWARE=$(FLAG_AVR_TIMER1_CLOCK),$(FLAG_AVR_GPIO),$(FLAG_ESP_AT_HARDWARE_TIMING)\n"
+            "\t@echo AT_DEFINE=$(findstring -DCU_ESP_AT_CAPTURE_PROFILE=1,$(CFLAGS))\n",
+            encoding="utf-8",
+        )
+        cases = [
+            (["TSYS=linux"], "1,1,1", True),
+            (["TSYS=windows_mingw"], "1,1,1", True),
+            (["TSYS=macos"], "1,1,1", True),
+            (["TSYS=emscripten"], "0,0,1", True),
+            (["TSYS=linux", "FLAG_AVR_TIMER1_CLOCK=0", "FLAG_AVR_GPIO=0", "FLAG_ESP_AT_HARDWARE_TIMING=0"], "0,0,0", False),
+            (["TSYS=emscripten", "FLAG_AVR_TIMER1_CLOCK=1", "FLAG_AVR_GPIO=1"], "1,1,1", True),
+        ]
+        for options, flags, enabled in cases:
+            with self.subTest(options=options):
+                result = subprocess.run([MAKE, "--no-print-directory", "-s", "-f", str(fixture), *options],
+                                        cwd=ROOT, text=True, capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("HARDWARE=" + flags, result.stdout)
+                self.assertIn("AT_DEFINE=" + ("-DCU_ESP_AT_CAPTURE_PROFILE=1" if enabled else "") + "\n", result.stdout)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--make", default=MAKE, help="GNU Make executable")

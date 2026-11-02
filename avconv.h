@@ -70,8 +70,15 @@
 ** yet, it is initialized. It fetches the image data by reading the game
 ** region of the 640 x 270 backbuffer from guicore, and the audio data of
 ** the frame as directly passed to it.
+** With OMIT MESSAGES enabled (default), consumes the clean frame staged by
+** frame_run() before text composition; waits if no clean frame is available.
 */
 void avconv_push(uint8 const* samples, auint len);
+/* Preserve the 640x228 recording region before emulator text is composited.
+ * Called once per rendered recording frame; no copy when omission is off. */
+void avconv_stage_clean_frame(void);
+boole avconv_get_omit_messages(void);
+void avconv_set_omit_messages(boole enable);
 
 
 /*

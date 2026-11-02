@@ -200,6 +200,7 @@ static int pin_toggle_test(void (*step)(void))
  step();
  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x0FU, "OUT to PINC toggles PORTC");
  CHECK(cpu_state.iors[CU_IO_PINC] == 0x55U, "a PINC write leaves PINC");
+ CHECK(video_row.pixels[0] == 0x0FU, "OUT PINC reaches the picture on its own cycle, as OUT PORTC does");
  step();
  CHECK(cpu_state.iors[CU_IO_PORTC] == 0x8FU, "SBI on PINC toggles only its bit");
  step();
@@ -258,6 +259,151 @@ static int peripherals_test(void)
  CHECK(cpu_state.eep_wrte && cpu_state.eep_end == 4U + EEPROM_EWR_TIM, "new write mode controls operation duration");
  cu_avr_write_io(CU_IO_EECR, 0U);
  CHECK((cpu_state.iors[CU_IO_EECR] & 0x32U) == 0x22U, "busy program retains EEPE and mode");
+ return 0;
+}
+
+/* UART TX is a hardware time source even with no attached serial peer. */
+static void uart_setup(auint a, auint b, auint c, auint ubrr)
+{
+ setup();
+ cpu_state.iors[CU_IO_TIMSK1] = cpu_state.iors[CU_IO_TIFR1] = 0U;
+#if defined(ENABLE_ESP)
+ cu_esp_set_serial_route(CU_ESP_SERIAL_DISCONNECTED);
+#endif
+ cu_avr_write_io(CU_IO_UCSR0A, a);
+ cu_avr_write_io(CU_IO_UCSR0B, b);
+ cu_avr_write_io(CU_IO_UCSR0C, c);
+ cu_avr_write_io(CU_IO_UBRR0H, ubrr >> 8);
+ cu_avr_write_io(CU_IO_UBRR0L, ubrr & 255U);
+}
+
+static int uart_timer_test(void (*step)(void))
+{
+ static const struct { auint a,b,c,ubrr,clocks; } cases[] = {
+  {0U,8U,6U,7U,1280U},       /* 8N1, normal speed */
+  {2U,8U,6U,7U,640U},        /* 8N1, double speed */
+  {0U,8U,0U,0U,112U},        /* 5N1, UBRR=0 is valid */
+  {0U,8U,2U,0U,128U},        /* 6N1 */
+  {0U,8U,4U,0U,144U},        /* 7N1 */
+  {0U,12U,0x3EU,1U,416U},    /* 9O2 */
+  {0U,8U,6U,0x123U,46720U},  /* all 12 UBRR bits */
+  {0U,8U,0x46U,7U,160U},     /* synchronous UART master, 8N1 */
+  {0U,8U,0xC6U,7U,128U},     /* USART MSPIM: eight clocks, no framing */
+ };
+ unsigned i;
+ for(i=0U;i<sizeof(cases)/sizeof(cases[0]);++i){
+  uart_setup(cases[i].a,cases[i].b,cases[i].c,cases[i].ubrr);
+  CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"reset UART is empty without a completed transmission");
+  cu_avr_write_io(CU_IO_UDR0,0x55U);
+  CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==cases[i].clocks,"UART schedules configured frame, independently of peer");
+  CHECK(cycle_next_event<=cases[i].clocks,"UART completion is a hardware deadline");
+  cpu_state.cycle=cases[i].clocks-1U;cu_avr_hwexec();
+  CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"UART completion is not early");
+  cpu_state.cycle++;cu_avr_hwexec();
+  CHECK(!cpu_state.usr0_tran && (cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"UART completion latches without polling");
+ }
+
+ uart_setup(0U,8U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x11U);
+ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
+ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x20U),"second byte occupies UART holding register");
+ cpu_state.cycle=2U;cu_avr_write_io(CU_IO_UDR0,0x33U);
+ CHECK(cpu_state.usr0_end==160U,"full UART ignores another write without restarting shift register");
+ cpu_state.cycle=160U;cu_avr_hwexec();
+ CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==320U && (cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"buffered UART continues without intermediate TXC");
+ cpu_state.cycle=320U;cu_avr_hwexec();
+ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x60U,"TXC waits for both UART registers to empty");
+ cu_avr_write_io(CU_IO_UCSR0A,0U);
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"writing zero preserves TXC");
+ cu_avr_write_io(CU_IO_UDR0,0x44U);
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"UDR write does not implicitly acknowledge old TXC");
+ cu_avr_write_io(CU_IO_UCSR0A,0x40U);
+ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0x63U)==0x20U,"TXC is write-one-to-clear and other status bits are read-only");
+
+ uart_setup(0U,8U,6U,0U);
+ cpu_state.cycle=0xFFFFFFF0U;cycle_next_event=0xFFFFFFF8U;
+ cu_avr_write_io(CU_IO_UDR0,0U);
+ CHECK(cpu_state.usr0_end==144U,"UART deadline wraps with CPU cycle counter");
+ cpu_state.cycle=144U;cu_avr_hwexec();
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"UART completion survives cycle wrap");
+ cpu_state.iors[CU_IO_SREG]=SREG_IM;event_it_enter=FALSE;cu_avr_itcheck();
+ CHECK(!event_it_enter,"TXC alone cannot interrupt polling-only software");
+ cu_avr_write_io(CU_IO_UCSR0B,0x48U);
+ CHECK(event_it,"enabling TXCIE requests an interrupt check for latched TXC");
+ cu_avr_itcheck();
+ CHECK(event_it_enter && event_it_vect==VECT_USART0_TX,"unmasking pending TXC selects USART vector");
+ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"interrupt acknowledges TXC even after status read");
+ event_it_enter=FALSE;cu_avr_itcheck();
+ CHECK(!event_it_enter,"idle UART does not repeatedly raise TX interrupt");
+
+ uart_setup(0U,0x48U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x55U);
+ cpu_state.cycle=160U;cu_avr_hwexec();
+ event_it_enter=FALSE;cu_avr_itcheck();
+ CHECK(!event_it_enter && (cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"global mask defers UART ISR without losing completion");
+ cu_avr_write_io(CU_IO_SREG,SREG_IM);
+ CHECK(event_it,"unmasking global interrupts rechecks pending UART completion");
+ cu_avr_itcheck();
+ CHECK(event_it_enter && event_it_vect==VECT_USART0_TX,"pending UART interrupt survives global mask");
+
+ uart_setup(0U,8U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x11U);
+ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
+ cu_avr_io_update(); /* Same scheduler reconstruction used after state restore. */
+ cpu_state.cycle=160U;cu_avr_hwexec();
+ CHECK(cpu_state.usr0_tran && cpu_state.usr0_end==320U,"I/O state restoration retains buffered UART deadline");
+ cpu_state.cycle=320U;cu_avr_hwexec();
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"restored UART completes normally");
+
+ uart_setup(0U,0U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x55U);
+ CHECK(!cpu_state.usr0_tran,"disabled transmitter does not start timer");
+ uart_setup(0U,8U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x55U);
+ cu_avr_write_io(CU_IO_UCSR0B,0U);
+ cpu_state.cycle=160U;cu_avr_hwexec();
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x40U,"clearing TXEN allows in-flight transmission to finish");
+ uart_setup(0U,8U,6U,0U);
+ cu_avr_write_io(CU_IO_UDR0,0x55U);
+ cu_avr_reset_wd();
+ CHECK(!cpu_state.usr0_tran && (cu_avr_read_io(CU_IO_UCSR0A)&0x60U)==0x20U,"watchdog reset cancels UART timer and completion flag");
+
+ /* Run actual instructions without polling UCSR0A. The interrupt ends the
+  * foreground loop, just as an interrupt-terminated scanline does. */
+ uart_setup(0U,0x48U,6U,0U);
+ instruction(0U,0xCFFFU); /* RJMP . */
+ cpu_state.iors[CU_IO_SREG]=SREG_IM;
+ cu_avr_write_io(CU_IO_UDR0,0x55U);
+ for(i=0U;i<100U && cpu_state.pc!=VECT_USART0_TX;++i) step();
+ CHECK(cpu_state.pc==VECT_USART0_TX && cpu_state.cycle>=160U && cpu_state.cycle<=168U,"UART interrupts a non-polling loop through production decoder");
+ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x40U),"actual UART ISR entry clears TXC");
+#if defined(ENABLE_ESP)
+ /* Check the real MCU and endpoint together, not just their separate models.
+  * The third write is ignored while full, and polling RX must not relatch TXC. */
+ for(i=CU_UART_PROFILE_FAST;i<=CU_UART_PROFILE_DEBUG;++i){
+ uart_setup(0U,0x18U,6U,185U);
+ cu_esp_set_serial_route(CU_ESP_SERIAL_LOOPBACK);
+ cu_esp_set_uart_profile(i);
+ cu_avr_write_io(CU_IO_UDR0,0x11U);
+ cpu_state.cycle=1U;cu_avr_write_io(CU_IO_UDR0,0x22U);
+ cpu_state.cycle=2U;cu_avr_write_io(CU_IO_UDR0,0x33U);
+ cpu_state.cycle=29760U;cu_avr_hwexec();
+ (void)cu_avr_read_io(CU_IO_UCSR0A);
+ cpu_state.cycle=59520U;cu_avr_hwexec();
+ CHECK(cu_avr_read_io(CU_IO_UCSR0A)&0x80U,"real loopback receives first buffered frame");
+ CHECK(cu_avr_read_io(CU_IO_UDR0)==0x11U,"first UART byte survives CPU scheduler integration");
+ cu_avr_write_io(CU_IO_UCSR0A,0x40U);
+ cu_avr_write_io(CU_IO_UCSR0B,0x58U); /* Change interrupt mask, not RX/TX config. */
+ cpu_state.cycle=89280U;cu_avr_hwexec();
+ CHECK((cu_avr_read_io(CU_IO_UCSR0A)&0xC0U)==0x80U,"RX polling does not recreate acknowledged TXC");
+ CHECK(cu_avr_read_io(CU_IO_UDR0)==0x22U,"UART holding register preserves second byte");
+ CHECK(!(cu_avr_read_io(CU_IO_UCSR0A)&0x80U),"full UART did not send third byte");
+ cu_avr_write_io(CU_IO_UDR0,0x44U);
+ cu_avr_reset_wd();
+ CHECK(!cu_esp_get_state()->uart_tx_shift_valid,"watchdog reset cancels peer's pending transmission too");
+ }
+ cu_esp_set_uart_profile(CU_UART_PROFILE_FAST);
+#endif
  return 0;
 }
 
@@ -404,10 +550,12 @@ static int hex_hints_test(void (*step)(void))
 int main(void)
 {
  if (run_decoder(cu_avr_exec) || run_decoder(cu_avr_exec_table) || peripherals_test()) return 1;
+ if (uart_timer_test(cu_avr_exec) || uart_timer_test(cu_avr_exec_table)) return 1;
  if (pin_toggle_test(cu_avr_exec) || pin_toggle_test(cu_avr_exec_table)) return 1;
  if (hex_hints_test(cu_avr_exec) || hex_hints_test(cu_avr_exec_table)) return 1;
  puts("HEX hints passed for both decoders.");
  puts("Interrupt timing regression passed for switch and function-table decoders.");
+ puts("UART transmit-complete timer regression passed for both decoders.");
  puts("PINx toggle regression passed for switch and function-table decoders.");
  return 0;
 }

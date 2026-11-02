@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCAL_DIRS = {"_obj_", "roms", "profiles", "cheats", "savestates", "screenshots", "video"}
+LOCAL_DIRS = {"_obj_", "build", "dist", "roms", "profiles", "cheats", "savestates", "screenshots", "video"}
 LOCAL_NAMES = {"config.cfg", "esp.cfg", "eeprom.bin", "romdump.bin", "rom.bin", "dummybin"}
 BINARY_SUFFIXES = {".exe", ".dll", ".o", ".obj", ".so", ".dylib", ".czs", ".lct", ".log", ".orig", ".pyc"}
 SECRET_PATTERNS = [

@@ -1,4 +1,5 @@
 #include "un_client.h"
+#include "un_recovery.h"
 #include <string.h>
 void uc_rtt(UrLink *link,uint32_t elapsed) {
     uint16_t value=elapsed>65535?65535:(uint16_t)elapsed;
@@ -13,6 +14,13 @@ void uc_rtt(UrLink *link,uint32_t elapsed) {
 }
 void uc_reset(UrClient *c) {volatile uint8_t *p=(volatile uint8_t*)c;size_t n=sizeof(*c);while(n--)*p++=0;}
 void uc_restart(UrClient *c){UrFailure saved=c->failure;uc_reset(c);c->failure=saved;}
+void uc_uart_metrics(UrClient *c,uint32_t now,unsigned rx,unsigned tx,unsigned queued,int paused){
+    UrMetrics *m=&c->metrics;m->uart_rx+=rx;m->uart_tx+=tx;
+    if(m->paused)m->paused_ms+=now-m->pause_at;
+    m->pause_at=now;m->paused=!!paused;
+    m->uart_queued=queued>255?255:queued;
+    if(queued>m->uart_peak)m->uart_peak=queued>65535?65535:queued;
+}
 void uc_note_failure(UrClient *c,uint8_t source,uint8_t reason,uint8_t peers){
     if(c->failure.source)return;
     c->failure.source=source;c->failure.reason=reason;
@@ -59,8 +67,40 @@ int uc_receive(UrClient *c,const uint8_t *p,size_t n,uint32_t now) {
        !ur_open(p,n,c->key,UR_IS_OOB(p[4])?7:1,c->match,UR_IS_OOB(p[4])?&c->oob.replay:&c->replay))return 0;
     frame=ur_get32(p+18);c->last_rx=now;
     switch(p[4]){
+    case UR_RECOVERY_STATUS:{
+        uint16_t gen=(uint16_t)p[28]|((uint16_t)p[29]<<8);
+        if(!un_recovery_enabled(c->config) || !gen || p[24]>15 || p[25]>15 ||
+           (p[24]&p[25]) || (p[26]&~p[25]) || p[30]>3 || p[31] ||
+           (p[24]?(p[27]>3 || !(p[24]&(1u<<p[27]))):p[27]!=255))return 0;
+        if(gen<c->recovery.generation || ur_get32(p+14)<c->recovery.received)return 1;
+        c->recovery.received=ur_get32(p+14);c->lobby.roster_seq=ur_get32(p+14);
+        uint8_t changed=gen!=c->recovery.generation;
+        if(changed){
+            c->recovery.generation=gen;c->recovery.game_ack=c->recovery.ack=0;
+            c->recovery.forwarded=0;c->recovery.dirty=1;
+            memset(c->snapshots.received,0,sizeof c->snapshots.received);
+            memset(c->snapshots.pending,0,sizeof c->snapshots.pending);
+            c->snapshots.unread&=(uint16_t)~15u;
+            /* Reset reliable consumption on both participants at this fence,
+             * retaining outer anti-replay counters. Every message has gen16. */
+            UrReplay replay=c->oob.replay;uint32_t seq=c->oob.seq;
+            memset(&c->oob,0,sizeof c->oob);memset(&c->service,0,sizeof c->service);
+            c->oob.replay=replay;c->oob.seq=seq;
+            for(unsigned i=0;i<4;i++)c->oob.peer[i].mask=c->service.peer[i].mask=1u<<i;
+            c->services.dirty|=c->history.local;
+        }
+        c->lobby.active=p[24];c->recovery.reserved=p[25];c->recovery.returning=p[26];
+        c->lobby.host=p[27];c->recovery.countdown=p[30];
+        /* A generation fence can discard an in-flight reliable transfer.
+         * Retained setup/config records owned by us must be offered again. */
+        for(unsigned i=4;changed && i<13;i++)if(c->snapshots.valid&(1u<<i)){
+            unsigned owner=i>=8?(p[27]<4?1u<<p[27]:0):un_recovery_owner(p[24],p[27],i&3u);
+            if(owner==c->history.local)c->snapshots.dirty|=1u<<i;
+        }
+        break;
+    }
     case UR_ROSTER:
-        if(c->protocol<UR_PROFILE_LOBBY || !p[24] || p[24]>15 || p[25]>15 ||
+        if(c->protocol<UR_PROFILE_LOBBY || (!p[24] && !un_recovery_enabled(c->config)) || p[24]>15 || p[25]>15 ||
            (p[24]&p[25]) || p[26]>2 || (p[27]&~p[24]))return 0;
         if(ur_get32(p+14)<=c->lobby.roster_seq)return 1;
         c->lobby.roster_seq=ur_get32(p+14);
@@ -147,7 +187,7 @@ int uc_submit(UrClient *c,uint32_t frame,const uint8_t pads[8]) {
     /* The game's own actual input is known immediately. Relay retention ACK
      * remains separate so direct play never waits on a server round trip. */
     ur_frame(&c->history,frame,0)->mask|=c->history.local;
-    if(frame>=c->next)c->next=frame+1;
+    if(frame>=c->next){c->next=frame+1;c->metrics.input_frames++;}
     return 1;
 }
 UrFrame *uc_fetch(UrClient *c,uint32_t frame) {
@@ -172,7 +212,7 @@ int uc_next(UrClient *c,uint32_t now,uint8_t p[48]) {
     unsigned i,pass;
     if(c->state==UC_TICKET){if(now-c->born>10000)uc_fail(c,10);return 0;}
     if(c->state<UC_BINDING || c->state>UC_READY)return 0;
-    if(now-c->last_rx>15000 || (c->protocol!=UR_PROFILE_LIVE && now-c->born>=c->lease_ms)){uc_fail(c,11);return 0;}
+    if(now-c->last_rx>(un_recovery_enabled(c->config)?25000u:15000u) || (c->protocol!=UR_PROFILE_LIVE && now-c->born>=c->lease_ms)){uc_fail(c,11);return 0;}
     if(now-c->last_tx<1)return 0;
     if(c->state>=UC_WAITING && now-c->last_rx>=1000){
         c->state=UC_BINDING;c->challenged=0;c->last_tx=now-250;
@@ -183,6 +223,13 @@ int uc_next(UrClient *c,uint32_t now,uint8_t p[48]) {
         return uc_packet(c,p,c->challenged?UR_CONFIRM:UR_HELLO,0,0,c->history.width,c->challenged?c->challenge:0,now);
     }
     if(c->state==UC_READY){
+        if(un_recovery_enabled(c->config) && c->recovery.ack==c->recovery.generation &&
+           c->recovery.ack && (c->recovery.dirty || ((c->recovery.returning&c->history.local) &&
+           !c->recovery.countdown && now-c->recovery.ack_at>=250))){
+            uint8_t data[8]={1,c->recovery.ack,c->recovery.ack>>8};
+            c->recovery.ack_at=now;c->recovery.dirty=0;
+            return uc_packet(c,p,UR_RECOVERY_REQUEST,0,0,c->history.width,data,now);
+        }
         if(c->protocol==UR_PROFILE_LIVE){
             if(c->lobby.waiting && now-c->release_at>=100){
                 uint8_t data[8]={c->lobby.action,c->lobby.expected,c->lobby.expected>>8};c->release_at=now;

@@ -4,6 +4,8 @@
 
 static char output[64];
 static unsigned output_len;
+/* This core-only fixture supplies the diagnostic clock normally owned by main. */
+uint32 mainui_get_frame_counter(void){return 0U;}
 static int whisper_printf(char const* fmt, ...)
 {
  va_list args;

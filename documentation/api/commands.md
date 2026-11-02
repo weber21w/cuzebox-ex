@@ -23,6 +23,14 @@ The settings API exposes `system_messages` (overlay visibility),
 These use the same persisted preferences as the GUI. See the
 [logging guide](../logging.md) for message filtering and rate limits.
 
+`EMU_STATUS` also returns `video_dump_omit_messages` (default 1).
+`EMU_SET video_dump_omit_messages 0|1` changes the saved **OMIT MESSAGES**
+recording preference. With 1, video captures the game buffer before emulator
+text/notices are drawn; screen messages remain governed by `system_messages`.
+With 0, the recorder includes visible notices as before. Changes during a
+recording apply to the next rendered frame, including replay-to-video. This
+does not change video dimensions, timing, audio, or screenshot settings.
+
 ## Core utility commands
 
 ### `PING`
@@ -615,19 +623,70 @@ cost. Output sample time follows guest execution, so pausing retains samples
 and generates no extra silence. Screenshot scaling, filters, and JAMMA
 transforms run on request, with the visual debug HUD omitted in headless mode.
 
-### `SCREENSHOT_CAPTURE`
+### `SCREENSHOT_SETTINGS [STATUS|PRESET <name>|SET <key> <value>]`
 
-Captures the current rendered CUzeBox display as a 24-bit BMP entirely
+Read or change persistent emulator-wide screenshot settings. No argument is
+equivalent to STATUS. The native screenshot dialog and web Controls page use
+these same settings. Changes affect future captures; already captured bytes
+are unchanged. Use `CONFIG SAVE` to flush preferences explicitly.
+
+SET keys: `X_WIDTH` (integer 1–2880), `Y_SCALE` (integer 1–10), `SAMPLING`
+(`NEAREST`, `AREA`, `LINEAR`), `BYPASS_FILTERS` (0|1), `INCLUDE_GUI` (0|1).
+Invalid commands return `ok:0` without changing scale. Presets set both axes,
+leaving sampling and bypass unchanged: CYCLE=1440/5 (default), RAW=1440/1,
+WIDTH320=320/1, WIDTH256=256/1, WIDTH240=240/1, WIDTH192=192/1, WIDTH160=160/1.
+Axes remain editable; `preset` is derived and becomes CUSTOM for other pairs.
+
+STATUS and successful mutations return `x_width`, `y_scale`, `sampling`,
+`bypass_filters`, `include_gui`, `preset`, `x_min`, `x_max`, `y_min`, `y_max`,
+`x_choices`, `sampling_choices` and `presets` (name/x_width/y_scale objects).
+
+```text
+SCREENSHOT_SETTINGS PRESET WIDTH256
+SCREENSHOT_SETTINGS SET Y_SCALE 3
+SCREENSHOT_SETTINGS SET SAMPLING AREA
+SCREENSHOT_CAPTURE
+```
+
+This exports a 256 by source_rows*3 cycle PNG with the full 1440-cycle interval
+area-averaged to 256 columns. Width does not assert the game uses a 256-pixel
+mode. Scale controls apply only with bypass enabled. Filtered/GUI/BMP output
+retains rendered dimensions. INCLUDE_GUI affects native GUI saves only.
+
+### `SCREENSHOT_CAPTURE [PNG|BMP]`
+
+Captures a game-only RGB PNG by default, entirely
 in memory and associates it with the requesting API client. The response
-includes byte size, width, height, and format. No host screenshot file is
+includes byte size, width, height, format and a `capture` metadata object. No host screenshot file is
 created.
 
-File and in-memory screenshots both apply JAMMA rotations/mirrors and active
-display filters, keeping the HUD upright and omitting the interactive menu.
-Dimensions follow the display layout: 640 × 560 normally, 320 × 280 in small
-mode, or 620 × 456 / 310 × 228 in game-only mode. Rotated content is fitted
-inside the same viewport with letterboxing, as on screen. Clients should use
-the returned dimensions rather than assuming the raw 640 × 280 backbuffer.
+With the default settings (`ScreenshotBypassFilters=1`, X=1440, Y=5), each of the 1,440 active cycle
+samples is one column and each captured scanline is repeated five times.
+Sampling, display filters, HUD and frame blending are excluded. Black game
+rows remain intact. The current completed field window has up to 225 rows;
+interlaced fields weave with nearest-neighbor 5/2 scaling to preserve aspect,
+and JAMMA rotation/mirrors change the image canvas
+without adding letterboxing. No emulation runs merely to capture an image.
+Reset/state load clears the cached pixels until the next completed field.
+With bypass disabled, PNG uses the filtered game-only image. The GUI tool's
+explicit Include GUI capture does not change the default API game-only path.
+
+The response format is `png`, or `bmp24` with explicit `BMP`. Explicit BMP
+retains the historical current rendered layout, including its HUD and fitting.
+Always use the returned dimensions and format. The default `SCREENSHOT` file
+command also writes PNG; explicit `.bmp` filenames request the legacy export.
+
+**For AI/image consumers:** use `capture.schema == "cuex-shot-1"` and retain
+the capture response with its bytes. PNG embeds identical JSON under the tEXt
+keyword `CUEX.Capture`. Web downloads expose it through the
+`X-CUEX-Capture-Metadata` header. Check `path`, `source_valid`, `scale_applied`,
+`sampling`, `cycle_exact_x`, actual dimensions, pre-rotation dimensions and
+`jamma_flags` before mapping image points to emulated cycles. Smaller X widths
+lose cycle detail; AREA/LINEAR blend RGB samples. A cleared cache is black with
+`source_valid:0`, which does not mean the guest rendered black. Capture is the
+latest completed field, not necessarily the current partial debugger field.
+The complete field definitions, sampling formulas, interlace mapping and
+orientation rules are in [Screenshot interpretation](../screenshots.md#interpreting-screenshots-in-ai-agents).
 
 ### `SCREENSHOT_READ <OFFSET> [LEN]`
 
