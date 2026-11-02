@@ -1,0 +1,90 @@
+name: Inspect and assemble tested release packages
+on:
+  push:
+    branches: [codex/release-assembly-debug]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Completed native package workflow run
+        default: '41408513912'
+        required: true
+      tag:
+        description: Tag built by that run
+        default: v2026.11.02-preview.2
+        required: true
+permissions:
+  contents: write
+  actions: read
+jobs:
+  assemble:
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.run_id || '41408513912' }}
+      RELEASE_TAG: ${{ inputs.tag || 'v2026.11.02-preview.2' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify tested source and package jobs
+        run: |
+          set -euo pipefail
+          RUN_SHA="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" --jq .head_sha)"
+          TAG_SHA="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          test "$RUN_SHA" = "$TAG_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs" > package-jobs.json
+          python3 - <<'PY'
+          import json
+          jobs={j['name']:j for j in json.load(open('package-jobs.json'))['jobs']}
+          expected=['linux','windows','macos / macos (macos-15, arm64)','macos / macos (macos-15-intel, x86_64)']
+          for name in expected:assert jobs[name]['conclusion']=='success',(name,jobs[name]['conclusion'])
+          print('All four package jobs passed at the requested tag.')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.SOURCE_RUN }}
+          pattern: cuex-*
+          path: downloads
+      - name: Inspect source archive collisions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,tarfile
+          groups={}
+          for p in Path('downloads').rglob('*'):
+              if p.is_file():groups.setdefault(p.name,[]).append(p)
+          digest=lambda b:hashlib.sha256(b).hexdigest()
+          for name,paths in groups.items():
+              if len({digest(p.read_bytes()) for p in paths})<2:continue
+              print('::error title=Different release assets::'+name)
+              for p in paths:print(str(p),digest(p.read_bytes()))
+              if name.startswith('CUEX-') and name.endswith('-source.tar.gz'):
+                  snapshots=[]
+                  for p in paths:
+                      with tarfile.open(p) as t:snapshots.append({m.name:t.extractfile(m).read() for m in t if m.isfile()})
+                  names=set().union(*(set(s) for s in snapshots))
+                  for f in sorted(names):
+                      values=[s.get(f) for s in snapshots]
+                      if len({digest(v) if v is not None else None for v in values})>1:
+                          same_lf=len({digest(v.replace(b'\r\n',b'\n')) if v is not None else None for v in values})==1
+                          sizes=[len(v) if v is not None else None for v in values]
+                          print('::notice title=Source difference::'+f+' sizes='+str(sizes)+' equal_after_LF='+str(same_lf))
+          PY
+      - name: Assemble and create draft
+        run: |
+          set -euo pipefail
+          mkdir -p logs
+          bash -euo pipefail <<'SCRIPT' 2>&1 | tee logs/assembly.log
+            python3 tools/collect_release_artifacts.py downloads release-assets
+            gh release create "$RELEASE_TAG" release-assets/* --verify-tag --draft --title "CUEX $RELEASE_TAG" --notes-file packaging/release/RELEASE-NOTES.md
+          SCRIPT
+      - name: Report assembly failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('logs').glob('*.log'):
+              message=p.read_text(errors='replace')[-3500:]
+              print('::error title='+p.name+'::'+message.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
