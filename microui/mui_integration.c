@@ -1420,8 +1420,9 @@ static char const* mui_display_scaler_name(auint mode)
 #endif
 }
 
+/* Menu order: the scanline presets lightest first; 14 (12.5%) was added last. */
 static const auint mui_display_postfilter_values[] = {
-	0U, 1U, 2U, 3U, 4U, 5U, 6U, 9U, 10U, 11U, 12U, 13U
+	0U, 14U, 1U, 2U, 3U, 4U, 5U, 6U, 9U, 10U, 11U, 12U, 13U
 };
 
 static auint mui_display_postfilter_to_choice(auint mode)
@@ -1455,6 +1456,7 @@ static char const* mui_display_postfilter_name(auint mode)
 #ifdef ENABLE_DISPLAY_FILTERS
 	static const char* filter_names[] = {
 		"NONE",
+		"SCANLINES 12%",
 		"SCANLINES 25%",
 		"SCANLINES 37%",
 		"SCANLINES 50%",
@@ -5082,7 +5084,7 @@ static void mui_build_config_page_window(mu_Context* ctx)
 				}
 
 				post_filter_mode = mui_display_postfilter_to_choice(mainui_get_filter_crt_mode());
-				if (mui_labeled_choice_popup(ctx, "POST", "display_postfilter_popup", mui_display_postfilter_name(mainui_get_filter_crt_mode()), (const char* const[]){ "NONE", "SCANLINES 25%", "SCANLINES 37%", "SCANLINES 50%", "APERTURE GRILLE", "SHADOW MASK", "CURVATURE", "GRILLE + SCANLINES", "MASK + SCANLINES", "BUMP MAP", "LUCID", "HEATWAVE" }, 12U, &post_filter_mode, 104, 184)){
+				if (mui_labeled_choice_popup(ctx, "POST", "display_postfilter_popup", mui_display_postfilter_name(mainui_get_filter_crt_mode()), (const char* const[]){ "NONE", "SCANLINES 12%", "SCANLINES 25%", "SCANLINES 37%", "SCANLINES 50%", "APERTURE GRILLE", "SHADOW MASK", "CURVATURE", "GRILLE + SCANLINES", "MASK + SCANLINES", "BUMP MAP", "LUCID", "HEATWAVE" }, 13U, &post_filter_mode, 104, 184)){
 					mainui_set_filter_crt_mode(mui_display_postfilter_from_choice(post_filter_mode));
 				}
 #endif

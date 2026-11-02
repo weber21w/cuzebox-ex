@@ -301,14 +301,21 @@ static filter_scale_mode_t guicore_filter_scale_mode;
 static filter_crt_params_t guicore_filter_crt;
 static boole               guicore_filter_init_done = FALSE;
 
+/* The filters take every other pixel of a 640-pixel line (320 across), which
+** the 2x scalers double back; a hi-res game keeps all 640 (see
+** guicore_set_full_width()), so the capture buffer is 640 across. */
 #define GUICORE_STAGE_SRCW_MAX 320U
 #define GUICORE_STAGE_SRCH_MAX 492U
+#define GUICORE_STAGE_FULLW_MAX (GUICORE_STAGE_SRCW_MAX * 2U)
 #define GUICORE_STAGE_DSTW_MAX (GUICORE_STAGE_SRCW_MAX * 2U)
 #define GUICORE_STAGE_DSTH_MAX (GUICORE_STAGE_SRCH_MAX * 2U)
-static uint32              guicore_stage_src32[GUICORE_STAGE_SRCW_MAX * GUICORE_STAGE_SRCH_MAX];
+static uint32              guicore_stage_src32[GUICORE_STAGE_FULLW_MAX * GUICORE_STAGE_SRCH_MAX];
 static uint8               guicore_stage_src8[GUICORE_STAGE_SRCW_MAX * GUICORE_STAGE_SRCH_MAX];
 static uint32              guicore_stage_dst32[GUICORE_STAGE_DSTW_MAX * GUICORE_STAGE_DSTH_MAX];
 #endif
+/* Filters keep the full width of each line: set for hi-res games (the ROM's
+** VIDEO_AREA_WEIGHTED hint, or the user's sampling setting). */
+static boole               guicore_full_width = FALSE;
 
 
 static void guicore_applyicon(void)
@@ -725,6 +732,22 @@ static uint8 guicore_quantize_332(uint32 c)
  return (uint8)(((ri & 7U) << 5) | ((gi & 7U) << 2) | (bi & 3U));
 }
 
+/* Every pixel of each line, 2 * view->srcw across, where guicore_capture_view32()
+** takes every other one. */
+static void guicore_capture_view32_full(uint32* dst, auint pitch, guicore_view_t const* view)
+{
+ auint y, x;
+ auint w = view->srcw << 1;
+ auint x0 = view->srcx << 1;
+ if(guicore_interlaced){
+  for(y=0;y<view->srch*2U;y++) for(x=0;x<w;x++)
+   dst[y*pitch+x]=guicore_native_to_argb(guicore_fields[(view->srcy*2U+y)*640U+x0+x]);
+  return;
+ }
+ for(y=0;y<view->srch;y++) for(x=0;x<w;x++)
+  dst[y*pitch+x]=guicore_native_to_argb(guicore_pixels[(view->srcy+y)*640U+x0+x] | guicore_amask);
+}
+
 static void guicore_capture_view32(uint32* dst, auint pitch, guicore_view_t const* view)
 {
  auint y, x;
@@ -851,6 +874,37 @@ static void guicore_render_staged(uint32* dest, auint dpitch, auint texw, auint 
  }
 
  if ((view.srcw > GUICORE_STAGE_SRCW_MAX) || (sourceh > GUICORE_STAGE_SRCH_MAX)){
+  return;
+ }
+
+ /* Hi-res: all 640 pixels of a line reach the filters, so a 3-cycle dot is
+ ** not dropped. Lines are doubled to the 2x height the CRT effects expect;
+ ** the 2x scalers are for pixel art and are skipped. The small (1x) window
+ ** keeps the half-width path. */
+ if (guicore_full_width && (scale > 1U)){
+  auint fullw = view.srcw << 1;
+  auint y;
+  guicore_capture_view32_full(guicore_stage_src32, fullw, &view);
+  if (guicore_filter_pre_mode != FILTER_PRE_NONE){
+   filter_apply_pre(guicore_stage_src32, (int)fullw, (int)sourceh, (int)fullw, guicore_filter_pre_mode, &guicore_filter_crt);
+  }
+  if (guicore_interlaced){
+   out32 = guicore_stage_src32;   /* both fields: already 2x high */
+   outh = sourceh;
+  }else{
+   for (y = 0U; y < sourceh; ++y){
+    memcpy(&guicore_stage_dst32[(y * 2U) * fullw], &guicore_stage_src32[y * fullw], fullw * sizeof(uint32));
+    memcpy(&guicore_stage_dst32[(y * 2U + 1U) * fullw], &guicore_stage_src32[y * fullw], fullw * sizeof(uint32));
+   }
+   out32 = guicore_stage_dst32;
+   outh = sourceh * 2U;
+  }
+  out_pitch = fullw;
+  outw = fullw;
+  if (guicore_filter_crt.mode != FILTER_CRT_NONE){
+   filter_apply_crt(out32, (int)outw, (int)outh, (int)out_pitch, &guicore_filter_crt);
+  }
+  guicore_blit_content_buf(dest, dpitch, out32, out_pitch, outw, outh, scale, &view);
   return;
  }
 
@@ -1557,13 +1611,23 @@ auint guicore_get_filter_crt_mode(void)
 void guicore_set_filter_crt_mode(auint mode)
 {
 #ifdef ENABLE_DISPLAY_FILTERS
-	if ((mode == 7U) || (mode == 8U) || (mode > (auint)FILTER_CRT_HEATWAVE)){
+	if ((mode == 7U) || (mode == 8U) || (mode > (auint)FILTER_CRT_MODE_MAX)){
 		mode = (auint)FILTER_CRT_NONE;
 	}
 	guicore_filter_crt.mode = (filter_crt_mode_t)mode;
 #else
 	(void)mode;
 #endif
+}
+
+void guicore_set_full_width(boole enabled)
+{
+	guicore_full_width = enabled ? TRUE : FALSE;
+}
+
+boole guicore_get_full_width(void)
+{
+	return guicore_full_width;
 }
 
 auint guicore_get_render_path(void)

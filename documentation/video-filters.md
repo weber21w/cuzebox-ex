@@ -135,6 +135,7 @@ Configured by `FilterCrtMode`.
 Available modes:
 
 - `0` = none
+- `14` = scanlines 12.5% (listed first in the menu, after NONE)
 - `1` = scanlines 25%
 - `2` = scanlines 37%
 - `3` = scanlines 50%
@@ -307,6 +308,18 @@ other bits must be preserved. This defines the future packrom property
 `areaweight=0` or `areaweight=1`; packrom support is not implemented here.
 Older zero-filled headers remain off. Program hints never replace saved user
 preferences.
+
+### Full width in the filters
+
+The same selection marks a hi-res game for the display filters. The filters
+normally take every other pixel of each 640-pixel line, 320 across, and the 2x
+scalers double them back: right for pixel art, but a mode 80 text dot is about
+1.3 pixels wide, so whole dots are dropped and letters lose strokes. With area
+sampling on, a pre-filter or CRT effect takes all 640 pixels, each line is
+drawn twice to the height the CRT effects expect, and the 2x scalers (Scale2x,
+HQ2x, xBR2x) are skipped. The CRT effects run on the same 620x456 image as
+before; the capture and any pre-filter cover twice the pixels. The small (1x)
+window and the unfiltered display are unchanged.
 
 The API exposes `area_weighted` and `area_weighted_mode` in `EMU_STATUS`.
 `EMU_SET area_weighted 0|1` forces off/on; `EMU_SET area_weighted_mode 0`
