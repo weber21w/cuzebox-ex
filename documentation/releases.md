@@ -18,7 +18,11 @@ timed stages. FFmpeg is cached by architecture, SDK/x264 version and the pinned
 recipe; the cache is saved after a successful helper build even if a later test
 fails. Build/FFmpeg/package diagnostics are retained as separate `debug-macos-*`
 artifacts, including on failure. Release collection includes only `cuex-*`
-package artifacts, so diagnostic logs do not become release downloads.
+package artifacts, so diagnostic logs do not become release downloads. The collector
+accepts differing gzip streams only when their uncompressed CUEX source TAR
+bytes match exactly. It verifies each original manifest hash and rewrites the
+final SHA256SUMS to the selected shared archive. Different source payloads or
+binary assets still stop release assembly.
 
 | Target | Artifact | Initial support |
 | --- | --- | --- |
