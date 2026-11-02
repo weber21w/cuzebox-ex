@@ -57,27 +57,55 @@ jobs:
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-x264 mingw-w64-x86_64-python
       - name: Build recording helper
-        run: bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg
+        run: |
+          set -euo pipefail
+          mkdir -p _obj_/ci-logs
+          bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg 2>&1 | tee _obj_/ci-logs/windows-ffmpeg.log
       - name: Build and check CUEX
         run: |
+          set -euo pipefail
           export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
-          DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
-          make -j2 TSYS=windows_mingw OBD=_obj_/release OUT=_obj_/release/cuzebox.exe FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
-          python3 tools/test_runtime_paths.py _obj_/release/cuzebox.exe
-          python3 tools/test_headless_api.py _obj_/release/cuzebox.exe
-          make -j2 -f tests/preferences/Makefile TSYS=windows_mingw OBD=_obj_/release OUT=_obj_/release/cuzebox.exe FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE" interrupt-test storage-test video-messages-test
-          python3 tools/test_video_messages.py _obj_/release
+          export DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
+          bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/windows-native.log
+            command -v make gcc python3 ffmpeg ffprobe
+            make -j2 TSYS=windows_mingw OBD=_obj_/release OUT=_obj_/release/cuzebox.exe FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
+            python3 tools/test_runtime_paths.py _obj_/release/cuzebox.exe
+            python3 tools/test_headless_api.py _obj_/release/cuzebox.exe
+            make -j2 -f tests/preferences/Makefile TSYS=windows_mingw OBD=_obj_/release OUT=_obj_/release/cuzebox.exe FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE" interrupt-test storage-test video-messages-test
+            python3 tools/test_video_messages.py _obj_/release
+          CUEX_SCRIPT
       - name: Package
         env:
           VERSION: ${{ inputs.version || github.ref_name }}
         run: |
-          python3 tools/release_package.py build --platform windows --version "$VERSION" --binary _obj_/release/cuzebox.exe --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg.exe --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe.exe --dependency-dir "$(cygpath -m "$MINGW_PREFIX/bin")"
-          python3 tools/test_release_package.py --windows dist/*windows*.zip
+          set -euo pipefail
+          bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/windows-package.log
+            python3 tools/release_package.py build --platform windows --version "$VERSION" --binary _obj_/release/cuzebox.exe --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg.exe --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe.exe --dependency-dir "$(cygpath -m "$MINGW_PREFIX/bin")"
+            python3 tools/test_release_package.py --windows dist/*windows*.zip
+          CUEX_SCRIPT
       - uses: actions/upload-artifact@v4
         with:
           name: cuex-windows-x86_64
           path: dist/
           if-no-files-found: error
+      - name: Report Windows build failure
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for p in Path('_obj_/ci-logs').glob('windows-*.log'):
+              message=p.read_text(errors='replace')[-3500:]
+              message=message.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print('::error title='+p.name+'::'+message)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-windows
+          path: |
+            _obj_/ci-logs/
+            _obj_/ffmpeg/build/ffbuild/config.log
+          if-no-files-found: ignore
   macos:
     uses: ./.github/workflows/macos.yml
     with:
