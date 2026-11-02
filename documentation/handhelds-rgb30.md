@@ -6,10 +6,13 @@ save states, and virtual keyboard. It disables the debugger, API/web server,
 display filters, recording/replay, netplay, ESP emulation, and remote ROMs by
 default. Explicit command-line feature overrides still work.
 
-## PortMaster package and installation
+There are currently two main, supported custom firmwares (distros) for the RGB30,
+[ROCKNIX](https://rocknix.org/) and [dArkOS.](https://github.com/christianhaitian/dArkOS)
+ROCKNIX includes PortMaster by default and the analogue stick works to control the cuzebox
+GUI. The analogue stick does not currently work with cuzebox-ex under dArkOS.
 
-PortMaster packaging and dArkOS installation guidance incorporate
-[Dan MacDonald's PR #6](https://github.com/weber21w/cuzebox-ex/pull/6).
+## Building the PortMaster package
+
 The RGB30 package targets AArch64 Linux; other handhelds may need their own
 build profile and compatible runtime libraries.
 
@@ -22,33 +25,53 @@ make rgb30-package
 make rgb30-package FLAG_DEBUGGER=1 FLAG_API_SERVER=1
 ```
 
-This creates `cuzebox-rgb30-portmaster.zip`. Its root contains `CUzeBox.sh`,
-`CUzeBox/`, `port.json` and the package README. The launcher uses PortMaster
-controls and platform setup/cleanup when installed, and also runs standalone.
-It preserves ROM arguments and uses native SDL controller input. No game ROMs,
-compatibility executable, or runtime libraries are bundled. Build against the
-target firmware SDK if the packaged executable needs a newer libc than the device.
+This creates `cuzebox-rgb30-portmaster.zip`.
 
-On dArkOS, configure Wi-Fi, then use **START → OPTIONS → TOOLS →
-Install.PortMaster** if needed. Copy the archive to `ports/autoinstall` on the
-SD card's EASYROMS partition and launch **OPTIONS → TOOLS → PortMaster** to
-install it. Restart EmulationStation using **START → QUIT → RESTART
-EMULATIONSTATION** so CUzeboxEX appears in Ports. Menu names can vary by release.
+For packaging regression checks on Linux/WSL, run `python3 tools/test_portmaster_package.py`.
+This checks archive paths, launcher arguments, controller setup, cleanup and exit status
+using a mock executable. Its not a not substitute for testing on a physical handheld.
 
-The contributor reported that the ROCKNIX Ports menu did not launch installed
-ports on their system; direct script launch over SSH or the standalone integration
-below are alternatives. They also reported unresolved analog-stick GUI cursor
-control. ROMs can be placed beside the binary or passed as a launcher argument;
-packaging changes alone do not resolve that input issue.
+## Update PortMaster
 
-For packaging regression checks on Linux/WSL, run
-`python3 tools/test_portmaster_package.py`. This checks archive paths, launcher
-arguments, controller setup, cleanup and exit status using a mock executable.
-It does not substitute for testing on a physical handheld.
+PortMaster is installed by default under ROCKNIX but it is updated quite often so its
+recommended you update PortMaster first before you install cuzebox or any other ports.
 
-## Standalone integration
+After connecting to WiFi, load PortMaster from the **Tools** menu then go to **Options**
+-> **Update PortMaster**.
 
-The intended delivery is a **standalone emulator integrated into ROCKNIX**.
+## Delete ports_scripts directory
+
+When you install the current build of ROCKNIX for the RGB30, it creates several dirs
+within **/storage/roms** including **/storage/roms/ports_scripts**. If **ports_scripts**
+exists, PortMaster will install all port launcher scripts there but EmulationStation
+doesn't scan this directory for launcher scripts and so they don't appear in your menu.
+
+Check for this directory before you install any PortMaster packages. If you've not yet
+used PortMaster to install anything, just delete it and that will force PM to install
+all launcher scripts into **/storage/roms/ports/** where ES will see them.
+
+dArkOS doesn't create a **/storage/roms/ports_scripts** dir and so doesn't have this issue.
+
+## Installing the PortMaster package
+
+Copy **cuzebox-rgb30-portmaster.zip** to **/roms/ports/PortMaster/autoinstall** on the
+SD card's EASYROMS partition and launch **TOOLS → PortMaster** to install it. If cuzebox
+doesn't instantly appear in your ports menu you may need to reboot or otherwise force the
+ES menus to refresh.
+
+## Undervolting
+
+I had to configure undervolting to use cuzebox without it restarting or crashing the system
+under both ROCKNIX and dArkOS.
+
+Under ROCKNIX go to **START -> SYSTEM SETTINGS -> TWEAKS -> UNDERVOLT-CPU** and choose
+**RK3566-UNDERVOLT-CPU-L3.DTBO** to enable undervolting.
+
+You should now be able to launch cuzebox from the ports menu.
+
+# Standalone integration
+
+The following covers creating a **standalone emulator integrated into ROCKNIX**.
 This does not require a PortMaster installation. ROCKNIX already has an
 [Uzebox system](https://rocknix.org/systems/uzebox/); its existing Uzem core can
 remain available alongside CUzeBox EX.
