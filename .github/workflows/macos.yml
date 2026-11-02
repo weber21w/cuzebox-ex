@@ -1,0 +1,78 @@
+name: macOS builds and tests
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Artifact version
+        type: string
+        default: preview
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        default: preview
+permissions:
+  contents: read
+concurrency:
+  group: macos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
+      VERSION: ${{ inputs.version || 'preview' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: brew install sdl2 x264 pkg-config nasm
+      - name: Build recording helper
+        run: |
+          mkdir -p _obj_/ci-logs
+          bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg 2>&1 | tee _obj_/ci-logs/ffmpeg.log
+      - name: Build and test native CUEX
+        run: |
+          export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
+          DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
+          {
+            make -j2 TSYS=macos OBD=_obj_/release OUT=_obj_/release/cuzebox FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
+            python3 tools/source_audit.py
+            python3 tools/test_runtime_paths.py _obj_/release/cuzebox
+            python3 tools/test_headless_api.py _obj_/release/cuzebox
+            python3 tools/test_release_tools.py
+            make -j2 -f tests/preferences/Makefile TSYS=macos OBD=_obj_/release OUT=_obj_/release/cuzebox FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE" preferences-test interrupt-test timer1-test hardware-test storage-test interlace-test screenshot-test cycle-screenshot-test screenshot-tool-test video-messages-test
+            python3 tools/test_screenshot_png.py _obj_/release
+            python3 tools/test_video_messages.py _obj_/release
+          } 2>&1 | tee _obj_/ci-logs/native.log
+      - name: Package and test app bundle
+        run: |
+          {
+            python3 tools/release_package.py build --platform macos --arch '${{ matrix.arch }}' --version "$VERSION" --binary _obj_/release/cuzebox --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe
+            python3 tools/test_release_package.py --macos dist/*macos*.zip
+            python3 tools/test_macos_app.py dist/*macos*.zip
+          } 2>&1 | tee _obj_/ci-logs/package.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cuex-macos-${{ matrix.arch }}-unsigned
+          path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-macos-${{ matrix.arch }}
+          path: |
+            _obj_/ci-logs/
+            _obj_/ffmpeg/build/ffbuild/config.log
+          if-no-files-found: ignore

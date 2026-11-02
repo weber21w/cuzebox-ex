@@ -1,4 +1,17 @@
 CUzeBoxEX / UNOS Linux migration handoff
+LATEST UPDATE - 2026-11-02 MACOS CI SETUP
+Mac build/test jobs now live in reusable .github/workflows/macos.yml, invoked
+by release.yml and independently on main/codex branch pushes and PRs. Both
+macos-15 arm64 and macos-15-intel targets build and package the same CUEX app.
+Coverage includes core/GUI regressions, PNG/video decode, headless packaged
+recording, and tools/test_macos_app.py launching a real Cocoa window. The
+native-window test checks the extracted signature, relocated dependencies,
+API/PNG operation, clean shutdown and that the signed bundle stays unchanged.
+Mac temporary-directory symlinks are resolved in the path/package test helpers.
+Debug artifacts are kept separately and excluded from release asset collection.
+Initial Mac packages remain ad-hoc signed, not notarized, with macOS 15 minimum.
+Read the latest CI run results before advertising Mac downloads as tested.
+
 LATEST UPDATE - 2026-11-01 PRE-PUSH REGRESSION REVIEW
 Compared the entire active publishable tree with freshly cloned GitHub main
 bd553618efb1401972a7d99e282a72d1e8b8921d. No upstream files are missing.

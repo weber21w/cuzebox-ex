@@ -11,7 +11,7 @@ g.add_argument('--windows',type=Path);g.add_argument('--linux',type=Path);g.add_
 args=p.parse_args()
 
 with tempfile.TemporaryDirectory(prefix='cuex-package-test-') as temporary:
-    root=Path(temporary);launch=root/'caller';launch.mkdir();data=root/'user data'
+    root=Path(temporary).resolve();launch=root/'caller';launch.mkdir();data=root/'user data'
     artifact=(args.windows or args.linux or args.macos).resolve()
     env=dict(os.environ)
     if args.windows or args.macos:

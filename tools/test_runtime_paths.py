@@ -7,7 +7,7 @@ from cuzebox_api import CUzeBoxApi
 
 exe=Path(sys.argv[1]).resolve()
 with tempfile.TemporaryDirectory(prefix='cuex-paths-') as tmp:
-    root=Path(tmp);launch=root/'launch';launch.mkdir();assets=root/'assets';assets.mkdir()
+    root=Path(tmp).resolve();launch=root/'launch';launch.mkdir();assets=root/'assets';assets.mkdir()
     (assets/'config.default.cfg').write_text('ApiServer=0\nVideoDumpOmitMessages=1\n')
     (assets/'themes').mkdir();(assets/'themes/default.cfg').write_text('GuiTheme=TEST\n')
     data=root/'user data'

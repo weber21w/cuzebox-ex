@@ -5,6 +5,18 @@ builds downloadable Actions artifacts. Pushing a `v*` tag builds the same matrix
 and creates a **draft** GitHub release only after every package job succeeds.
 Draft publication is a separate review step. This workflow does not merge PRs.
 
+The reusable `.github/workflows/macos.yml` also runs Mac builds/tests on pushes
+to `main` and `codex/**`, pull requests, or manual dispatch. The release workflow
+calls the same jobs, so test artifacts and release artifacts use the same recipe.
+Both Apple Silicon and Intel jobs run the native core/GUI regressions, independent
+PNG/video decoding, a packaged headless session, and an actual Cocoa-window
+launch of the extracted app. The bundle signature and its bundled-library paths
+are checked again after launch. Runner audio uses SDL's dummy driver; actual
+audio devices/controllers/serial hardware still require desktop testing.
+Build/FFmpeg/package diagnostics are retained as separate `debug-macos-*`
+artifacts, including on failure. Release collection includes only `cuex-*`
+package artifacts, so diagnostic logs do not become release downloads.
+
 | Target | Artifact | Initial support |
 | --- | --- | --- |
 | Windows x86-64 | ZIP, required DLLs and FFmpeg | Windows 10+, portable by default |

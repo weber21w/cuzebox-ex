@@ -79,41 +79,9 @@ jobs:
           path: dist/
           if-no-files-found: error
   macos:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15
-            arch: arm64
-          - runner: macos-15-intel
-            arch: x86_64
-    runs-on: ${{ matrix.runner }}
-    env:
-      MACOSX_DEPLOYMENT_TARGET: '15.0'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Dependencies
-        run: brew install sdl2 x264 pkg-config nasm
-      - name: Build recording helper
-        run: bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg
-      - name: Build and check CUEX
-        run: |
-          export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
-          DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
-          make -j2 TSYS=macos OBD=_obj_/release OUT=_obj_/release/cuzebox FLAG_REMOTE_ROMS_LIBCURL=0 EXTRA_CFLAGS=-DCUEX_DISTRIBUTION=1 VER_DATE="$DATE"
-          python3 tools/test_runtime_paths.py _obj_/release/cuzebox
-          python3 tools/test_headless_api.py _obj_/release/cuzebox
-      - name: Package unsigned test app
-        env:
-          VERSION: ${{ inputs.version || github.ref_name }}
-        run: |
-          python3 tools/release_package.py build --platform macos --arch '${{ matrix.arch }}' --version "$VERSION" --binary _obj_/release/cuzebox --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe
-          python3 tools/test_release_package.py --macos dist/*macos*.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cuex-macos-${{ matrix.arch }}-unsigned
-          path: dist/
-          if-no-files-found: error
+    uses: ./.github/workflows/macos.yml
+    with:
+      version: ${{ inputs.version || github.ref_name }}
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [linux, windows, macos]
@@ -125,6 +93,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: downloads
+          pattern: cuex-*
       - name: Create draft release with checked packages
         env:
           GH_TOKEN: ${{ github.token }}

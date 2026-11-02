@@ -21,7 +21,7 @@ class ReleaseTools(unittest.TestCase):
 
     def test_macos_dependency_closure(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base=Path(tmp);homebrew=base/'brew';homebrew.mkdir()
+            base=Path(tmp).resolve();homebrew=base/'brew';homebrew.mkdir()
             a=homebrew/'libA.dylib';b=homebrew/'libB.dylib';a.write_bytes(b'A');b.write_bytes(b'B')
             exe=base/'MacOS/cuzebox';exe.parent.mkdir();exe.write_bytes(b'EXEC')
             libs=base/'Frameworks';calls=[]
