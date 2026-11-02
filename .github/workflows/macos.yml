@@ -40,15 +40,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Dependencies
+        id: dependencies
         run: |
           brew install sdl2 x264 pkg-config nasm make
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          SDK_HASH="$( { brew list --versions x264; clang --version; sw_vers; } | shasum -a 256 | cut -d ' ' -f 1)"
+          echo "helper-sdk=$SDK_HASH" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: helper-cache
+        with:
+          path: _obj_/ffmpeg
+          key: cuex-ffmpeg-macos15-${{ matrix.arch }}-${{ steps.dependencies.outputs.helper-sdk }}-${{ hashFiles('packaging/release/build-ffmpeg.sh', 'packaging/release/tools.lock.json') }}
       - name: Build recording helper
+        if: steps.helper-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p _obj_/ci-logs
           bash packaging/release/build-ffmpeg.sh _obj_/ffmpeg 2>&1 | tee _obj_/ci-logs/ffmpeg.log
+      - uses: actions/cache/save@v4
+        if: steps.helper-cache.outputs.cache-hit != 'true'
+        with:
+          path: _obj_/ffmpeg
+          key: ${{ steps.helper-cache.outputs.cache-primary-key }}
       - name: Build and test native CUEX
         run: |
+          mkdir -p _obj_/ci-logs
           export PATH="$PWD/_obj_/ffmpeg/prefix/bin:$PATH"
           export DATE="0x$(git show -s --format=%cd --date=format:%Y%m%d HEAD)"
           bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/native.log
@@ -85,7 +100,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           for p in Path('_obj_/ci-logs').glob('*.log'):
-              text=p.read_text(errors='replace')[-6500:]
+              text=p.read_text(errors='replace')[-3500:]
               text=text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
               print('::error title='+p.name+'::'+text)
           PY

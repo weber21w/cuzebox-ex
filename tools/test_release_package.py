@@ -1,6 +1,6 @@
 """Smoke-test extracted release payloads without writing into installed assets."""
 from pathlib import Path
-import argparse,json,os,subprocess,tempfile,zipfile
+import argparse,json,os,subprocess,sys,tempfile,zipfile
 from test_screenshot_png import decode
 from cuzebox_api import CUzeBoxApi
 import socket
@@ -37,7 +37,22 @@ with tempfile.TemporaryDirectory(prefix='cuex-package-test-') as temporary:
         env['XDG_DATA_HOME']=str(root/'xdg');env['PATH']='/usr/bin:/bin'
         installed=None
     before={str(f.relative_to(installed)):f.stat().st_size for f in installed.rglob('*') if f.is_file()} if installed else None
-    result=subprocess.check_output([*command,'--data-dir',str(data),'--print-paths'],cwd=launch,env=env,text=True)
+    print('Package smoke: checking startup paths', flush=True)
+    startup=subprocess.Popen([*command,'--data-dir',str(data),'--print-paths'],cwd=launch,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    try:
+        result,errors=startup.communicate(timeout=30)
+    except subprocess.TimeoutExpired:
+        if sys.platform=='darwin':
+            sample=root/'startup-sample.txt'
+            try:subprocess.run(['sample',str(startup.pid),'1','-file',str(sample)],capture_output=True,timeout=15)
+            except (OSError,subprocess.TimeoutExpired) as exc:print('Could not sample startup:',exc,flush=True)
+            if sample.exists():
+                trace=sample.read_text(errors='replace');start=max(0,trace.find('Call graph:'))
+                print('Startup stack:\n'+trace[start:start+2800],flush=True)
+        startup.kill();result,errors=startup.communicate(timeout=10)
+        raise AssertionError(('Package startup timed out',result,errors))
+    assert startup.returncode==0,(startup.returncode,result,errors)
+    print('Package smoke: startup paths passed; starting headless API', flush=True)
     info=json.loads(result);assert info['mode']=='user-data' and Path(info['data']).resolve()==data
     assert (data/'config.cfg').is_file() and 'ApiServer=0' in (data/'config.cfg').read_text()
     with socket.socket() as probe:probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
@@ -46,12 +61,14 @@ with tempfile.TemporaryDirectory(prefix='cuex-package-test-') as temporary:
         api=CUzeBoxApi(port=port)
         try:
             api.wait_ready(20)
+            print('Package smoke: API ready', flush=True)
             def request(cmd):
                 r=api.command(cmd);assert r.get('ok'),(cmd,r);return r
             request('RUN_FRAMES 6');api.wait_run_complete(timeout=20)
             shot=data/'capture.png';request('SCREENSHOT '+shot.as_posix());decode(shot)
             request('EMU_SET video_dump_autoinc 0')
             request('EMU_SET video_dump_file video/package-test.MP4')
+            print('Package smoke: recording with bundled FFmpeg', flush=True)
             request('EMU_SET video_dump_active 1');request('RUN_FRAMES 12');api.wait_run_complete(timeout=30)
             request('EMU_SET video_dump_active 0')
             status=request('EMU_STATUS')['video_dump_status']
@@ -59,6 +76,9 @@ with tempfile.TemporaryDirectory(prefix='cuex-package-test-') as temporary:
             assert status.startswith('WROTE '),(status,errors)
             assert (data/'video/package-test.MP4').stat().st_size>0
             request('CONFIG SAVE')
+        except Exception:
+            print((root/'run.log').read_text(errors='replace')[-6000:],flush=True)
+            raise
         finally:
             try:api.command('QUIT')
             except Exception:pass

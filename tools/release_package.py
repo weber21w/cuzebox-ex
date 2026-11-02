@@ -242,7 +242,9 @@ def macos_package(stage,args):
     provenance(res,args)
     # Ad-hoc signing makes native Apple Silicon test packages runnable. This
     # is deliberately not described as Developer ID signing or notarization.
-    for p in copied+executables:run(['codesign','--force','--sign','-',p])
+    # Signing the main executable can make codesign inspect the whole bundle.
+    # Sign its helper executables first, including unsigned Intel FFmpeg builds.
+    for p in copied+executables[1:]+executables[:1]:run(['codesign','--force','--sign','-',p])
     run(['codesign','--force','--sign','-',app]);run(['codesign','--verify','--deep','--strict',app])
     archive=args.out/f'CUEX-{args.version}-macos-{args.arch}-unsigned.zip'
     write_zip(archive,app,app.name)
