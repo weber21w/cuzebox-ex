@@ -1,4 +1,12 @@
 CUzeBoxEX / UNOS Linux migration handoff
+LATEST VERIFIED UPDATE - 2026-11-02 MACOS BUILDS PASS
+Both Intel and Apple Silicon Mac jobs passed at source a936a8c, including
+packaged recording, an actual Cocoa window, PNG/API, bundle signatures and
+unchanged installed resources. Linux/browser jobs and a rebuilt Windows
+package also passed. Read documentation/macos-validation-2026-11-02.md for
+run/download links and remaining physical-device/notarization limits.
+Changes are on codex/prepush-review-20261101; main was not merged or tagged.
+
 LATEST UPDATE - 2026-11-02 MACOS CI SETUP
 Mac build/test jobs now live in reusable .github/workflows/macos.yml, invoked
 by release.yml and independently on main/codex branch pushes and PRs. Both
