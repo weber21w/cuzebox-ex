@@ -62,13 +62,18 @@ jobs:
             python3 tools/test_screenshot_png.py _obj_/release
             python3 tools/test_video_messages.py _obj_/release
           CUEX_SCRIPT
-      - name: Package and test app bundle
+      - name: Create signed app bundle
+        timeout-minutes: 5
         run: |
-          bash -euo pipefail <<'CUEX_SCRIPT' 2>&1 | tee _obj_/ci-logs/package.log
-            python3 tools/release_package.py build --platform macos --arch '${{ matrix.arch }}' --version "$VERSION" --binary _obj_/release/cuzebox --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe
-            python3 tools/test_release_package.py --macos dist/*macos*.zip
-            python3 tools/test_macos_app.py dist/*macos*.zip
-          CUEX_SCRIPT
+          python3 -u tools/release_package.py build --platform macos --arch '${{ matrix.arch }}' --version "$VERSION" --binary _obj_/release/cuzebox --ffmpeg _obj_/ffmpeg/prefix/bin/ffmpeg --ffprobe _obj_/ffmpeg/prefix/bin/ffprobe 2>&1 | tee _obj_/ci-logs/package.log
+      - name: Test packaged headless recording
+        timeout-minutes: 3
+        run: |
+          python3 -u tools/test_release_package.py --macos dist/*macos*.zip 2>&1 | tee _obj_/ci-logs/package-headless.log
+      - name: Test packaged Cocoa window
+        timeout-minutes: 3
+        run: |
+          python3 -u tools/test_macos_app.py dist/*macos*.zip 2>&1 | tee _obj_/ci-logs/package-cocoa.log
       - uses: actions/upload-artifact@v4
         with:
           name: cuex-macos-${{ matrix.arch }}-unsigned
