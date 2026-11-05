@@ -175,6 +175,7 @@ const auint cu_kbd_scan_codes[][2] = {
  {0x73,SDLK_KP_5},
  {0x74,SDLK_KP_6},
  {0x75,SDLK_KP_8},
+ {0x76,SDLK_ESCAPE},
  {0x79,SDLK_KP_PLUS},
  {0x7a,SDLK_KP_3},
  {0x7b,SDLK_KP_MINUS},
