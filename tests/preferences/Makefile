@@ -19,6 +19,14 @@ timer1-test: $(OBD)/timer1_regression.exe
 $(OBD)/timer1_regression.exe: tests/bootloader/timer1_regression.c tests/preferences/Makefile cu_avr.c main.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
 	$(CC) -I. -o $@ $< $(filter-out $(OBD)/cu_avr.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSPD)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
 
+.PHONY: timer2-test
+timer2-test: $(OBD)/timer2_regression.exe
+	mkdir -p $(OBD)/timer2-run
+	cd $(OBD)/timer2-run && ../timer2_regression.exe
+
+$(OBD)/timer2_regression.exe: tests/bootloader/timer2_regression.c tests/preferences/Makefile cu_avr.c main.c $(PREF_TEST_OBJECTS) $(DEPS) | $(OBD)
+	$(CC) -I. -o $@ $< $(filter-out $(OBD)/cu_avr.o,$(PREF_TEST_OBJECTS)) $(filter-out -Dmain=SDL_main,$(CFSPD)) $(filter-out -mwindows -lSDL2main -lmingw32,$(LINKB))
+
 .PHONY: hardware-test
 hardware-test: $(OBD)/hardware_regression.exe
 	mkdir -p $(OBD)/hardware-run
