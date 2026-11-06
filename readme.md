@@ -279,7 +279,10 @@ On Windows:
 
 Without a ROM argument, the emulator starts its built-in Bootloader 5 image.
 A configured external bootloader can override its boot section. The virtual
-SD card is composed from the loaded game's directory.
+SD card is composed from the loaded game's directory, or from a `uzedisk`
+folder beside the game when there is one. A `uzedisk` card is writable: the
+game may create, resize, rename and delete files in it, as with
+`SdAllowNewFiles=1`.
 
 For quiet AI/API testing, use the same full-featured executable in runtime
 headless mode:

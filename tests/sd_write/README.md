@@ -16,6 +16,7 @@ Coverage includes:
 - guest-created directories where their cluster is initialized before the parent entry is linked
 - guest file data written before its directory entry is linked
 - nested create, rename, delete, and descendant remapping after a parent-directory rename
+- a `uzedisk` folder beside the ROM as the card, writable; the ROM's folder and the user's setting without one
 - variable-length VFAT savestate serialization/restoration of sparse directory sectors and nested host mappings
 
 Regular file contents are not copied into VFAT RAM. They continue to stream directly to host files. Only FAT system metadata plus sparse guest-written/unmapped sectors and directory sectors are retained by the VFAT layer.

@@ -79,7 +79,8 @@ saved preferences. `--help` lists them.
 
 Command-line ROM and explicit config paths are resolved **before** changing
 working directory. An explicitly loaded ROM's containing directory remains the
-virtual SD root, including sibling files and subdirectories. Package/user-data
+virtual SD root, including sibling files and subdirectories, unless a
+`uzedisk` folder sits beside the ROM: that folder is then the SD root, writable. Package/user-data
 directories are not substituted for that root. With no ROM, installed/portable
 packages expose their writable `roms/` directory to the built-in Bootloader 5.
 EEPROM and game-side SD writes retain their existing ROM-adjacent semantics.
