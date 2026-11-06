@@ -92,7 +92,23 @@ static char filesys_find_path[CH_NSIZE] = {0U};
 */
 static boole filesys_sd_allow_new_files = FALSE;
 
+/*
+** A "uzedisk" folder beside the ROM is its SD card: the card is composed
+** from that folder instead of the ROM's own, and the emulated software may
+** create, resize, rename and delete files in it, as if SdAllowNewFiles were
+** set. The ROM, EEPROM and the other emulator files stay beside the ROM.
+*/
+#define FILESYS_SD_UZEDISK "uzedisk"
+static boole filesys_sd_uzedisk = FALSE;
+
+/* The extra SD write permission: set by the user, or by a uzedisk folder */
+static boole filesys_sd_writable(void)
+{
+ return (filesys_sd_allow_new_files || filesys_sd_uzedisk) ? TRUE : FALSE;
+}
+
 static void filesys_addpath(char* dest, const char* src, auint len);
+static void filesys_sd_addpath(char* dest, const char* src, auint len);
 
 /* A trusted guest may alter the SD directory, but it must not be able to
 ** escape it through a crafted name or a host-side symlink / reparse point.
@@ -156,7 +172,7 @@ static boole filesys_sd_makepath(char* dest, char const* name)
  auint ni = 0U;
  auint ci;
  if (!filesys_sd_name_safe(name)){ return FALSE; }
- filesys_addpath(dest, name, CH_NSIZE);
+ filesys_sd_addpath(dest, name, CH_NSIZE);
  filesys_base_dir(base, CH_NSIZE);
  strncpy(cur, base, sizeof(cur) - 1U);
  cur[sizeof(cur) - 1U] = 0;
@@ -239,6 +255,10 @@ static void filesys_base_dir(char* dest, auint len)
   dest[i] = filesys_path[i];
   i ++;
  }
+ if (filesys_sd_uzedisk){
+  char const* sub = FILESYS_SD_UZEDISK;
+  while ((i < (len - 1U)) && (*sub != 0)){ dest[i++] = *sub++; }
+ }
  if (i == 0U){ dest[i++] = '.'; }
  while ((i > 1U) && ((dest[i - 1U] == '/') || (dest[i - 1U] == '\\'))){ i --; }
  dest[i] = 0;
@@ -305,6 +325,21 @@ static void filesys_addpath(char* dest, const char* src, auint len)
 
 
 /*
+** Combines the SD card's directory with the passed filename: the set path,
+** with "uzedisk/" after it when that folder serves the card.
+*/
+static void filesys_sd_addpath(char* dest, const char* src, auint len)
+{
+ char tmp[CH_NSIZE];
+
+ if (!filesys_sd_uzedisk){ filesys_addpath(dest, src, len); return; }
+ (void)snprintf(tmp, sizeof(tmp), "%s/%s", FILESYS_SD_UZEDISK, src);
+ filesys_addpath(dest, tmp, len);
+}
+
+
+
+/*
 ** Sets path string. All filesystem operations will be carried out on the
 ** set path. If there is a file name on the end of the path, it is removed
 ** from it (bare paths must terminate with a '/'). If name is non-null, the
@@ -347,6 +382,21 @@ void  filesys_setpath(char const* path, char* name, auint len)
    j ++;
   }
   name[j] = 0;
+ }
+
+ /* A uzedisk folder in it serves the SD card, writable */
+
+ {
+  char        dir[PATH_SIZE + sizeof(FILESYS_SD_UZEDISK)];
+  struct stat st;
+  boole       found;
+  (void)snprintf(dir, sizeof(dir), "%s%s", filesys_path, FILESYS_SD_UZEDISK);
+  found = ((stat(dir, &st) == 0) && S_ISDIR(st.st_mode)) ? TRUE : FALSE;
+  if (found != filesys_sd_uzedisk){
+   filesys_flush(FILESYS_CH_SD);
+   filesys_sd_uzedisk = found;
+   if (found){ print_message("SD card: %s, writable\n", dir); }
+  }
  }
 
  return;
@@ -467,7 +517,7 @@ auint filesys_write(auint ch, uint8 const* src, auint len)
  uint8 dum[512];
  boole restrict_sd_growth;
 
- restrict_sd_growth = ((ch == FILESYS_CH_SD) && (!filesys_sd_allow_new_files));
+ restrict_sd_growth = ((ch == FILESYS_CH_SD) && (!filesys_sd_writable()));
 
  /* Try to reopen the file for writing if necessary */
 
@@ -506,7 +556,7 @@ auint filesys_write(auint ch, uint8 const* src, auint len)
   if (len > (fsize - filesys_ch[ch].pos)){
    len = fsize - filesys_ch[ch].pos;
   }
- }else if ((ch == FILESYS_CH_SD) && filesys_sd_allow_new_files){
+ }else if ((ch == FILESYS_CH_SD) && filesys_sd_writable()){
   uint64_t endpos = (uint64_t)filesys_ch[ch].pos + (uint64_t)len;
   uint64_t cursize = 0U;
   struct stat st;
@@ -563,7 +613,7 @@ void filesys_set_sd_allow_new_files(boole enable)
 
 boole filesys_get_sd_allow_new_files(void)
 {
- return filesys_sd_allow_new_files;
+ return filesys_sd_writable();
 }
 
 
@@ -578,7 +628,7 @@ boole filesys_resize_sd(char const* name, auint size)
  FILE* fp;
  int rv;
 
- if (!filesys_sd_allow_new_files){ return FALSE; }
+ if (!filesys_sd_writable()){ return FALSE; }
  if (!filesys_sd_makepath(&(path[0]), name)){ return FALSE; }
 
  /* Commit any buffered data before deciding whether the logical size already
@@ -620,7 +670,7 @@ boole filesys_delete_sd(char const* name)
 {
  char path[CH_NSIZE];
  struct stat st;
- if (!filesys_sd_allow_new_files){ return FALSE; }
+ if (!filesys_sd_writable()){ return FALSE; }
  if (!filesys_sd_makepath(&(path[0]), name)){ return FALSE; }
  filesys_flush(FILESYS_CH_SD);
  if (stat(path, &st) < 0){ return TRUE; } /* Already absent is an achieved delete. */
@@ -636,7 +686,7 @@ boole filesys_rename_sd(char const* oldname, char const* newname)
  char oldpath[CH_NSIZE];
  char newpath[CH_NSIZE];
  struct stat st;
- if (!filesys_sd_allow_new_files){ return FALSE; }
+ if (!filesys_sd_writable()){ return FALSE; }
  if (!filesys_sd_makepath(&(oldpath[0]), oldname)){ return FALSE; }
  if (!filesys_sd_makepath(&(newpath[0]), newname)){ return FALSE; }
  if (strcmp(oldpath, newpath) == 0){ return TRUE; }
@@ -655,7 +705,7 @@ boole filesys_mkdir_sd(char const* name)
  char path[CH_NSIZE];
  struct stat st;
  int rv;
- if (!filesys_sd_allow_new_files){ return FALSE; }
+ if (!filesys_sd_writable()){ return FALSE; }
  if (!filesys_sd_makepath(path, name)){ return FALSE; }
  if (stat(path, &st) == 0){ return S_ISDIR(st.st_mode) ? TRUE : FALSE; }
 #if defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
@@ -673,7 +723,7 @@ boole filesys_rmdir_sd(char const* name)
  char path[CH_NSIZE];
  struct stat st;
  int rv;
- if (!filesys_sd_allow_new_files){ return FALSE; }
+ if (!filesys_sd_writable()){ return FALSE; }
  if (!filesys_sd_makepath(path, name)){ return FALSE; }
  filesys_flush(FILESYS_CH_SD);
  if (stat(path, &st) < 0){ return TRUE; }
